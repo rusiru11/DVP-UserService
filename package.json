@@ -1,0 +1,19 @@
+{
+  "name": "dvp-userservice",
+  "version": "1.0.0",
+  "description": "User, Profile and identity service for duo voice platform",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuoSoftware/DVP-UserService.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DuoSoftware/DVP-UserService/issues"
+  },
+  "homepage": "https://github.com/DuoSoftware/DVP-UserService#readme"
+}
