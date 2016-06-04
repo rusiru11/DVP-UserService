@@ -10,7 +10,7 @@ var Schema = mongoose.Schema;
 var contactSchema = new Schema({
     contact:String,
     type:String,
-    varified: Boolean
+    verified: Boolean
 });
 
 

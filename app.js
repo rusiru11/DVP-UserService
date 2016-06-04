@@ -48,8 +48,9 @@ server.use(jwt({secret: secret.Secret}));
 
 server.get('/DVP/API/:version/Users', authorization({resource:"user", action:"read"}), userService.GetUsers);
 server.get('/DVP/API/:version/User/:name', authorization({resource:"user", action:"read"}), userService.GetUser);
-server.del('/DVP/API/:version/User/:name', authorization({resource:"user", action:"read"}), userService.DeleteUser);
-server.post('/DVP/API/:version/User', authorization({resource:"user", action:"read"}), userService.CreateUser);
+server.del('/DVP/API/:version/User/:name', authorization({resource:"user", action:"delete"}), userService.DeleteUser);
+server.post('/DVP/API/:version/User', authorization({resource:"user", action:"write"}), userService.CreateUser);
+server.patch('/DVP/API/:version/User/:name', authorization({resource:"user", action:"write"}), userService.UpdateUser);
 
 
 

@@ -115,6 +115,8 @@ function DeleteUser(req,res){
 
 function CreateUser(req, res){
 
+    logger.debug("DVP-UserService.CreateUser Internal method ");
+
 
 
     var user = User({
@@ -123,8 +125,8 @@ function CreateUser(req, res){
         name: req.body.name,
         username: req.body.username,
         password: req.body.password,
-        phoneNumber: {contact:req.body.phone, type: "phone", varified: false},
-        email:{contact:req.body.mail, type: "phone", varified: false},
+        phoneNumber: {contact:req.body.phone, type: "phone", verified: false},
+        email:{contact:req.body.mail, type: "phone", verified: false},
         user_meta: {},
         app_meta: {},
         company: parseInt(req.user.company),
@@ -155,7 +157,40 @@ function CreateUser(req, res){
 }
 
 
+function UpdateUser(req, res){
+
+
+
+    logger.debug("DVP-UserService.UpdateUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+    User.findOneAndUpdate({username: req.params.name}, req.body, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
+
+        }else{
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, users);
+
+        }
+
+        res.end(jsonString);
+    });
+
+
+
+
+
+}
+
+
 module.exports.GetUser = GetUser;
 module.exports.GetUsers = GetUsers;
 module.exports.DeleteUser = DeleteUser;
 module.exports.CreateUser = CreateUser;
+module.exports.UpdateUser = UpdateUser;
