@@ -1,0 +1,33 @@
+/**
+ * Created by a on 6/3/2016.
+ */
+
+// grab the things we need
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+
+
+var contactSchema = new Schema({
+    contact:String,
+    type:String,
+    verified: Boolean
+});
+
+
+
+var organisationSchema = new Schema({
+    owner_name:String,
+    company_name: String,
+    company_enabled: Boolean,
+    id: Number,
+    tenant: Boolean,
+    created_at: Date,
+    updated_at: Date
+});
+
+
+
+
+var User = mongoose.model('Organisation', organisationSchema);
+module.exports = User;
+
