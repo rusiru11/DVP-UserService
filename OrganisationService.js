@@ -2,10 +2,29 @@
  * Created by Heshan.i on 6/6/2016.
  */
 var mongoose = require('mongoose');
+var redis = require('redis');
+var config = require('config');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var Org = require('./model/Organisation');
 var User = require('./model/User');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
+
+client = redis.createClient(config.Redis.port, config.Redis.ip);
+client.auth(config.Redis.password);
+client.on("error", function (err) {
+    infoLogger.DetailLogger.log('error', 'Redis connection error :: %s', err);
+    console.log("Error " + err);
+});
+
+function GetNewCompanyId(callback){
+    client.incr("CompanyCount", function (err, result) {
+        if (err) {
+            callback(null);
+        } else {
+            callback(parseInt(result));
+        }
+    });
+}
 
 function GetOrganisations(req, res){
     logger.debug("DVP-UserService.GetOrganisations Internal method ");
@@ -83,46 +102,54 @@ function DeleteOrganisation(req,res){
 function CreateOrganisation(req, res){
     logger.debug("DVP-UserService.CreateOrganisation Internal method ");
     var jsonString;
-    var org = Org({
-        owner_name: req.body.owner.name,
-        company_name: req.body.name,
-        company_enabled: true,
-        id: 3,
-        tenant: 1,
-        created_at: Date.now(),
-        updated_at: Date.now()
-    });
-
-    var user = User({
-        name: req.body.owner.name,
-        username: req.body.owner.username,
-        password: req.body.owner.password,
-        phoneNumber: {contact:req.body.owner.phone, type: "phone", verified: false},
-        email:{contact:req.body.owner.mail, type: "phone", verified: false},
-        user_meta: {},
-        app_meta: {},
-        company: 3,
-        tenant: 1,
-        user_scopes: {},
-        created_at: Date.now(),
-        updated_at: Date.now()
-
-    });
-
-    user.save(function(err, user) {
-        if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
-            res.end(jsonString);
-        }else{
-            org.save(function(err, org) {
-                if (err) {
-                    user.remove(function (err) {});
-                    jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
-                }else{
-                    var jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
-                }
-                res.end(jsonString);
+    GetNewCompanyId(function(cid){
+        if(cid != null && cid > 0) {
+            var org = Org({
+                owner_id: req.body.owner.username,
+                company_name: req.body.name,
+                company_enabled: true,
+                id: cid,
+                tenant: 1,
+                created_at: Date.now(),
+                updated_at: Date.now()
             });
+
+            var user = User({
+                name: req.body.owner.name,
+                username: req.body.owner.username,
+                password: req.body.owner.password,
+                phoneNumber: {contact: req.body.owner.phone, type: "phone", verified: false},
+                email: {contact: req.body.owner.mail, type: "phone", verified: false},
+                user_meta: {},
+                app_meta: {},
+                company: cid,
+                tenant: 1,
+                user_scopes: {},
+                created_at: Date.now(),
+                updated_at: Date.now()
+
+            });
+
+            user.save(function (err, user) {
+                if (err) {
+                    jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+                    res.end(jsonString);
+                } else {
+                    org.save(function (err, org) {
+                        if (err) {
+                            user.remove(function (err) {
+                            });
+                            jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
+                        } else {
+                            var jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
+                        }
+                        res.end(jsonString);
+                    });
+                }
+            });
+        }else{
+            jsonString = messageFormatter.FormatMessage(undefined, "Create new organisation id failed", false, undefined);
+            res.end(jsonString);
         }
     });
 }
