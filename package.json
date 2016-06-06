@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/DuoSoftware/DVP-UserService/issues"
   },
-  "homepage": "https://github.com/DuoSoftware/DVP-UserService#readme"
+  "homepage": "https://github.com/DuoSoftware/DVP-UserService#readme",
+  "dependencies": {
+    "ejs": "^2.4.2"
+  }
 }
