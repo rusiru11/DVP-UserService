@@ -3,12 +3,12 @@
  */
 
 
-var oauth2orize = require('oauth2orize')
-    , passport = require('passport')
-    , login = require('connect-ensure-login')
-    , client = require('./model/Client')
-    ,authorizationCode = require('./model/AuthorizationCodes')
-    ,accessToken = require ('./model/AccessToken')
+var oauth2orize = require('oauth2orize');
+var passport = require('passport');
+var login = require('connect-ensure-login');
+var client = require('./model/Client');
+var authorizationCode = require('./model/AuthorizationCodes');
+var accessToken = require ('./model/AccessToken');
 
 
 var server = oauth2orize.createServer();
@@ -64,11 +64,12 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
 
             var accesstoken = accessToken({
 
-                    userID: authCode.userID,
-                    clientId: authCode.clientID,
-                    scope: [String],
-                    expirationDate: ""
-                });
+                token: token,
+                userID: authCode.userID,
+                clientId: authCode.clientID,
+                scope: [String],
+                expirationDate: ""
+            });
 
             accesstoken.save(token, authCode.userID, authCode.clientID, function(err, accesstoken) {
                 if (err) {

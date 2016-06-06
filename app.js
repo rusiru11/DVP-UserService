@@ -1,28 +1,60 @@
 
 
-var express = require('express')
-    , passport = require('passport')
-    , site = require('./site')
-    , oauth2 = require('./oauth2')
+var express = require('express');
+var passport = require('passport');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+var errorhandler = require('errorhandler');
+var session = require('express-session');
+//var qs = require('qs');
+var site = require('./sites');
+var oauth2 = require('./oauth2');
+
+require('./auth');
 
 
-// Express configuration
 
-var app = express.createServer();
+
+var expressQSParser = require('express-qs-parser');
+
+
+    qsParserMiddleware = expressQSParser({
+        // list of parameters to be analyzed
+        params: {
+            //applies the pattern on all matched elements thanks to the global option
+            filters: /([\w-_]+)(\>|<|\=|\!=)([\w_-]+)/g,
+            order: /(-?)([\w\s]+)/
+        },
+        // name of the request property where the middleware will store the parsed parameters
+        storage: 'parsedQuery'
+    });
+
+//--------------------------------------------------------------------
+
+// applies the parser on all routes
+
+
+
+
+
+var app = express();
+
+
 app.set('view engine', 'ejs');
-app.use(express.logger());
-app.use(express.cookieParser());
-app.use(express.bodyParser());
-app.use(express.session({ secret: 'keyboard cat' }));
 
+
+app.use(qsParserMiddleware);
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(session({ secret: 'keyboard cat', resave: true, saveUninitialized: true}));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(app.router);
-app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+app.use(cookieParser());
+app.use(errorhandler({ dumpExceptions: true, showStack: true }));
 
 // Passport configuration
 
-require('./auth');
 
 
 app.get('/', site.index);
@@ -31,9 +63,17 @@ app.post('/login', site.login);
 app.get('/logout', site.logout);
 app.get('/account', site.account);
 
-app.get('/dialog/authorize', oauth2.authorization);
+app.get('/dialog/authorize', function(req, res){
+    console.log(req.query.response_type);
+
+});
 app.post('/dialog/authorize/decision', oauth2.decision);
 app.post('/oauth/token', oauth2.token);
+
+
+//oauth2.authorization
+
+
 
 
 
