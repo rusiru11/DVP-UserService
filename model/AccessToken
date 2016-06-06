@@ -1,0 +1,20 @@
+
+
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+
+
+var accessTokenSchema = new Schema({
+    userID:{ type: String, required: true },
+    clientId:{ type: String, required: true, unique: true },
+    scope: [String],
+    expirationDate: { type: String, required: true }
+});
+
+
+
+
+var AccessToken = mongoose.model('AccessToken', accessTokenSchema);
+module.exports = AccessToken;
+
+
