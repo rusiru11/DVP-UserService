@@ -57,7 +57,6 @@ function GetOrganisation(req, res){
     });
 }
 
-
 function DeleteOrganisation(req,res){
     logger.debug("DVP-UserService.DeleteOrganisation Internal method ");
 
@@ -70,7 +69,7 @@ function DeleteOrganisation(req,res){
             res.end(jsonString);
         }else{
             if(users.length>0){
-                jsonString = messageFormatter.FormatMessage(undefined, "Users Available, Denied Remove Organisation", false, undefined);
+                jsonString = messageFormatter.FormatMessage(undefined, "Users are Available, Denied Remove Organisation", false, undefined);
                 res.end(jsonString);
             }else {
                 Org.findOne({tenant: tenant, id: company}, function (err, org) {
@@ -97,7 +96,6 @@ function DeleteOrganisation(req,res){
         }
     });
 }
-
 
 function CreateOrganisation(req, res){
     logger.debug("DVP-UserService.CreateOrganisation Internal method ");
@@ -153,7 +151,6 @@ function CreateOrganisation(req, res){
         }
     });
 }
-
 
 function UpdateOrganisation(req, res){
     logger.debug("DVP-UserService.UpdateOrganisation Internal method ");
