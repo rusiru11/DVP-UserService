@@ -14,6 +14,23 @@ var contactSchema = new Schema({
 });
 
 
+var scopeSchema = new Schema({
+
+    scope: { type: String, required: true},
+    read: Boolean,
+    write: Boolean,
+    delete: Boolean,
+
+})
+
+var menuScopeSchema = new Schema({
+
+    menuItem: {type: String, required: true},
+    menuAction: [scopeSchema],
+
+
+})
+
 
 var userSchema = new Schema({
     name: String,
@@ -23,9 +40,11 @@ var userSchema = new Schema({
     email: { type: contactSchema, required: true },
     company: { type: Number, required: true },
     tenant: { type: Number, required: true },
+    contacts: [contactSchema],
     user_meta: {},
     app_meta: {},
-    user_scopes: {},
+    user_scopes: [scopeSchema],
+    client_scopes: [menuScopeSchema],
     created_at: Date,
     updated_at: Date
 });
