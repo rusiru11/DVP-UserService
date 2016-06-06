@@ -3,6 +3,7 @@
 var restify = require('restify');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var userService = require("./UserService.js");
+var organisationService = require("./OrganisationService");
 var config = require('config');
 var jwt = require('restify-jwt');
 var util = require('util');
@@ -52,9 +53,13 @@ server.del('/DVP/API/:version/User/:name', authorization({resource:"user", actio
 server.post('/DVP/API/:version/User', authorization({resource:"user", action:"write"}), userService.CreateUser);
 server.patch('/DVP/API/:version/User/:name', authorization({resource:"user", action:"write"}), userService.UpdateUser);
 
+//////////////////////////////Organisation API/////////////////////////////////////////////////////
 
-
-
+server.get('/DVP/API/:version/Organisations', authorization({resource:"user", action:"read"}), organisationService.GetOrganisations);
+server.get('/DVP/API/:version/Organisation', authorization({resource:"user", action:"read"}), organisationService.GetOrganisation);
+server.del('/DVP/API/:version/Organisation', authorization({resource:"user", action:"delete"}), organisationService.DeleteOrganisation);
+server.post('/DVP/API/:version/Organisation', authorization({resource:"user", action:"write"}), organisationService.CreateOrganisation);
+server.patch('/DVP/API/:version/Organisation', authorization({resource:"user", action:"write"}), organisationService.UpdateOrganisation);
 
 server.listen(port, function () {
 

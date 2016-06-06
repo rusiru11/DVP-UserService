@@ -20,7 +20,7 @@ var organisationSchema = new Schema({
     company_name: String,
     company_enabled: Boolean,
     id: Number,
-    tenant: Boolean,
+    tenant: Number,
     created_at: Date,
     updated_at: Date
 });
@@ -28,6 +28,6 @@ var organisationSchema = new Schema({
 
 
 
-var User = mongoose.model('Organisation', organisationSchema);
-module.exports = User;
+var Organisation = mongoose.model('Organisation', organisationSchema);
+module.exports = Organisation;
 
