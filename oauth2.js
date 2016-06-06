@@ -91,7 +91,7 @@ exports.authorization = [
             if (err) { return done(err); }
             else if(!client) {
 
-                var noClientErr = new ERROR("No client found");
+                var noClientErr = new Error("No client found");
                 return done(noClientErr);
             }
 

@@ -6,94 +6,14 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var errorhandler = require('errorhandler');
 var session = require('express-session');
-//var qs = require('qs');
+var qs = require('qs');
 var site = require('./sites');
 var oauth2 = require('./oauth2');
-
+var url = require('url');
 require('./auth');
-
-
-
-
-var expressQSParser = require('express-qs-parser');
-
-
-    qsParserMiddleware = expressQSParser({
-        // list of parameters to be analyzed
-        params: {
-            //applies the pattern on all matched elements thanks to the global option
-            filters: /([\w-_]+)(\>|<|\=|\!=)([\w_-]+)/g,
-            order: /(-?)([\w\s]+)/
-        },
-        // name of the request property where the middleware will store the parsed parameters
-        storage: 'parsedQuery'
-    });
-
-//--------------------------------------------------------------------
-
-// applies the parser on all routes
-
-
-
-
-
+var ejwt = require('express-jwt');
+var cors = require('cors');
 var app = express();
-
-
-app.set('view engine', 'ejs');
-
-
-app.use(qsParserMiddleware);
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(session({ secret: 'keyboard cat', resave: true, saveUninitialized: true}));
-app.use(passport.initialize());
-app.use(passport.session());
-app.use(cookieParser());
-app.use(errorhandler({ dumpExceptions: true, showStack: true }));
-
-// Passport configuration
-
-
-
-app.get('/', site.index);
-app.get('/login', site.loginForm);
-app.post('/login', site.login);
-app.get('/logout', site.logout);
-app.get('/account', site.account);
-
-app.get('/dialog/authorize', function(req, res){
-    console.log(req.query.response_type);
-
-});
-app.post('/dialog/authorize/decision', oauth2.decision);
-app.post('/oauth/token', oauth2.token);
-
-
-//oauth2.authorization
-
-
-
-
-
-app.listen(3000);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -117,6 +37,10 @@ var mongouser=config.Mongo.user;
 var mongopass = config.Mongo.password;
 
 
+var port = config.Host.port || 3000;
+var host = config.Host.vdomain || 'localhost';
+
+
 var mongoose = require('mongoose');
 var connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodb)
 mongoose.connect(connectionstring);
@@ -125,11 +49,116 @@ mongoose.connection.once('open', function() {
     console.log("Connected to db");
 });
 
+app.set('view engine', 'ejs');
+
+
+//var router = express.Router();
+
+/*
+router.use(function (req, res, next) {
+    var url_parts = url.parse(req.url, true);
+    req.query = url_parts.query;
+    next();
+});
+*/
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(session({ secret: 'keyboard cat', resave: true, saveUninitialized: true}));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(cookieParser());
+app.use(errorhandler({ dumpExceptions: true, showStack: true }));
+app.use(cors());
 
 
 
-var port = config.Host.port || 3000;
-var host = config.Host.vdomain || 'localhost';
+
+app.get('/', site.index);
+app.get('/login', site.loginForm);
+app.post('/login', site.login);
+app.get('/logout', site.logout);
+app.get('/account', site.account);
+
+app.get('/dialog/authorize', oauth2.authorization);
+app.post('/dialog/authorize/decision', oauth2.decision);
+app.post('/oauth/token', oauth2.token);
+
+
+app.get('/DVP/API/:version/Users', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsers);
+
+
+//////////////////////////////Cloud API/////////////////////////////////////////////////////
+
+app.get('/DVP/API/:version/Users', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsers);
+app.get('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUser);
+app.delete('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), userService.DeleteUser);
+app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateUser);
+app.put('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.UpdateUser);
+
+//////////////////////////////Organisation API/////////////////////////////////////////////////////
+app.get('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfile);
+app.put('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfile);
+
+app.get('/DVP/API/:version/Organisations', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), organisationService.GetOrganisations);
+app.get('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), organisationService.GetOrganisation);
+app.delete('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), organisationService.DeleteOrganisation);
+app.post('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), organisationService.CreateOrganisation);
+app.patch('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), organisationService.UpdateOrganisation);
+
+app.get('/DVP/API/:version/Users/:name/Scope',jwt({secret: secret.Secret}), authorization({resource:"userScope", action:"write"}), userService.GetUserScopes);
+app.put('/DVP/API/:version/Users/:name/Scope', jwt({secret: secret.Secret}),authorization({resource:"userScope", action:"write"}), userService.AddUserScopes);
+app.delete('/DVP/API/:version/User/:name/Scope/:scope', jwt({secret: secret.Secret}),authorization({resource:"userScope", action:"delete"}), userService.DeleteUser);
+
+app.get('/DVP/API/:version/Users/:name/Scope',jwt({secret: secret.Secret}), authorization({resource:"userAppScope", action:"write"}), userService.GetAppScopes);
+app.put('/DVP/API/:version/Users/:name/AppScope', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"write"}), userService.AddUserAppScopes);
+app.delete('/DVP/API/:version/User/:name/AppScope/:scope', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"delete"}), userService.RemoveUserAppScopes);
+
+
+app.get('/DVP/API/:version/Users/:name/UserMeta', jwt({secret: secret.Secret}),authorization({resource:"userMeta", action:"read"}), userService.GetUserMeta);
+app.put('/DVP/API/:version/Users/:name/UserMeta', jwt({secret: secret.Secret}),authorization({resource:"userMeta", action:"write"}), userService.UpdateUserMetadata);
+
+app.get('/DVP/API/:version/Users/:name/AppMeta', jwt({secret: secret.Secret}),authorization({resource:"userAppMeta", action:"read"}), userService.GetAppMeta);
+app.put('/DVP/API/:version/Users/:name/AppMeta', jwt({secret: secret.Secret}),authorization({resource:"userAppMeta", action:"write"}), userService.UpdateAppMetadata);
+
+
+
+
+//app.use('/', router);
+
+
+app.listen(port, function () {
+
+    logger.info("DVP-UserService.main Server listening at %d", port);
+
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 
 
 var server = restify.createServer({
@@ -185,3 +214,5 @@ server.listen(port, function () {
     logger.info("DVP-UserService.main Server %s listening at %s", server.name, server.url);
 
 });
+
+    */
