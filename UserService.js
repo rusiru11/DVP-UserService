@@ -11,14 +11,14 @@ function GetUsers(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.find({}, function(err, users) {
+    User.find({company: company, tenant: tenant}, function(err, users) {
         if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+            jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
         }
 
@@ -39,7 +39,7 @@ function GetUser(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name}, function(err, users) {
+    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
@@ -70,38 +70,21 @@ function DeleteUser(req,res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name}, function(err, user) {
+    User.findOneAndRemove({username: req.params.name,company: company, tenant: tenant}, function(err, user) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
-            res.end(jsonString);
+
 
         }else{
 
-           if(user) {
+            jsonString = messageFormatter.FormatMessage(undefined, "Delete User Failed, user object is null", false, undefined);
 
-               user.remove(function (err) {
-                   if (err) {
 
-                       jsonString = messageFormatter.FormatMessage(err, "Delete User Failed", false, undefined);
-
-                   }
-
-                   else {
-
-                       jsonString = messageFormatter.FormatMessage(undefined, "User successfully deleted", true, undefined);
-                   }
-
-                   res.end(jsonString);
-
-               });
-           }else{
-
-               jsonString = messageFormatter.FormatMessage(undefined, "Delete User Failed, user object is null", false, undefined);
-               res.end(jsonString);
-           }
 
         }
+
+        res.end(jsonString);
 
 
     });
@@ -126,11 +109,8 @@ function CreateUser(req, res){
         password: req.body.password,
         phoneNumber: {contact:req.body.phone, type: "phone", verified: false},
         email:{contact:req.body.mail, type: "phone", verified: false},
-        user_meta: {},
-        app_meta: {},
         company: parseInt(req.user.company),
         tenant: parseInt(req.user.tenant),
-        user_scopes: {},
         created_at: Date.now(),
         updated_at: Date.now()
 
@@ -166,7 +146,7 @@ function UpdateUser(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name}, req.body, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, req.body, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
@@ -194,7 +174,7 @@ function GetUserProfile(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name}, function(err, users) {
+    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
@@ -289,7 +269,7 @@ function UpdateUserProfile(req, res) {
 
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name}, req.body, function (err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, req.body, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
@@ -314,7 +294,7 @@ function AddUserScopes(req, res){
     var jsonString;
 
     //Show.update({ "_id": showId },{ "$push": { "episodes": episodeData } },callback)
-    User.findOneAndUpdate({username: req.params.name},{ "$push": { "user_scopes": req.body } }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$push": { "user_scopes": req.body } }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
@@ -343,7 +323,7 @@ function RemoveUserScopes(req, res){
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name},{ "$pullAll": { "user_scopes": [{"scope":req.params.scope}] } }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "user_scopes": [{"scope":req.params.scope}] } }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
@@ -371,7 +351,7 @@ function AddUserAppScopes(req, res){
     var jsonString;
 
     //Show.update({ "_id": showId },{ "$push": { "episodes": episodeData } },callback)
-    User.findOneAndUpdate({username: req.params.name},{ "$push": { "client_scopes": req.body } }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$push": { "client_scopes": req.body } }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
@@ -400,7 +380,7 @@ function RemoveUserAppScopes(req, res){
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name},{ "$pullAll": { "client_scopes": [{"menuItem":req.params.scope}] } }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "client_scopes": [{"menuItem":req.params.scope}] } }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
@@ -427,7 +407,7 @@ function GetUserMeta(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name}, function(err, users) {
+    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
@@ -458,7 +438,7 @@ function GetAppMeta(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name}, function(err, users) {
+    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
@@ -481,7 +461,6 @@ function GetAppMeta(req, res){
 
 }
 
-
 function UpdateUserMetadata(req, res){
 
 
@@ -493,7 +472,7 @@ function UpdateUserMetadata(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name}, { "user_meta" : req.body }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { "user_meta" : req.body }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update user meta Failed", false, undefined);
@@ -524,7 +503,7 @@ function UpdateAppMetadata(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name}, { "app_meta" : req.body }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { "app_meta" : req.body }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update app meta Failed", false, undefined);
@@ -552,7 +531,7 @@ function GetUserScopes(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name}, function(err, users) {
+    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User scope Failed", false, undefined);
@@ -583,7 +562,7 @@ function GetAppScopes(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name}, function(err, users) {
+    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
