@@ -6,27 +6,15 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
-
-var contactSchema = new Schema({
-    contact:String,
-    type:String,
-    verified: Boolean
-});
-
-
-
 var organisationSchema = new Schema({
-    owner_id:String,
-    company_name: String,
-    company_enabled: Boolean,
+    ownerId:String,
+    companyName: String,
+    companyEnabled: Boolean,
     id: Number,
     tenant: Number,
     created_at: Date,
     updated_at: Date
 });
-
-
-
 
 var Organisation = mongoose.model('Organisation', organisationSchema);
 module.exports = Organisation;
