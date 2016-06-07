@@ -24,6 +24,8 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var userService = require("./UserService.js");
 var clientService = require("./ClientService");
 var organisationService = require("./OrganisationService");
+var resourceService = require("./ResourceService");
+var packageService = require("./PackageService");
 var config = require('config');
 var jwt = require('restify-jwt');
 var util = require('util');
@@ -106,6 +108,18 @@ app.get('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authoriza
 app.delete('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), organisationService.DeleteOrganisation);
 app.post('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), organisationService.CreateOrganisation);
 app.patch('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), organisationService.UpdateOrganisation);
+
+app.get('/DVP/API/:version/Resources', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), resourceService.GetResources);
+app.get('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), resourceService.GetResource);
+app.delete('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), resourceService.DeleteResource);
+app.post('/DVP/API/:version/Resource', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), resourceService.CreateResource);
+app.patch('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), resourceService.UpdateResource);
+
+app.get('/DVP/API/:version/Packages', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), packageService.GetPackages);
+app.get('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), packageService.GetPackage);
+app.delete('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), packageService.DeletePackage);
+app.post('/DVP/API/:version/Package', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), packageService.CreatePackage);
+app.patch('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), packageService.UpdatePackage);
 
 app.get('/DVP/API/:version/Users/:name/Scope',jwt({secret: secret.Secret}), authorization({resource:"userScope", action:"write"}), userService.GetUserScopes);
 app.put('/DVP/API/:version/Users/:name/Scope', jwt({secret: secret.Secret}),authorization({resource:"userScope", action:"write"}), userService.AddUserScopes);

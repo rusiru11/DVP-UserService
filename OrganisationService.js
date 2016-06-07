@@ -1,7 +1,6 @@
 /**
  * Created by Heshan.i on 6/6/2016.
  */
-var mongoose = require('mongoose');
 var redis = require('redis');
 var config = require('config');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
@@ -103,9 +102,9 @@ function CreateOrganisation(req, res){
     GetNewCompanyId(function(cid){
         if(cid != null && cid > 0) {
             var org = Org({
-                owner_id: req.body.owner.username,
-                company_name: req.body.name,
-                company_enabled: true,
+                ownerId: req.body.owner.username,
+                companyName: req.body.name,
+                companyEnabled: true,
                 id: cid,
                 tenant: 1,
                 created_at: Date.now(),

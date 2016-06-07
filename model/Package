@@ -1,0 +1,22 @@
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+
+
+var scopeSchema = new Schema({
+    scopeName: { type: String, required: true, unique: true },
+    actions: { type: [String], unique: true },
+    limit: Number
+});
+
+var resourceSchema = new Schema({
+    resourceName: { type: String, required: true, unique: true },
+    scopes: [scopeSchema]
+});
+
+var packageSchema = new Schema({
+    packageName: { type: String, required: true, unique: true },
+    resources: [resourceSchema]
+});
+
+var Package = mongoose.model('Package', packageSchema);
+module.exports = Package;
