@@ -6,7 +6,7 @@ var Schema = mongoose.Schema;
 
 var authorizationSchema = new Schema({
     code:{ type: String, required: true},
-    userID:{ type: String, required: true },
+    userId:{ type: String, required: true },
     clientId:{ type: String, required: true},
     scope: [String],
     redirectURL: { type: String, required: true }

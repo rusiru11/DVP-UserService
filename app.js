@@ -22,6 +22,7 @@ var app = express();
 var restify = require('restify');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var userService = require("./UserService.js");
+var clientService = require("./ClientService");
 var organisationService = require("./OrganisationService");
 var config = require('config');
 var jwt = require('restify-jwt');
@@ -120,6 +121,20 @@ app.put('/DVP/API/:version/Users/:name/UserMeta', jwt({secret: secret.Secret}),a
 
 app.get('/DVP/API/:version/Users/:name/AppMeta', jwt({secret: secret.Secret}),authorization({resource:"userAppMeta", action:"read"}), userService.GetAppMeta);
 app.put('/DVP/API/:version/Users/:name/AppMeta', jwt({secret: secret.Secret}),authorization({resource:"userAppMeta", action:"write"}), userService.UpdateAppMetadata);
+
+
+
+app.get('/DVP/API/:version/Clients', jwt({secret: secret.Secret}),authorization({resource:"client", action:"read"}), clientService.GetClients);
+app.get('/DVP/API/:version/Client/:clientid', jwt({secret: secret.Secret}),authorization({resource:"client", action:"read"}), clientService.GetClient);
+app.delete('/DVP/API/:version/Client/:clientid', jwt({secret: secret.Secret}),authorization({resource:"client", action:"delete"}), clientService.DeleteClient);
+app.post('/DVP/API/:version/Client', jwt({secret: secret.Secret}),authorization({resource:"client", action:"write"}), clientService.CreateClient);
+
+
+
+
+
+
+
 
 
 

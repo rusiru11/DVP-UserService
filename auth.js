@@ -6,9 +6,9 @@ var LocalStrategy = require('passport-local').Strategy;
 var BasicStrategy = require('passport-http').BasicStrategy;
 var ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy;
 var BearerStrategy = require('passport-http-bearer').Strategy;
-var user = require('./model/User');
-var client = require('./model/Client');
-var accessToken = require ('./model/AccessToken');
+var User = require('./model/User');
+var Client = require('./model/Client');
+var AccessToken = require ('./model/AccessToken');
 
 
 /**
@@ -20,7 +20,7 @@ var accessToken = require ('./model/AccessToken');
  */
 passport.use(new LocalStrategy(
     function(username, password, done) {
-        user.findOne({username: username}, function(err, user) {
+        User.findOne({username: username}, function(err, user) {
             if (err) { return done(err); }
             if (!user) { return done(null, false); }
             if (user.password != password) { return done(null, false); }
@@ -34,7 +34,7 @@ passport.serializeUser(function(user, done) {
 });
 
 passport.deserializeUser(function(id, done) {
-    user.findOne({username: id}, function (err, user) {
+    User.findOne({username: id}, function (err, user) {
         done(err, user);
     });
 });
@@ -53,7 +53,7 @@ passport.deserializeUser(function(id, done) {
  */
 passport.use(new BasicStrategy(
     function(username, password, done) {
-        client.findOne({clientId: username}, function(err, client) {
+        Client.findOne({clientId: username}, function(err, client) {
             if (err) { return done(err); }
             if (!client) { return done(null, false); }
             if (client.clientSecret != password) { return done(null, false); }
@@ -64,7 +64,7 @@ passport.use(new BasicStrategy(
 
 passport.use(new ClientPasswordStrategy(
     function(clientId, clientSecret, done) {
-        client.findOne({clientId: username}, function(err, client) {
+        Client.findOne({clientId: username}, function(err, client) {
             if (err) { return done(err); }
             if (!client) { return done(null, false); }
             if (client.clientSecret != clientSecret) { return done(null, false); }
@@ -83,11 +83,11 @@ passport.use(new ClientPasswordStrategy(
  */
 passport.use(new BearerStrategy(
     function(accessToken, done) {
-        accessToken.findOne({token: accessToken}, function(err, token) {
+        AccessToken.findOne({token: accessToken}, function(err, token) {
             if (err) { return done(err); }
             if (!token) { return done(null, false); }
 
-            user.findOne({username: token.userID}, function(err, user) {
+            User.findOne({username: token.userID}, function(err, user) {
                 if (err) { return done(err); }
                 if (!user) { return done(null, false); }
                 // to keep this example simple, restricted scopes are not implemented,

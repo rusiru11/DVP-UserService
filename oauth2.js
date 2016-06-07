@@ -6,10 +6,18 @@
 var oauth2orize = require('oauth2orize');
 var passport = require('passport');
 var login = require('connect-ensure-login');
-var client = require('./model/Client');
-var authorizationCode = require('./model/AuthorizationCodes');
+var Client = require('./model/Client');
+var User = require('./model/User');
+var AuthorizationCode = require('./model/AuthorizationCodes');
 var accessToken = require ('./model/AccessToken');
-
+var FlakeIdGen = require('flake-idgen')
+var intformat = require('biguint-format')
+var uuid = require('node-uuid');
+var jwtBearer = require('oauth2orize-jwt-bearer').Exchange;
+var jwt = require('jsonwebtoken');
+var util = require("util");
+var moment = require('moment');
+var generator = new FlakeIdGen;
 
 var server = oauth2orize.createServer();
 
@@ -18,23 +26,25 @@ server.serializeClient(function(client, done) {
 });
 
 server.deserializeClient(function(id, done) {
-    client.findById(id, function(err, client) {
+    Client.findById(id, function(err, client) {
         if (err) { return done(err); }
         return done(null, client);
     });
 });
 
-
-
 server.grant(oauth2orize.grant.code(function(client, redirectURI, user, ares, done) {
-    var code = "aaaaaaaaaaaaaaaaaaaaaa";
 
 
-    var authorizationcode = authorizationCode(
+    var id1 = generator.next();
+    var id3 = intformat(id1, 'dec');
+    var code = id3;
+
+
+    var authorizationcode = AuthorizationCode(
         {
             code: code,
-            userID: user,
-            clientId: client,
+            userId: user.id,
+            clientId: client.id,
             scope: [],
             redirectURL: redirectURI
 
@@ -52,26 +62,26 @@ server.grant(oauth2orize.grant.code(function(client, redirectURI, user, ares, do
 }));
 
 server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, done) {
-    authorizationCode.findOne({code: code}, function(err, authCode) {
+    AuthorizationCode.findOne({code: code}, function(err, authCode) {
         if (err) { return done(err); }
-        if (authCode === undefined) { return done(null, false); }
-        if (client.id !== authCode.clientID) { return done(null, false); }
-        if (redirectURI !== authCode.redirectURI) { return done(null, false); }
+        if (!authCode) { return done(null, false); }
+        if (client.id !== authCode.clientId) { return done(null, false); }
+        if (redirectURI !== authCode.redirectURL) { return done(null, false); }
 
-        authorizationCode.delete(code, function(err) {
+        AuthorizationCode.findOneAndRemove({code: code}, function(err) {
             if(err) { return done(err); }
-            var token = "kkkkkkkkkkkkkk";
+            var token = uuid.v1();
 
             var accesstoken = accessToken({
 
                 token: token,
-                userID: authCode.userID,
-                clientId: authCode.clientID,
-                scope: [String],
-                expirationDate: ""
+                userId: authCode.userId,
+                clientId: authCode.clientId,
+                scope: [],
+                expirationDate: Date.now()
             });
 
-            accesstoken.save(token, authCode.userID, authCode.clientID, function(err, accesstoken) {
+            accesstoken.save(function(err, accesstoken) {
                 if (err) {
 
                     return done(err);
@@ -83,11 +93,85 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
 }));
 
 
+server.exchange('urn:ietf:params:oauth:grant-type:jwt-bearer', jwtBearer(function(client, data, signature, done) {
+    var crypto = require('crypto');
+    var pub = "secret";
+    var verifier = crypto.createVerify("RSA-SHA256");
+
+
+    var token = util.format("%s.%s", data, signature)
+
+
+    var decoded = jwt.decode(token);
+
+
+    Client.findOne({clientId: decoded.prn, redirectURL: decoded.url}, function (err, client) {
+        if (err) {
+            return done(err);
+        }
+        else if (!client) {
+
+            return done(null, null);
+
+        } else {
+
+            jwt.verify(token, client.clientSecret, function (err, decoded) {
+                if (err) {
+
+                    done(null, null);
+
+                } else {
+
+                    User.findOne({username: decoded.iss}, function(err, user) {
+
+                        var accessToken = null;
+                        if (!err) {
+
+
+                            var jti = uuid.v4();
+                            var secret = uuid.v4();
+                            //redisClient.set("token:iss:"+obj.Username+":"+jti, secret, redis.print);
+                            //redisClient.expires();
+
+                            var payload = {};
+                            payload.iss = user.username;
+                            payload.jti = jti;
+                            payload.sub = decoded.sub;
+                            payload.exp = moment().add(7, 'days').unix();
+                            payload.tenant = user.company;
+                            payload.company = user.tenant;
+                            payload.aud = decoded.prn;
+
+                            payload.scope = {};
+
+
+                            var accessToken = jwt.sign(payload, user.password);
+
+
+                        }
+
+                        done(null, accessToken);
+                    });
+
+                }
+            });
+
+            //done(null, null);
+
+        }
+    });
+}));
+
+
+
+
+
+
 
 exports.authorization = [
     login.ensureLoggedIn(),
     server.authorization(function(clientID, redirectURI, done) {
-        client.findOne({username: clientID, redirectURL: redirectURI}, function(err, client) {
+        Client.findOne({clientId: clientID, redirectURL: redirectURI}, function(err, client) {
             if (err) { return done(err); }
             else if(!client) {
 
@@ -103,8 +187,6 @@ exports.authorization = [
         res.render('dialog', { transactionID: req.oauth2.transactionID, user: req.user, client: req.oauth2.client });
     }
 ]
-
-
 
 exports.decision = [
     login.ensureLoggedIn(),
