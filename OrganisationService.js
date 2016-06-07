@@ -6,6 +6,7 @@ var config = require('config');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var Org = require('./model/Organisation');
 var User = require('./model/User');
+var VPackage = require('./model/Package');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 client = redis.createClient(config.Redis.port, config.Redis.ip);
@@ -14,6 +15,20 @@ client.on("error", function (err) {
     infoLogger.DetailLogger.log('error', 'Redis connection error :: %s', err);
     console.log("Error " + err);
 });
+
+function UniqueArray(array) {
+    var processed = [];
+    for (var i=array.length-1; i>=0; i--) {
+        if (array[i]!= null) {
+            if (processed.indexOf(array[i])<0) {
+                processed.push(array[i]);
+            } else {
+                array.splice(i, 1);
+            }
+        }
+    }
+    return array;
+}
 
 function GetNewCompanyId(callback){
     client.incr("CompanyCount", function (err, result) {
@@ -107,6 +122,7 @@ function CreateOrganisation(req, res){
                 companyEnabled: true,
                 id: cid,
                 tenant: 1,
+                packages:[],
                 created_at: Date.now(),
                 updated_at: Date.now()
             });
@@ -169,9 +185,77 @@ function UpdateOrganisation(req, res){
     });
 }
 
+function AssignPackageToOrganisation(req,res){
+    logger.debug("DVP-UserService.AssignPackageToOrganisation Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    VPackage.findOne({packageName: req.params.packageName}, function(err, vPackage) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
+            res.end(jsonString);
+        }else{
+            Org.findOne({tenant: tenant, id: company}, function(err, org) {
+                if (err) {
+                    jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+                    res.end(jsonString);
+                }else{
+                    org.updated_at = Date.now();
+                    org.packages.push(req.params.packageName);
+                    org.packages = UniqueArray(org.packages);
+
+                    Org.findOneAndUpdate({tenant: tenant, id: company}, org ,function(err,rOrg){
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
+                        }else {
+                            ///TODO: Set Limits
+                            jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
+                        }
+                        res.end(jsonString);
+                    });
+                }
+            });
+        }
+    });
+}
+
+function RemovePackageFromOrganisation(req,res){
+    logger.debug("DVP-UserService.RemovePackageFromOrganisation Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+            res.end(jsonString);
+        }else{
+            org.updated_at = Date.now();
+            for(var i=0; i<org.packages.length; i++){
+                if(org.packages[i].search(req.params.packageName) != -1){
+                    org.packages.splice(i,1);
+                }
+            }
+            Org.findOneAndUpdate({tenant: tenant, id: company}, org ,function(err,rorg){
+                if (err) {
+                    jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Failed", false, undefined);
+                }else {
+                    ///TODO: Remove Limits
+                    jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Successful", true, org);
+                }
+                res.end(jsonString);
+            });
+        }
+    });
+}
 
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
 module.exports.DeleteOrganisation = DeleteOrganisation;
 module.exports.CreateOrganisation = CreateOrganisation;
 module.exports.UpdateOrganisation = UpdateOrganisation;
+module.exports.AssignPackageToOrganisation = AssignPackageToOrganisation;
+module.exports.RemovePackageFromOrganisation = RemovePackageFromOrganisation;
