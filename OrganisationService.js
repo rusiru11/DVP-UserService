@@ -12,7 +12,6 @@ var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJ
 client = redis.createClient(config.Redis.port, config.Redis.ip);
 client.auth(config.Redis.password);
 client.on("error", function (err) {
-    infoLogger.DetailLogger.log('error', 'Redis connection error :: %s', err);
     console.log("Error " + err);
 });
 
