@@ -7,6 +7,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var Org = require('./model/Organisation');
 var User = require('./model/User');
 var VPackage = require('./model/Package');
+var Console = require('./model/Console');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 client = redis.createClient(config.Redis.port, config.Redis.ip);
@@ -218,6 +219,104 @@ function AssignPackageToOrganisation(req,res){
                         res.end(jsonString);
                     }
                 }
+            });
+        }
+    });
+}
+
+function UniqueObjectArray(array, field) {
+    var processed = [];
+    for (var i=array.length-1; i>=0; i--) {
+        if (array[i].hasOwnProperty(field)) {
+            if (processed.indexOf(array[i][field])<0) {
+                processed.push(array[i][field]);
+            } else {
+                array.splice(i, 1);
+            }
+        }
+    }
+    return array;
+}
+
+function GetUserScopes(scopes){
+    var e = new EventEmitter();
+    process.nextTick(function () {
+        if (Array.isArray(scopes)) {
+            var count = 0;
+            for (var i in scopes) {
+                count++;
+                var userScope = {};
+                var oScope = scopes[i];
+                userScope.scope = oScope.scopeName;
+                for(var j in oScope.actions){
+                    var action = oScope.actions[j];
+                    if(action){
+                        switch (action){
+                            case 'read':
+                                userScope.read = true;
+                                break;
+                            case 'write':
+                                userScope.write = true;
+                                break;
+                            case 'delete':
+                                userScope.delete = true;
+                                break;
+                        }
+                    }
+                }
+                e.emit('getUserScopes', userScope);
+                if(count == scopes.length){
+                    e.emit('endGetUserScopes');
+                }
+            }
+        }else {
+            e.emit('endGetUserScopes');
+        }
+    });
+
+    return (e);
+}
+
+function ExtractResources(resources){
+    var e = new EventEmitter();
+    process.nextTick(function () {
+        if (Array.isArray(resources)) {
+            var count = 0;
+            var userScopes = [];
+            for (var i in resources) {
+                var resource = resources[i];
+                var gus  = GetUserScopes(resource.scopes);
+                gus.on('getUserScopes', function(scope){
+                    if(scope){
+                        userScopes.push(scope);
+                    }
+                });
+                gus.on('endGetUserScopes', function(){
+                    count++;
+                    if(count == resources.length){
+                        e.emit('endExtractResources', userScopes);
+                    }
+                });
+            }
+        }else {
+            e.emit('endExtractResources', []);
+        }
+    });
+
+    return (e);
+}
+
+function UpdateOwner(ownerId, vPackage){
+    var jsonString;
+    User.findOne({username: ownerId}, function(err, user) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Find Owner Failed", false, undefined);
+            res.end(jsonString);
+        } else {
+            var er = ExtractResources(vPackage.resources);
+            er.on('endExtractResources', function(userScopes){
+                user.user_scopes = UniqueObjectArray(userScopes,"scope");
+                
             });
         }
     });
