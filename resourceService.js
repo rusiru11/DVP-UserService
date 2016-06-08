@@ -78,7 +78,7 @@ function CreateResource(req, res){
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Resource save failed", false, undefined);
         } else {
-            var jsonString = messageFormatter.FormatMessage(undefined, "Resource saved successfully", true, resource);
+            jsonString = messageFormatter.FormatMessage(undefined, "Resource saved successfully", true, resource);
         }
         res.end(jsonString);
     });

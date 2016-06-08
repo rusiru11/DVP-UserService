@@ -4,6 +4,7 @@
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var Resource = require('./model/Resource');
 var Navigation = require('./model/Navigation');
+var Console = require('./model/Console');
 var EventEmitter = require('events').EventEmitter;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
@@ -34,61 +35,100 @@ function GetResources(resources){
     return (e);
 }
 
-function GetAllNavigation(req, res){
-    logger.debug("DVP-UserService.GetNavigations Internal method ");
+function GetAllConsoles(req, res){
+    logger.debug("DVP-UserService.GetAllConsoles Internal method ");
 
     var jsonString;
-    Navigation.find({}, function(err, allNavigation) {
+    Console.find({}, function(err, allConsole) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Failed", false, undefined);
         }else{
-            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, allNavigation);
+            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, allConsole);
         }
         res.end(jsonString);
     });
 }
 
-function GetNavigation(req, res){
-    logger.debug("DVP-UserService.GetNavigation Internal method ");
+function GetConsole(req, res){
+    logger.debug("DVP-UserService.GetConsole Internal method ");
     var jsonString;
-    Navigation.findOne({navigationName: req.params.navigationName}, function(err, navigation) {
+    Console.findOne({consoleName: req.params.consoleName}, function(err, console) {
         if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Get Navigation Failed", false, undefined);
+            jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
         }else{
-            jsonString = messageFormatter.FormatMessage(err, "Get Navigation Successful", true, navigation);
+            jsonString = messageFormatter.FormatMessage(err, "Get Console Successful", true, console);
         }
         res.end(jsonString);
     });
 }
 
-function DeleteNavigation(req,res){
-    logger.debug("DVP-UserService.DeleteNavigation Internal method ");
+function DeleteConsole(req,res){
+    logger.debug("DVP-UserService.DeleteConsole Internal method ");
 
     var jsonString;
-    Navigation.findOne({navigationName: req.params.navigationName}, function (err, navigation) {
+    Console.findOne({consoleName: req.params.consoleName}, function (err, console) {
         if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Get Navigation Failed", false, undefined);
+            jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
             res.end(jsonString);
         } else {
-            if (navigation) {
-                navigation.remove(function (err) {
+            if (console) {
+                console.remove(function (err) {
                     if (err) {
-                        jsonString = messageFormatter.FormatMessage(err, "Delete Navigation Failed", false, undefined);
+                        jsonString = messageFormatter.FormatMessage(err, "Delete Console Failed", false, undefined);
                     } else {
-                        jsonString = messageFormatter.FormatMessage(undefined, "Navigation successfully deleted", true, undefined);
+                        jsonString = messageFormatter.FormatMessage(undefined, "Console successfully deleted", true, undefined);
                     }
                     res.end(jsonString);
                 });
             } else {
-                jsonString = messageFormatter.FormatMessage(undefined, "Delete Navigation Failed, resource object is null", false, undefined);
+                jsonString = messageFormatter.FormatMessage(undefined, "Delete Console Failed, resource object is null", false, undefined);
                 res.end(jsonString);
             }
         }
     });
 }
 
-function CreateNavigation(req, res){
-    logger.debug("DVP-UserService.CreateResource Internal method ");
+function CreateConsole(req, res){
+    logger.debug("DVP-UserService.CreateConsole Internal method ");
+    var jsonString;
+
+    var console = Console({
+        consoleName: req.body.consoleName,
+        consoleUserRoles: req.body.consoleUserRoles,
+        consoleNavigation: [],
+        created_at: Date.now(),
+        updated_at: Date.now()
+
+    });
+
+    console.save(function (err, console) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Console save failed", false, undefined);
+        } else {
+            jsonString = messageFormatter.FormatMessage(undefined, "Console saved successfully", true, console);
+        }
+        res.end(jsonString);
+    });
+}
+
+function UpdateConsole(req, res){
+    logger.debug("DVP-UserService.UpdateConsole Internal method ");
+
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+    Console.findOneAndUpdate({consoleName: req.params.consoleName}, req.body, function(err, console) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Update Console Failed", false, undefined);
+        }else{
+            jsonString = messageFormatter.FormatMessage(err, "Update Console Successful", true, console);
+        }
+        res.end(jsonString);
+    });
+}
+
+function AddNavigationToConsole(req, res){
+    logger.debug("DVP-UserService.AddNavigationToConsole Internal method ");
     var jsonString;
 
     var navigation = Navigation({
@@ -110,36 +150,69 @@ function CreateNavigation(req, res){
         }
     });
     gr.on('endValidateResources',function(){
-        navigation.save(function (err, navigation) {
+        Console.findOne({consoleName: req.params.consoleName}, function(err, console) {
             if (err) {
-                jsonString = messageFormatter.FormatMessage(err, "Navigation save failed", false, undefined);
-            } else {
-                jsonString = messageFormatter.FormatMessage(undefined, "Navigation saved successfully", true, navigation);
+                jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
+                res.end(jsonString);
+            }else{
+                if(console) {
+                    console.updated_at = Date.now();
+                    console.consoleNavigation.push(navigation);
+                    Console.findOneAndUpdate({consoleName: req.params.consoleName}, console, function (err, rConsole) {
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "Navigation save failed", false, undefined);
+                        } else {
+                            jsonString = messageFormatter.FormatMessage(undefined, "Navigation saved successfully", true, console);
+                        }
+                        res.end(jsonString);
+                    });
+                }else{
+                    jsonString = messageFormatter.FormatMessage(err, "No Console Found", false, undefined);
+                    res.end(jsonString);
+                }
             }
-            res.end(jsonString);
         });
     });
 }
 
-function UpdateNavigation(req, res){
-    logger.debug("DVP-UserService.UpdateNavigation Internal method ");
+function RemoveNavigationFromConsole(req,res){
+    logger.debug("DVP-UserService.RemoveNavigationToConsole Internal method ");
 
     var jsonString;
 
-    req.body.updated_at = Date.now();
-    Navigation.findOneAndUpdate({navigationName: req.params.navigationName}, req.body, function(err, navigation) {
+    Console.findOne({consoleName: req.params.consoleName}, function(err, console) {
         if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Update Navigation Failed", false, undefined);
+            jsonString = messageFormatter.FormatMessage(err, "Find Console Failed", false, undefined);
+            res.end(jsonString);
         }else{
-            jsonString = messageFormatter.FormatMessage(err, "Update Navigation Successful", true, navigation);
+            if(console) {
+                console.updated_at = Date.now();
+                for (var i = 0; i < console.consoleNavigation.length; i++) {
+                    if (console.consoleNavigation[i].navigationName.search(req.params.navigationName) != -1) {
+                        console.consoleNavigation.splice(i, 1);
+                    }
+                }
+                Console.findOneAndUpdate({consoleName: req.params.consoleName}, console, function (err, rConsole) {
+                    if (err) {
+                        jsonString = messageFormatter.FormatMessage(err, "Remove Navigation from Console Failed", false, undefined);
+                    } else {
+                        ///TODO: Remove Limits
+                        jsonString = messageFormatter.FormatMessage(err, "Remove Navigation from Console Successful", true, console);
+                    }
+                    res.end(jsonString);
+                });
+            }else{
+                jsonString = messageFormatter.FormatMessage(err, "No Console Found", false, undefined);
+                res.end(jsonString);
+            }
         }
-        res.end(jsonString);
     });
 }
 
-
-module.exports.GetAllNavigation = GetAllNavigation;
-module.exports.GetNavigation = GetNavigation;
-module.exports.DeleteNavigation = DeleteNavigation;
-module.exports.CreateNavigation = CreateNavigation;
-module.exports.UpdateNavigation = UpdateNavigation;
+module.exports.GetAllConsoles = GetAllConsoles;
+module.exports.GetConsole = GetConsole;
+module.exports.DeleteConsole = DeleteConsole;
+module.exports.CreateConsole = CreateConsole;
+module.exports.UpdateConsole = UpdateConsole;
+module.exports.AddNavigationToConsole = AddNavigationToConsole;
+module.exports.RemoveNavigationFromConsole = RemoveNavigationFromConsole;

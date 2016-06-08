@@ -153,7 +153,7 @@ function CreateOrganisation(req, res){
                             });
                             jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
                         } else {
-                            var jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
+                            jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
                         }
                         res.end(jsonString);
                     });
@@ -201,19 +201,24 @@ function AssignPackageToOrganisation(req,res){
                     jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
                     res.end(jsonString);
                 }else{
-                    org.updated_at = Date.now();
-                    org.packages.push(req.params.packageName);
-                    org.packages = UniqueArray(org.packages);
+                    if(org) {
+                        org.updated_at = Date.now();
+                        org.packages.push(req.params.packageName);
+                        org.packages = UniqueArray(org.packages);
 
-                    Org.findOneAndUpdate({tenant: tenant, id: company}, org ,function(err,rOrg){
-                        if (err) {
-                            jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
-                        }else {
-                            ///TODO: Set Limits
-                            jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
-                        }
+                        Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rOrg) {
+                            if (err) {
+                                jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
+                            } else {
+                                ///TODO: Set Limits
+                                jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
+                            }
+                            res.end(jsonString);
+                        });
+                    }else{
+                        jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
                         res.end(jsonString);
-                    });
+                    }
                 }
             });
         }
@@ -232,21 +237,26 @@ function RemovePackageFromOrganisation(req,res){
             jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
             res.end(jsonString);
         }else{
-            org.updated_at = Date.now();
-            for(var i=0; i<org.packages.length; i++){
-                if(org.packages[i].search(req.params.packageName) != -1){
-                    org.packages.splice(i,1);
+            if(org) {
+                org.updated_at = Date.now();
+                for (var i = 0; i < org.packages.length; i++) {
+                    if (org.packages[i].search(req.params.packageName) != -1) {
+                        org.packages.splice(i, 1);
+                    }
                 }
-            }
-            Org.findOneAndUpdate({tenant: tenant, id: company}, org ,function(err,rorg){
-                if (err) {
-                    jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Failed", false, undefined);
-                }else {
-                    ///TODO: Remove Limits
-                    jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Successful", true, org);
-                }
+                Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rorg) {
+                    if (err) {
+                        jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Failed", false, undefined);
+                    } else {
+                        ///TODO: Remove Limits
+                        jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Successful", true, org);
+                    }
+                    res.end(jsonString);
+                });
+            }else{
+                jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
                 res.end(jsonString);
-            });
+            }
         }
     });
 }

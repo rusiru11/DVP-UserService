@@ -113,7 +113,7 @@ function CreatePackage(req, res){
             if (err) {
                 jsonString = messageFormatter.FormatMessage(err, "Package save failed", false, undefined);
             } else {
-                var jsonString = messageFormatter.FormatMessage(undefined, "Package saved successfully", true, vPackage);
+                jsonString = messageFormatter.FormatMessage(undefined, "Package saved successfully", true, vPackage);
             }
             res.end(jsonString);
         });
