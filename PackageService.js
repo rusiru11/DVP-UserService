@@ -5,6 +5,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var Resource = require('./model/Resource');
 var VPackage = require('./model/Package');
 var EventEmitter = require('events').EventEmitter;
+var Console = require('./model/Console');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 function ValidateResources(resources){
@@ -28,6 +29,33 @@ function ValidateResources(resources){
             }
         }else {
             e.emit('endValidateResources');
+        }
+    });
+
+    return (e);
+}
+
+function ValidateConsoles(consoles){
+    var e = new EventEmitter();
+    process.nextTick(function () {
+        if (Array.isArray(consoles)) {
+            var count = 0;
+            for (var i in consoles) {
+                var console = consoles[i];
+                Console.findOne({consoleName: console}, function(err, console) {
+                    count++;
+                    if (err) {
+                        console.log(err);
+                    }else{
+                        e.emit('validateConsole',console);
+                    }
+                    if(count == consoles.length){
+                        e.emit('endValidateConsoles');
+                    }
+                });
+            }
+        }else {
+            e.emit('endValidateConsoles');
         }
     });
 
@@ -93,30 +121,38 @@ function CreatePackage(req, res){
 
     var vPackage = VPackage({
         packageName: req.body.packageName,
+        consoleAccessLimit: req.body.consoleAccessLimit,
         created_at: Date.now(),
         updated_at: Date.now()
 
     });
 
-    var vr = ValidateResources(req.body.resources);
-    vr.on('validateResource', function(oriResource){
-        for(var i in req.body.resources){
-            var bResource = req.body.resources[i];
-            if(bResource.resourceName == oriResource.resourceName){
-                vPackage.resources.push(bResource);
-                break;
-            }
-        }
+    var vc  = ValidateConsoles(req.body.consoles);
+    vc.on('validateConsole', function(console){
+        vPackage.consoles.push(console.consoleName);
     });
-    vr.on('endValidateResources', function(){
-        vPackage.save(function (err, vPackage) {
-            if (err) {
-                jsonString = messageFormatter.FormatMessage(err, "Package save failed", false, undefined);
-            } else {
-                jsonString = messageFormatter.FormatMessage(undefined, "Package saved successfully", true, vPackage);
+    vc.on('endValidateConsoles', function(){
+        var vr = ValidateResources(req.body.resources);
+        vr.on('validateResource', function(oriResource){
+            for(var i in req.body.resources){
+                var bResource = req.body.resources[i];
+                if(bResource.resourceName == oriResource.resourceName){
+                    vPackage.resources.push(bResource);
+                    break;
+                }
             }
-            res.end(jsonString);
         });
+        vr.on('endValidateResources', function(){
+            vPackage.save(function (err, vPackage) {
+                if (err) {
+                    jsonString = messageFormatter.FormatMessage(err, "Package save failed", false, undefined);
+                } else {
+                    jsonString = messageFormatter.FormatMessage(undefined, "Package saved successfully", true, vPackage);
+                }
+                res.end(jsonString);
+            });
+        });
+
     });
 }
 

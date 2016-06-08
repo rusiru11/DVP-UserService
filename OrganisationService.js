@@ -132,11 +132,9 @@ function CreateOrganisation(req, res){
                 password: req.body.owner.password,
                 phoneNumber: {contact: req.body.owner.phone, type: "phone", verified: false},
                 email: {contact: req.body.owner.mail, type: "phone", verified: false},
-                user_meta: {},
-                app_meta: {},
+                user_meta: {admin: true},
                 company: cid,
                 tenant: 1,
-                user_scopes: {},
                 created_at: Date.now(),
                 updated_at: Date.now()
 

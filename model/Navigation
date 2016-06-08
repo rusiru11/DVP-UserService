@@ -3,8 +3,7 @@ var Schema = mongoose.Schema;
 
 var scopeSchema = new Schema({
     scopeName: { type: String, required: true, unique: true },
-    actions: { type: [String], unique: true },
-    limit: Number
+    actions: { type: [String], unique: true }
 });
 
 var resourceSchema = new Schema({
