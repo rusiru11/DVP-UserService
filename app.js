@@ -145,9 +145,11 @@ app.delete('/DVP/API/:version/User/:name/AppScope/:scope', jwt({secret: secret.S
 
 app.get('/DVP/API/:version/Users/:name/UserMeta', jwt({secret: secret.Secret}),authorization({resource:"userMeta", action:"read"}), userService.GetUserMeta);
 app.put('/DVP/API/:version/Users/:name/UserMeta', jwt({secret: secret.Secret}),authorization({resource:"userMeta", action:"write"}), userService.UpdateUserMetadata);
+app.delete('/DVP/API/:version/Users/:name/UserMeta/:usermeta', jwt({secret: secret.Secret}),authorization({resource:"userMeta", action:"delete"}), userService.RemoveUserMetadata);
 
 app.get('/DVP/API/:version/Users/:name/AppMeta', jwt({secret: secret.Secret}),authorization({resource:"userAppMeta", action:"read"}), userService.GetAppMeta);
 app.put('/DVP/API/:version/Users/:name/AppMeta', jwt({secret: secret.Secret}),authorization({resource:"userAppMeta", action:"write"}), userService.UpdateAppMetadata);
+app.delete('/DVP/API/:version/Users/:name/AppMeta/:appmeta', jwt({secret: secret.Secret}),authorization({resource:"userAppMeta", action:"delete"}), userService.RemoveAppMetadata);
 
 
 app.get('/DVP/API/:version/Clients', jwt({secret: secret.Secret}),authorization({resource:"client", action:"read"}), clientService.GetClients);

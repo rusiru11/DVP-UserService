@@ -7,6 +7,8 @@ var Schema = mongoose.Schema;
 
 
 
+//read, write, all
+
 
 var claimsSchema = new Schema({
 

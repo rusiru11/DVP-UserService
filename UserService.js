@@ -641,6 +641,59 @@ function UpdateAppMetadata(req, res){
 
 }
 
+
+function RemoveUserMetadata(req, res){
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "user_meta": [{"scope":req.params.usermeta}] } }, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Remove user meta Failed", false, undefined);
+
+
+        }else{
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Remove user meta successfully", false, users);
+
+        }
+
+        res.end(jsonString);
+
+
+    });
+
+}
+
+function RemoveAppMetadata(req, res){
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "app_meta": [{"scope":req.params.appmeta}] } }, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update app meta Failed", false, undefined);
+
+
+        }else{
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Update app meta successfully", false, users);
+
+        }
+
+        res.end(jsonString);
+
+
+    });
+
+}
+
 function GetUserScopes(req, res){
 
 
@@ -722,3 +775,5 @@ module.exports.UpdateUserMetadata = UpdateUserMetadata;
 module.exports.UpdateAppMetadata = UpdateAppMetadata;
 module.exports.GetUserScopes = GetUserScopes;
 module.exports.GetAppScopes = GetAppScopes;
+module.exports.RemoveUserMetadata = RemoveUserMetadata;
+module.exports.RemoveAppMetadata= RemoveAppMetadata;

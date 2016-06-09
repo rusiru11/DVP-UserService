@@ -64,12 +64,18 @@ server.grant(oauth2orize.grant.code(function(client, redirectURI, user,ares, req
     var id3 = intformat(id1, 'dec');
     var code = id3;
 
+
+    var scopeArray = reqObj.scope;
+
     var authorizationcode = AuthorizationCode(
         {
+
+
+
             code: code,
             userId: user.id,
             clientId: client.id,
-            scope: reqObj.scope,
+            scope: scopeArray,
             redirectURL: redirectURI
 
 
@@ -85,7 +91,7 @@ server.grant(oauth2orize.grant.code(function(client, redirectURI, user,ares, req
     });
 }));
 
-server.grant(oauth2orize.grant.token(function (client, user, ares, done) {
+server.grant(oauth2orize.grant.token(function (client, user, ares,reqObj, done) {
     ///var token = uuid.v1();
 
 
@@ -107,7 +113,12 @@ server.grant(oauth2orize.grant.token(function (client, user, ares, done) {
     payload.company = user.tenant;
     payload.aud = client.name;
 
-    payload.scope = client.claims;
+    //payload.scope = client.claims;
+
+
+    var scopes = GetScopes(user,reqObj.scope);
+    payload.context = scopes.context;
+    payload.scope = scopes.scope;
 
 
     var token = jwt.sign(payload, secret);
@@ -122,7 +133,7 @@ server.grant(oauth2orize.grant.token(function (client, user, ares, done) {
         token: token,
         userId: user.id,
         clientId: client.id,
-        scope: scope,
+        scope: reqObj.scope,
         expirationDate: expin
     });
 
@@ -179,7 +190,14 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
                 payload.company = user.tenant;
                 payload.aud = client.name;
 
-                payload.scope = authCode.scope;
+
+
+                var scopes = GetScopes(user,authCode.scope);
+                payload.context = scopes.context;
+                payload.scope = scopes.scope;
+
+
+
 
 
                 var token = jwt.sign(payload, secret);
@@ -194,7 +212,7 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
                     jti: jti,
                     userId: authCode.userId,
                     clientId: authCode.clientId,
-                    scope: scope,
+                    scope: authCode.scope,
                     expirationDate: Date.now()
                 });
 
@@ -216,7 +234,7 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
                             token: rToken,
                             userId: authCode.userId,
                             clientId: authCode.clientId,
-                            scope: [],
+                            scope: authCode.scope,
                             expirationDate: Date.now()
                         });
 
@@ -290,7 +308,13 @@ server.exchange('urn:ietf:params:oauth:grant-type:jwt-bearer', jwtBearer(functio
                             payload.company = user.tenant;
                             payload.aud = decoded.prn;
 
-                            payload.scope = decoded.scope;
+
+
+
+                            var scopes = GetScopes(user,decoded.scope);
+                            payload.context = scopes.context;
+                            payload.scope = scopes.scope;
+
 
 
                             var accessToken = jwt.sign(payload, secret);
@@ -307,6 +331,7 @@ server.exchange('urn:ietf:params:oauth:grant-type:jwt-bearer', jwtBearer(functio
         }
     });
 }));
+
 
 server.exchange(oauth2orize.exchange.password(function (client, username, password, scope, done) {
     //Validate the user
@@ -326,6 +351,7 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
 
 
 
+        var scopeArray = scope;
         ////////////////////////////////////////////////////////////////////////////////////
 
         var jti = uuid.v4();
@@ -344,7 +370,11 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
         payload.company = user.tenant;
         payload.aud = client.name;
 
-        payload.scope = scope;
+        //payload.scope = scope;
+
+        var scopes = GetScopes(user,scopeArray);
+        payload.context = scopes.context;
+        payload.scope = scopes.scope;
 
 
         var token = jwt.sign(payload, secret);
@@ -359,7 +389,7 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
             userId: user.id,
             clientId: client.id,
             jti: jti,
-            scope: scope,
+            scope: scopeArray,
             expirationDate: Date.now()
         });
 
@@ -379,7 +409,7 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
                     token: rToken,
                     userId: user.id,
                     clientId: client.id,
-                    scope: [],
+                    scope: scopeArray,
                     expirationDate: Date.now()
                 });
 
@@ -424,6 +454,8 @@ server.exchange(oauth2orize.exchange.clientCredentials(function (client, scope, 
 }));
 
 server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken, scope, done) {
+
+
     RefreshToken.findOne({token: refreshToken}, function (err, refToken) {
         if (err) {
             return done(err);
@@ -437,6 +469,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
 
 
 
+        var scopeArray = refToken.scope;
         User.findById(refToken.userId, function (err, user) {
             if (err) {
                 return done(err);
@@ -468,7 +501,12 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
             payload.company = user.tenant;
             payload.aud = client.name;
 
-            payload.scope = scope;
+            //payload.scope = scope;
+
+
+            var scopes = GetScopes(user,scopeArray);
+            payload.context = scopes.context;
+            payload.scope = scopes.scope;
 
 
             var token = jwt.sign(payload, secret);
@@ -483,7 +521,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
                 userId: refToken.userId,
                 clientId: client.id,
                 jti: jti,
-                scope: scope,
+                scope: scopeArray,
                 expirationDate: Date.now()
             });
 
@@ -537,3 +575,145 @@ exports.token = [
 ]
 
 
+
+
+
+
+
+
+
+function GetScopes(user, claims){
+
+
+    var context = {};
+    var payload = {};
+    payload.context = {};
+    payload.scope = [];
+
+    if(claims) {
+        var index = claims.indexOf("profile_contacts");
+
+        if (index > -1) {
+            payload.context.phonenumber = user.phoneNumber;
+            payload.context.email = user.email;
+            payload.context.othercontacts = user.contacts;
+
+            claims.splice(index, 1);
+        }
+
+        var index = claims.indexOf("app_meta");
+
+        if (index > -1) {
+            payload.context.appmeta = user.app_meta;
+            claims.splice(index, 1);
+        }
+
+
+        var index = claims.indexOf("user_scopes");
+
+        if (index > -1) {
+            payload.context.appmeta = user.user_scopes;
+            claims.splice(index, 1);
+        }
+
+        var index = claims.indexOf("client_scopes");
+
+        if (index > -1) {
+            payload.context.appmeta = user.client_scopes;
+            claims.splice(index, 1);
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        claims.forEach(function (value) {
+
+
+            var arr = value.split("_");
+            if (arr.length > 1) {
+
+                var action = arr[0];
+                var resource = arr[1];
+
+
+                var scopeFound = user.user_scopes.filter(function (item) {
+                    return item.scope == resource;
+                })
+
+                if (scopeFound.length > 0) {
+
+                    var myscope = {};
+                    myscope.resource = scopeFound[0].scope;
+                    myscope.actions = [];
+
+                    if (action == "read") {
+
+                        var actionArray = [];
+                        if (scopeFound[0].read) {
+
+                            actionArray.push("read");
+
+                        }
+
+                        myscope.actions = myscope.actions.concat(actionArray);
+
+
+                    }
+                    else if (action == "write") {
+
+
+                        var actionArray = [];
+                        if (scopeFound[0].read) {
+
+                            actionArray.push("read");
+
+                        }
+
+                        if (scopeFound[0].write) {
+
+                            actionArray.push("write");
+
+                        }
+
+
+                        myscope.actions = myscope.actions.concat(actionArray);
+
+                    }
+                    else if (action == "all") {
+
+
+                        var actionArray = [];
+                        if (scopeFound[0].read) {
+
+                            actionArray.push("read");
+
+                        }
+
+                        if (scopeFound[0].write) {
+
+                            actionArray.push("write");
+
+                        }
+
+
+                        if (scopeFound[0].delete) {
+
+                            actionArray.push("delete");
+
+                        }
+
+                        myscope.actions = myscope.actions.concat(actionArray);
+
+                    }
+
+                    payload.scope.push(myscope);
+                }
+
+            }
+        });
+    }
+
+
+    return payload;
+
+}
