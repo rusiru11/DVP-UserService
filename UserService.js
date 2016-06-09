@@ -449,7 +449,7 @@ function AddUserAppScopes(req, res){
                                                     if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
                                                         assignUser.client_scopes.push(req.body);
                                                         assignUser.client_scopes = UniqueObjectArray(assignUser.client_scopes,"menuItem");
-                                                        User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},assignUser, function(err, rUser) {
+                                                        User.findOneAndUpdate({username: req.params.username,company: company, tenant: tenant},assignUser, function(err, rUser) {
                                                             if (err) {
                                                                 jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
                                                             }else{
