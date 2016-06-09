@@ -109,8 +109,8 @@ server.grant(oauth2orize.grant.token(function (client, user, ares,reqObj, done) 
     payload.jti = jti;
     payload.sub = "Access client";
     payload.exp = expin;
-    payload.tenant = user.company;
-    payload.company = user.tenant;
+    payload.tenant = user.tenant;
+    payload.company = user.company;
     payload.aud = client.name;
 
     //payload.scope = client.claims;
@@ -186,8 +186,8 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
                 payload.jti = jti;
                 payload.sub = "Access client";
                 payload.exp = expin;
-                payload.tenant = user.company;
-                payload.company = user.tenant;
+                payload.tenant = user.tenant;
+                payload.company = user.company;
                 payload.aud = client.name;
 
 
@@ -304,8 +304,8 @@ server.exchange('urn:ietf:params:oauth:grant-type:jwt-bearer', jwtBearer(functio
                             payload.jti = jti;
                             payload.sub = decoded.sub;
                             payload.exp = moment().add(7, 'days').unix();
-                            payload.tenant = user.company;
-                            payload.company = user.tenant;
+                            payload.tenant = user.tenant;
+                            payload.company = user.company;
                             payload.aud = decoded.prn;
 
 
@@ -366,8 +366,8 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
         payload.jti = jti;
         payload.sub = "Access client";
         payload.exp = expin;
-        payload.tenant = user.company;
-        payload.company = user.tenant;
+        payload.tenant = user.tenant;
+        payload.company = user.company;
         payload.aud = client.name;
 
         //payload.scope = scope;
@@ -497,8 +497,8 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
             payload.jti = jti;
             payload.sub = "Access client";
             payload.exp = expin;
-            payload.tenant = user.company;
-            payload.company = user.tenant;
+            payload.tenant = user.tenant;
+            payload.company = user.company;
             payload.aud = client.name;
 
             //payload.scope = scope;
