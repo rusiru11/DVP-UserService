@@ -141,6 +141,21 @@ function CreateOrganisation(req, res){
                 updated_at: Date.now()
             });
 
+            var userScopes = [
+                {scope: "user", read: true, write: true, delete: true},
+                {scope: "userProfile", read: true, write: true, delete: true},
+                {scope: "organisation", read: true, write: true, delete: true},
+                {scope: "resource", read: true, write: true, delete: true},
+                {scope: "package", read: true, write: true, delete: true},
+                {scope: "console", read: true, write: true, delete: true},
+                {scope: "userScope", read: true, write: true, delete: true},
+                {scope: "userAppScope", read: true, write: true, delete: true},
+                {scope: "userMeta", read: true, write: true, delete: true},
+                {scope: "userAppMeta", read: true, write: true, delete: true},
+                {scope: "client", read: true, write: true, delete: true},
+                {scope: "clientScope", read: true, write: true, delete: true}
+            ];
+
             var user = User({
                 name: req.body.owner.name,
                 username: req.body.owner.username,
@@ -148,6 +163,7 @@ function CreateOrganisation(req, res){
                 phoneNumber: {contact: req.body.owner.phone, type: "phone", verified: false},
                 email: {contact: req.body.owner.mail, type: "phone", verified: false},
                 user_meta: {role: "admin"},
+                user_scopes: userScopes,
                 company: cid,
                 tenant: 1,
                 created_at: Date.now(),

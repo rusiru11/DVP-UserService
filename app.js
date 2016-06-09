@@ -99,7 +99,6 @@ app.get('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorizati
 app.delete('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), userService.DeleteUser);
 app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateUser);
 app.put('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.UpdateUser);
-app.put('/DVP/API/:version/User/:username/Package/:packageName/Console/:consoleName/Navigation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.AddUserAppScopes);
 
 //////////////////////////////Organisation API/////////////////////////////////////////////////////
 app.get('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfile);
@@ -139,9 +138,8 @@ app.put('/DVP/API/:version/Users/:name/Scope', jwt({secret: secret.Secret}),auth
 app.delete('/DVP/API/:version/User/:name/Scope/:scope', jwt({secret: secret.Secret}),authorization({resource:"userScope", action:"delete"}), userService.RemoveUserScopes);
 
 app.get('/DVP/API/:version/Users/:name/AppScope',jwt({secret: secret.Secret}), authorization({resource:"userAppScope", action:"read"}), userService.GetAppScopes);
-app.put('/DVP/API/:version/Users/:name/AppScope', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"write"}), userService.AddUserAppScopes);
 app.delete('/DVP/API/:version/User/:name/AppScope/:scope', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"delete"}), userService.RemoveUserAppScopes);
-
+app.put('/DVP/API/:version/User/:username/Package/:packageName/Console/:consoleName/AppScope', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"write"}), userService.AddUserAppScopes);
 
 app.get('/DVP/API/:version/Users/:name/UserMeta', jwt({secret: secret.Secret}),authorization({resource:"userMeta", action:"read"}), userService.GetUserMeta);
 app.put('/DVP/API/:version/Users/:name/UserMeta', jwt({secret: secret.Secret}),authorization({resource:"userMeta", action:"write"}), userService.UpdateUserMetadata);
