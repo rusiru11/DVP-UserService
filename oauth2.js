@@ -91,7 +91,7 @@ server.grant(oauth2orize.grant.code(function(client, redirectURI, user,ares, req
     });
 }));
 
-server.grant(oauth2orize.grant.token(function (client, user, ares, done) {
+server.grant(oauth2orize.grant.token(function (client, user, ares,reqObj, done) {
     ///var token = uuid.v1();
 
 
@@ -116,7 +116,7 @@ server.grant(oauth2orize.grant.token(function (client, user, ares, done) {
     //payload.scope = client.claims;
 
 
-    var scopes = GetScopes(user,client.claims);
+    var scopes = GetScopes(user,reqObj.scope);
     payload.context = scopes.context;
     payload.scope = scopes.scope;
 
@@ -133,7 +133,7 @@ server.grant(oauth2orize.grant.token(function (client, user, ares, done) {
         token: token,
         userId: user.id,
         clientId: client.id,
-        scope: client.claims,
+        scope: reqObj.scope,
         expirationDate: expin
     });
 
@@ -234,7 +234,7 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
                             token: rToken,
                             userId: authCode.userId,
                             clientId: authCode.clientId,
-                            scope: [],
+                            scope: authCode.scope,
                             expirationDate: Date.now()
                         });
 
@@ -455,7 +455,7 @@ server.exchange(oauth2orize.exchange.clientCredentials(function (client, scope, 
 
 server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken, scope, done) {
 
-    var scopeArray = scope;
+
     RefreshToken.findOne({token: refreshToken}, function (err, refToken) {
         if (err) {
             return done(err);
@@ -469,6 +469,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
 
 
 
+        var scopeArray = refToken.scope;
         User.findById(refToken.userId, function (err, user) {
             if (err) {
                 return done(err);
@@ -588,126 +589,129 @@ function GetScopes(user, claims){
     var payload = {};
     payload.context = {};
     payload.scope = [];
-    var index = claims.indexOf("profile_contacts");
 
-    if(index > -1) {
-        payload.context.phonenumber = user.phoneNumber;
-        payload.context.email = user.email;
-        payload.context.othercontacts = user.contacts;
+    if(claims) {
+        var index = claims.indexOf("profile_contacts");
 
-        claims.splice(index, 1);
-    }
+        if (index > -1) {
+            payload.context.phonenumber = user.phoneNumber;
+            payload.context.email = user.email;
+            payload.context.othercontacts = user.contacts;
 
-    var index = claims.indexOf("app_meta");
-
-    if(index > -1) {
-        payload.context.appmeta= user.app_meta;
-        claims.splice(index, 1);
-    }
-
-
-    var index = claims.indexOf("user_scopes");
-
-    if(index > -1) {
-        payload.context.appmeta= user.user_scopes;
-        claims.splice(index, 1);
-    }
-
-    var index = claims.indexOf("client_scopes");
-
-    if(index > -1) {
-        payload.context.appmeta= user.client_scopes;
-        claims.splice(index, 1);
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-    claims.forEach(function(value){
-
-
-        var arr = value.split("_");
-        if(arr.length > 1){
-
-            var action = arr[0];
-            var resource = arr[1];
-
-
-            var scopeFound = user.user_scopes.filter(function(item) {
-                return item.scope == resource;
-            })
-
-            if(scopeFound.length > 0){
-
-                var myscope = {};
-                myscope.resource = scopeFound[0].scope;
-                myscope.actions = [];
-
-                if(action == "read"){
-
-                    var actionArray = [];
-                    if(scopeFound[0].read){
-
-                        actionArray.push("read");
-
-                    }
-
-                    myscope.actions = myscope.actions.concat(actionArray);
-
-
-                }
-                else if(action == "write"){
-
-
-                    var actionArray = [];
-                    if(scopeFound[0].read ){
-
-                        actionArray.push("read");
-
-                    }
-
-                    if(scopeFound[0].write){
-
-                        actionArray.push("write");
-
-                    }
-
-
-                    myscope.actions = myscope.actions.concat(actionArray);
-
-                }
-                else if(action == "all"){
-
-
-                    var actionArray = [];
-                    if(scopeFound[0].read ){
-
-                        actionArray.push("read");
-
-                    }
-
-                    if(scopeFound[0].write ){
-
-                        actionArray.push("write");
-
-                    }
-
-
-                    if(scopeFound[0].delete ){
-
-                        actionArray.push("delete");
-
-                    }
-
-                    myscope.actions = myscope.actions.concat(actionArray);
-
-                }
-
-                payload.scope.push(myscope);
-            }
-
+            claims.splice(index, 1);
         }
-    });
+
+        var index = claims.indexOf("app_meta");
+
+        if (index > -1) {
+            payload.context.appmeta = user.app_meta;
+            claims.splice(index, 1);
+        }
+
+
+        var index = claims.indexOf("user_scopes");
+
+        if (index > -1) {
+            payload.context.appmeta = user.user_scopes;
+            claims.splice(index, 1);
+        }
+
+        var index = claims.indexOf("client_scopes");
+
+        if (index > -1) {
+            payload.context.appmeta = user.client_scopes;
+            claims.splice(index, 1);
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        claims.forEach(function (value) {
+
+
+            var arr = value.split("_");
+            if (arr.length > 1) {
+
+                var action = arr[0];
+                var resource = arr[1];
+
+
+                var scopeFound = user.user_scopes.filter(function (item) {
+                    return item.scope == resource;
+                })
+
+                if (scopeFound.length > 0) {
+
+                    var myscope = {};
+                    myscope.resource = scopeFound[0].scope;
+                    myscope.actions = [];
+
+                    if (action == "read") {
+
+                        var actionArray = [];
+                        if (scopeFound[0].read) {
+
+                            actionArray.push("read");
+
+                        }
+
+                        myscope.actions = myscope.actions.concat(actionArray);
+
+
+                    }
+                    else if (action == "write") {
+
+
+                        var actionArray = [];
+                        if (scopeFound[0].read) {
+
+                            actionArray.push("read");
+
+                        }
+
+                        if (scopeFound[0].write) {
+
+                            actionArray.push("write");
+
+                        }
+
+
+                        myscope.actions = myscope.actions.concat(actionArray);
+
+                    }
+                    else if (action == "all") {
+
+
+                        var actionArray = [];
+                        if (scopeFound[0].read) {
+
+                            actionArray.push("read");
+
+                        }
+
+                        if (scopeFound[0].write) {
+
+                            actionArray.push("write");
+
+                        }
+
+
+                        if (scopeFound[0].delete) {
+
+                            actionArray.push("delete");
+
+                        }
+
+                        myscope.actions = myscope.actions.concat(actionArray);
+
+                    }
+
+                    payload.scope.push(myscope);
+                }
+
+            }
+        });
+    }
 
 
     return payload;
