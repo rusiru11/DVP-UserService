@@ -8,6 +8,7 @@ var Org = require('./model/Organisation');
 var User = require('./model/User');
 var VPackage = require('./model/Package');
 var Console = require('./model/Console');
+var EventEmitter = require('events').EventEmitter;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 client = redis.createClient(config.Redis.port, config.Redis.ip);
@@ -209,7 +210,7 @@ function AssignPackageToOrganisation(req,res){
                             if (err) {
                                 jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
                             } else {
-                                ///TODO: Set Limits
+                                UpdateOwner(org.ownerId,vPackage);
                                 jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
                             }
                             res.end(jsonString);
@@ -220,6 +221,42 @@ function AssignPackageToOrganisation(req,res){
                     }
                 }
             });
+        }
+    });
+}
+
+function RemovePackageFromOrganisation(req,res){
+    logger.debug("DVP-UserService.RemovePackageFromOrganisation Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+            res.end(jsonString);
+        }else{
+            if(org) {
+                org.updated_at = Date.now();
+                for (var i = 0; i < org.packages.length; i++) {
+                    if (org.packages[i].search(req.params.packageName) != -1) {
+                        org.packages.splice(i, 1);
+                    }
+                }
+                Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rorg) {
+                    if (err) {
+                        jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Failed", false, undefined);
+                    } else {
+                        ///TODO: Remove Limits
+                        jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Successful", true, org);
+                    }
+                    res.end(jsonString);
+                });
+            }else{
+                jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+                res.end(jsonString);
+            }
         }
     });
 }
@@ -306,58 +343,90 @@ function ExtractResources(resources){
     return (e);
 }
 
+function ExtractConsoles(consoles){
+    var e = new EventEmitter();
+    process.nextTick(function () {
+        if (Array.isArray(consoles)) {
+            var count = 0;
+            var clientScopes = [];
+            for (var i in consoles) {
+                var consoleName = consoles[i];
+                Console.findOne({consoleName: consoleName}, function(err, console) {
+                    if (err) {
+                        jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
+                        res.end(jsonString);
+                    }else{
+                        for(var j in console.consoleNavigation){
+                            count++;
+                            var navigation = console.consoleNavigation[j];
+                            var menuScope = {menuItem: navigation.navigationName, menuAction: []};
+                            for(var k in navigation.resources){
+                                var navigationResource = navigation.resources[k];
+                                for(var l in navigationResource.scopes){
+                                    var navigationResourceScope = navigationResource.scopes[l];
+                                    var scope = {scope: navigationResourceScope.scopeName};
+                                    for(var m in navigationResourceScope.actions){
+                                        var action = navigationResourceScope.actions[m];
+                                        if(action){
+                                            switch (action){
+                                                case 'read':
+                                                    scope.read = true;
+                                                    break;
+                                                case 'write':
+                                                    scope.write = true;
+                                                    break;
+                                                case 'delete':
+                                                    scope.delete = true;
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                    menuScope.menuAction.push(scope);
+                                }
+                            }
+                            clientScopes.push(menuScope);
+                        }
+                        e.emit('endExtractConsoles',clientScopes);
+                    }
+                });
+            }
+        }else {
+            e.emit('endExtractConsoles',[]);
+        }
+    });
+
+    return (e);
+}
+
 function UpdateOwner(ownerId, vPackage){
     var jsonString;
     User.findOne({username: ownerId}, function(err, user) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Find Owner Failed", false, undefined);
-            res.end(jsonString);
         } else {
             var er = ExtractResources(vPackage.resources);
             er.on('endExtractResources', function(userScopes){
-                user.user_scopes = UniqueObjectArray(userScopes,"scope");
-                
+                var uScopes = UniqueObjectArray(userScopes,"scope");
+                for(var i in uScopes){
+                    user.user_scopes.push(uScopes[i]);
+                }
+                var ec = ExtractConsoles(vPackage.consoles);
+                ec.on('endExtractConsoles', function(clientScopes){
+                    for(var j in clientScopes){
+                        user.client_scopes.push(clientScopes[j]);
+                    }
+                    User.findOneAndUpdate({username: ownerId}, user, function (err, rUser) {
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "Update User Scopes Failed", false, undefined);
+                        } else {
+                            jsonString = messageFormatter.FormatMessage(err, "Update User Scopes Successful", true, user);
+                        }
+                    });
+                });
             });
         }
     });
 }
-
-function RemovePackageFromOrganisation(req,res){
-    logger.debug("DVP-UserService.RemovePackageFromOrganisation Internal method ");
-
-    var company = parseInt(req.user.company);
-    var tenant = parseInt(req.user.tenant);
-    var jsonString;
-
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
-        if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
-            res.end(jsonString);
-        }else{
-            if(org) {
-                org.updated_at = Date.now();
-                for (var i = 0; i < org.packages.length; i++) {
-                    if (org.packages[i].search(req.params.packageName) != -1) {
-                        org.packages.splice(i, 1);
-                    }
-                }
-                Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rorg) {
-                    if (err) {
-                        jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Failed", false, undefined);
-                    } else {
-                        ///TODO: Remove Limits
-                        jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Successful", true, org);
-                    }
-                    res.end(jsonString);
-                });
-            }else{
-                jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
-                res.end(jsonString);
-            }
-        }
-    });
-}
-
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
 module.exports.DeleteOrganisation = DeleteOrganisation;

@@ -104,33 +104,33 @@ app.put('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorizati
 app.get('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfile);
 app.put('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfile);
 
-app.get('/DVP/API/:version/Organisations', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), organisationService.GetOrganisations);
-app.get('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), organisationService.GetOrganisation);
-app.delete('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), organisationService.DeleteOrganisation);
-app.post('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), organisationService.CreateOrganisation);
-app.put('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), organisationService.UpdateOrganisation);
-app.put('/DVP/API/:version/Organisation/Assign/:packageName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), organisationService.AssignPackageToOrganisation);
-app.delete('/DVP/API/:version/Organisation/Remove/:packageName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), organisationService.RemovePackageFromOrganisation);
+app.get('/DVP/API/:version/Organisations', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetOrganisations);
+app.get('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetOrganisation);
+app.delete('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"delete"}), organisationService.DeleteOrganisation);
+app.post('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.CreateOrganisation);
+app.put('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.UpdateOrganisation);
+app.put('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.AssignPackageToOrganisation);
+app.delete('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.RemovePackageFromOrganisation);
 
-app.get('/DVP/API/:version/Resources', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), resourceService.GetResources);
-app.get('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), resourceService.GetResource);
-app.delete('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), resourceService.DeleteResource);
-app.post('/DVP/API/:version/Resource', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), resourceService.CreateResource);
-app.put('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), resourceService.UpdateResource);
+app.get('/DVP/API/:version/Resources', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"read"}), resourceService.GetResources);
+app.get('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"read"}), resourceService.GetResource);
+app.delete('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"delete"}), resourceService.DeleteResource);
+app.post('/DVP/API/:version/Resource', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"write"}), resourceService.CreateResource);
+app.put('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"write"}), resourceService.UpdateResource);
 
-app.get('/DVP/API/:version/Packages', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), packageService.GetPackages);
-app.get('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), packageService.GetPackage);
-app.delete('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), packageService.DeletePackage);
-app.post('/DVP/API/:version/Package', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), packageService.CreatePackage);
-app.put('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), packageService.UpdatePackage);
+app.get('/DVP/API/:version/Packages', jwt({secret: secret.Secret}),authorization({resource:"package", action:"read"}), packageService.GetPackages);
+app.get('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"package", action:"read"}), packageService.GetPackage);
+app.delete('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"package", action:"delete"}), packageService.DeletePackage);
+app.post('/DVP/API/:version/Package', jwt({secret: secret.Secret}),authorization({resource:"package", action:"write"}), packageService.CreatePackage);
+app.put('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"package", action:"write"}), packageService.UpdatePackage);
 
-app.get('/DVP/API/:version/GetAllConsoles', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), navigationService.GetAllConsoles);
-app.get('/DVP/API/:version/Console/:consoleName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), navigationService.GetConsole);
-app.delete('/DVP/API/:version/Console/:consoleName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), navigationService.DeleteConsole);
-app.post('/DVP/API/:version/Console', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), navigationService.CreateConsole);
-app.put('/DVP/API/:version/Console/:consoleName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), navigationService.UpdateConsole);
-app.post('/DVP/API/:version/Console/:consoleName/AddNavigation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), navigationService.AddNavigationToConsole);
-app.delete('/DVP/API/:version/Console/:consoleName/Remove/:navigationName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), navigationService.RemoveNavigationFromConsole);
+app.get('/DVP/API/:version/Consoles', jwt({secret: secret.Secret}),authorization({resource:"console", action:"read"}), navigationService.GetAllConsoles);
+app.get('/DVP/API/:version/Console/:consoleName', jwt({secret: secret.Secret}),authorization({resource:"console", action:"read"}), navigationService.GetConsole);
+app.delete('/DVP/API/:version/Console/:consoleName', jwt({secret: secret.Secret}),authorization({resource:"console", action:"delete"}), navigationService.DeleteConsole);
+app.post('/DVP/API/:version/Console', jwt({secret: secret.Secret}),authorization({resource:"console", action:"write"}), navigationService.CreateConsole);
+app.put('/DVP/API/:version/Console/:consoleName', jwt({secret: secret.Secret}),authorization({resource:"console", action:"write"}), navigationService.UpdateConsole);
+app.put('/DVP/API/:version/Console/:consoleName/Navigation', jwt({secret: secret.Secret}),authorization({resource:"console", action:"write"}), navigationService.AddNavigationToConsole);
+app.delete('/DVP/API/:version/Console/:consoleName/Navigation/:navigationName', jwt({secret: secret.Secret}),authorization({resource:"console", action:"write"}), navigationService.RemoveNavigationFromConsole);
 
 
 app.get('/DVP/API/:version/Users/:name/Scope',jwt({secret: secret.Secret}), authorization({resource:"userScope", action:"write"}), userService.GetUserScopes);
