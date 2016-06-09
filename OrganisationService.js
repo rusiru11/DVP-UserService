@@ -31,6 +31,18 @@ function UniqueArray(array) {
     return array;
 }
 
+function UniqueObjectArray(array, field) {
+    var processed = [];
+    for (var i=array.length-1; i>=0; i--) {
+            if (processed.indexOf(array[i][field])<0) {
+                processed.push(array[i][field]);
+            } else {
+                array.splice(i, 1);
+            }
+    }
+    return array;
+}
+
 function GetNewCompanyId(callback){
     client.incr("CompanyCount", function (err, result) {
         if (err) {
@@ -124,6 +136,7 @@ function CreateOrganisation(req, res){
                 id: cid,
                 tenant: 1,
                 packages:[],
+                consoleAccessLimits:[],
                 created_at: Date.now(),
                 updated_at: Date.now()
             });
@@ -134,7 +147,7 @@ function CreateOrganisation(req, res){
                 password: req.body.owner.password,
                 phoneNumber: {contact: req.body.owner.phone, type: "phone", verified: false},
                 email: {contact: req.body.owner.mail, type: "phone", verified: false},
-                user_meta: {admin: true},
+                user_meta: {role: "admin"},
                 company: cid,
                 tenant: 1,
                 created_at: Date.now(),
@@ -202,19 +215,51 @@ function AssignPackageToOrganisation(req,res){
                     res.end(jsonString);
                 }else{
                     if(org) {
-                        org.updated_at = Date.now();
-                        org.packages.push(req.params.packageName);
-                        org.packages = UniqueArray(org.packages);
-
-                        Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rOrg) {
-                            if (err) {
-                                jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
-                            } else {
-                                UpdateOwner(org.ownerId,vPackage);
-                                jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
+                        if(org.packages.indexOf(req.params.packageName) == -1) {
+                            org.updated_at = Date.now();
+                            org.packages.push(req.params.packageName);
+                            org.packages = UniqueArray(org.packages);
+                            for (var i in vPackage.consoleAccessLimit) {
+                                var vCal = vPackage.consoleAccessLimit[i];
+                                var tempCal = {
+                                    accessType: vCal.accessType,
+                                    accessLimit: vCal.accessLimit,
+                                    currentAccess: []
+                                };
+                                if(vCal.accessType == "admin") {
+                                    tempCal.currentAccess.push(org.ownerId);
+                                }
+                                var count = 0;
+                                if (org.consoleAccessLimits.length > 0) {
+                                    for (var j in org.consoleAccessLimits) {
+                                        count++;
+                                        var cal = org.consoleAccessLimits[j];
+                                        if (cal.accessType == vCal.accessType) {
+                                            org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + tempCal.accessLimit;
+                                            break;
+                                        }
+                                        if (count == org.consoleAccessLimits.length) {
+                                            org.consoleAccessLimits.push(tempCal);
+                                        }
+                                    }
+                                } else {
+                                    org.consoleAccessLimits.push(tempCal);
+                                }
                             }
+
+                            Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rOrg) {
+                                if (err) {
+                                    jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
+                                } else {
+                                    UpdateUser(org.ownerId, vPackage);
+                                    jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
+                                }
+                                res.end(jsonString);
+                            });
+                        }else{
+                            jsonString = messageFormatter.FormatMessage(err, "Package Already Added", false, undefined);
                             res.end(jsonString);
-                        });
+                        }
                     }else{
                         jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
                         res.end(jsonString);
@@ -244,14 +289,33 @@ function RemovePackageFromOrganisation(req,res){
                         org.packages.splice(i, 1);
                     }
                 }
-                Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rorg) {
+                VPackage.findOne({packageName: req.params.packageName}, function(err, vPackage) {
                     if (err) {
-                        jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Failed", false, undefined);
+                        jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
+                        console.log(jsonString);
                     } else {
-                        ///TODO: Remove Limits
-                        jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Successful", true, org);
+                        for(var i in vPackage.consoleAccessLimit){
+                            var vCal = vPackage.consoleAccessLimit[i];
+                            var tempCal = {accessType: vCal.accessType, accessLimit: vCal.accessLimit, currentAccess: []};
+                            for (var j in org.consoleAccessLimits) {
+                                var cal = org.consoleAccessLimits[j];
+                                if (cal.accessType == vCal.accessType) {
+                                    org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit - tempCal.accessLimit;
+                                    break;
+                                }
+                            }
+                        }
+
+                        Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rorg) {
+                            if (err) {
+                                jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Failed", false, undefined);
+                            } else {
+                                ///TODO: Remove Limits
+                                jsonString = messageFormatter.FormatMessage(err, "Remove Package to Organisation Successful", true, org);
+                            }
+                            res.end(jsonString);
+                        });
                     }
-                    res.end(jsonString);
                 });
             }else{
                 jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
@@ -259,20 +323,6 @@ function RemovePackageFromOrganisation(req,res){
             }
         }
     });
-}
-
-function UniqueObjectArray(array, field) {
-    var processed = [];
-    for (var i=array.length-1; i>=0; i--) {
-        if (array[i].hasOwnProperty(field)) {
-            if (processed.indexOf(array[i][field])<0) {
-                processed.push(array[i][field]);
-            } else {
-                array.splice(i, 1);
-            }
-        }
-    }
-    return array;
 }
 
 function GetUserScopes(scopes){
@@ -398,11 +448,12 @@ function ExtractConsoles(consoles){
     return (e);
 }
 
-function UpdateOwner(ownerId, vPackage){
+function UpdateUser(ownerId, vPackage){
     var jsonString;
     User.findOne({username: ownerId}, function(err, user) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Find Owner Failed", false, undefined);
+            return jsonString;
         } else {
             var er = ExtractResources(vPackage.resources);
             er.on('endExtractResources', function(userScopes){
@@ -415,12 +466,16 @@ function UpdateOwner(ownerId, vPackage){
                     for(var j in clientScopes){
                         user.client_scopes.push(clientScopes[j]);
                     }
+
+                    user.client_scopes = UniqueObjectArray(user.client_scopes,"menuItem");
+                    user.user_scopes = UniqueObjectArray(user.user_scopes,"scope");
                     User.findOneAndUpdate({username: ownerId}, user, function (err, rUser) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "Update User Scopes Failed", false, undefined);
                         } else {
                             jsonString = messageFormatter.FormatMessage(err, "Update User Scopes Successful", true, user);
                         }
+                        return jsonString;
                     });
                 });
             });
