@@ -133,11 +133,11 @@ app.put('/DVP/API/:version/Console/:consoleName/Navigation', jwt({secret: secret
 app.delete('/DVP/API/:version/Console/:consoleName/Navigation/:navigationName', jwt({secret: secret.Secret}),authorization({resource:"console", action:"write"}), navigationService.RemoveNavigationFromConsole);
 
 
-app.get('/DVP/API/:version/Users/:name/Scope',jwt({secret: secret.Secret}), authorization({resource:"userScope", action:"write"}), userService.GetUserScopes);
+app.get('/DVP/API/:version/Users/:name/Scope',jwt({secret: secret.Secret}), authorization({resource:"userScope", action:"read"}), userService.GetUserScopes);
 app.put('/DVP/API/:version/Users/:name/Scope', jwt({secret: secret.Secret}),authorization({resource:"userScope", action:"write"}), userService.AddUserScopes);
-app.delete('/DVP/API/:version/User/:name/Scope/:scope', jwt({secret: secret.Secret}),authorization({resource:"userScope", action:"delete"}), userService.DeleteUser);
+app.delete('/DVP/API/:version/User/:name/Scope/:scope', jwt({secret: secret.Secret}),authorization({resource:"userScope", action:"delete"}), userService.RemoveUserScopes);
 
-app.get('/DVP/API/:version/Users/:name/Scope',jwt({secret: secret.Secret}), authorization({resource:"userAppScope", action:"write"}), userService.GetAppScopes);
+app.get('/DVP/API/:version/Users/:name/AppScope',jwt({secret: secret.Secret}), authorization({resource:"userAppScope", action:"read"}), userService.GetAppScopes);
 app.put('/DVP/API/:version/Users/:name/AppScope', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"write"}), userService.AddUserAppScopes);
 app.delete('/DVP/API/:version/User/:name/AppScope/:scope', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"delete"}), userService.RemoveUserAppScopes);
 
@@ -149,7 +149,6 @@ app.get('/DVP/API/:version/Users/:name/AppMeta', jwt({secret: secret.Secret}),au
 app.put('/DVP/API/:version/Users/:name/AppMeta', jwt({secret: secret.Secret}),authorization({resource:"userAppMeta", action:"write"}), userService.UpdateAppMetadata);
 
 
-
 app.get('/DVP/API/:version/Clients', jwt({secret: secret.Secret}),authorization({resource:"client", action:"read"}), clientService.GetClients);
 app.get('/DVP/API/:version/Client/:clientid', jwt({secret: secret.Secret}),authorization({resource:"client", action:"read"}), clientService.GetClient);
 app.delete('/DVP/API/:version/Client/:clientid', jwt({secret: secret.Secret}),authorization({resource:"client", action:"delete"}), clientService.DeleteClient);
@@ -157,15 +156,11 @@ app.post('/DVP/API/:version/Client', jwt({secret: secret.Secret}),authorization(
 
 
 
+app.get('/DVP/API/:version/Client/:id/claims',jwt({secret: secret.Secret}), authorization({resource:"clientScope", action:"read"}), clientService.GetClientClaims);
+app.put('/DVP/API/:version/Client/:id/claim', jwt({secret: secret.Secret}),authorization({resource:"clientScope", action:"write"}), clientService.AddClientClaim);
+app.delete('/DVP/API/:version/Client/:id/claim/:claim', jwt({secret: secret.Secret}),authorization({resource:"clientScope", action:"delete"}), clientService.RemoveClientClaim);
 
 
-
-
-
-
-
-
-//app.use('/', router);
 
 
 app.listen(port, function () {

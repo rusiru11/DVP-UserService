@@ -141,9 +141,105 @@ function CreateClient(req, res){
 
 
 
+function AddClientClaim(req, res){
+
+
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    //Show.update({ "_id": showId },{ "$push": { "episodes": episodeData } },callback)
+    Client.findOneAndUpdate({clientId: req.params.id},{ "$push": { "claims": req.body } }, function(err, client) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update client claims Failed", false, undefined);
+
+
+        }else{
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Update client claims successfully", false, client);
+
+        }
+
+        res.end(jsonString);
+
+
+    });
+
+
+
+
+}
+
+function RemoveClientClaim(req, res){
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
+    Client.findOneAndUpdate({clientId: req.params.id},{ "$pullAll": { "claims": [{"scope":req.params.claim}] } }, function(err, client) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Remove client claims Failed", false, undefined);
+
+
+        }else{
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Remove client claims successfully", false, client);
+
+        }
+
+        res.end(jsonString);
+
+
+    });
+
+}
+
+function GetClientClaims(req, res){
+
+
+    logger.debug("DVP-UserService.GetClientClaims Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    Client.findOne({clientId: req.params.id}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Client claims Failed", false, undefined);
+
+        }else{
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Client claims Successful", true, client.claims);
+
+        }
+
+        res.end(jsonString);
+    });
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
 
 module.exports.GetClients = GetClients;
 module.exports.GetClient = GetClient;
 module.exports.DeleteClient= DeleteClient;
 module.exports.CreateClient = CreateClient;
+module.exports.AddClientClaim = AddClientClaim;
+module.exports.RemoveClientClaim = RemoveClientClaim;
+module.exports.GetClientClaims = GetClientClaims;
 
