@@ -456,8 +456,13 @@ function AddUserAppScopes(req, res){
                                                     var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
                                                     //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
                                                     if(consoleAccessLimitObj) {
-                                                        assignUser.client_scopes.push(req.body);
-                                                        assignUser.client_scopes = UniqueObjectArray(assignUser.client_scopes, "menuItem");
+                                                        var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
+                                                        if(consoleScope){
+                                                            consoleScope.menus.push(req.body);
+                                                            consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
+                                                        }else{
+                                                            assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: [req.body]});
+                                                        }
                                                         User.findOneAndUpdate({
                                                             username: req.params.username,
                                                             company: company,
