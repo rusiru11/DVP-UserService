@@ -561,20 +561,33 @@ function AddUserAppScopes(req, res){
                                             if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
                                                 if(appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1){
                                                     var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
-                                                    if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
-                                                        assignUser.client_scopes.push(req.body);
-                                                        assignUser.client_scopes = UniqueObjectArray(assignUser.client_scopes,"menuItem");
-                                                        User.findOneAndUpdate({username: req.params.username,company: company, tenant: tenant},assignUser, function(err, rUser) {
+                                                    //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
+                                                    if(consoleAccessLimitObj) {
+                                                        var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
+                                                        if(consoleScope){
+                                                            consoleScope.menus.push(req.body);
+                                                            consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
+                                                        }else{
+                                                            assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: [req.body]});
+                                                        }
+                                                        User.findOneAndUpdate({
+                                                            username: req.params.username,
+                                                            company: company,
+                                                            tenant: tenant
+                                                        }, assignUser, function (err, rUser) {
                                                             if (err) {
                                                                 jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
-                                                            }else{
+                                                            } else {
                                                                 jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, undefined);
                                                                 consoleAccessLimitObj.currentAccess.push(assignUser.username);
                                                                 consoleAccessLimitObj.currentAccess = UniqueArray(consoleAccessLimitObj.currentAccess);
-                                                                Org.findOneAndUpdate({tenant: tenant, id: company},org, function(err, rOrg) {
+                                                                Org.findOneAndUpdate({
+                                                                    tenant: tenant,
+                                                                    id: company
+                                                                }, org, function (err, rOrg) {
                                                                     if (err) {
                                                                         jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
-                                                                    }else {
+                                                                    } else {
                                                                         jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, undefined);
                                                                     }
                                                                     console.log(jsonString);
@@ -583,7 +596,8 @@ function AddUserAppScopes(req, res){
                                                             res.end(jsonString);
                                                         });
                                                     }else{
-                                                        jsonString = messageFormatter.FormatMessage(err, "Access Denied, Console Access Limit Exceeded", false, undefined);
+                                                        //jsonString = messageFormatter.FormatMessage(err, "Access Denied, Console Access Limit Exceeded", false, undefined);
+                                                        jsonString = messageFormatter.FormatMessage(err, "Access Denied, No Console Access Limit Found", false, undefined);
                                                         res.end(jsonString);
                                                     }
                                                 }else{

@@ -414,7 +414,7 @@ function ExtractConsoles(consoles){
     process.nextTick(function () {
         if (Array.isArray(consoles)) {
             var count = 0;
-            var clientScopes = [];
+            var consoleScopes = [];
             for (var i in consoles) {
                 var consoleName = consoles[i];
                 Console.findOne({consoleName: consoleName}, function(err, console) {
@@ -422,8 +422,8 @@ function ExtractConsoles(consoles){
                         jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
                         res.end(jsonString);
                     }else{
+                        var consoleScope = {consoleName: console.consoleName, menus: []};
                         for(var j in console.consoleNavigation){
-                            count++;
                             var navigation = console.consoleNavigation[j];
                             var menuScope = {menuItem: navigation.navigationName, menuAction: []};
                             for(var k in navigation.resources){
@@ -450,9 +450,14 @@ function ExtractConsoles(consoles){
                                     menuScope.menuAction.push(scope);
                                 }
                             }
-                            clientScopes.push(menuScope);
+                            consoleScope.menus.push(menuScope);
                         }
-                        e.emit('endExtractConsoles',clientScopes);
+                        count++;
+                        consoleScopes.push(consoleScope);
+                    }
+
+                    if(count == consoles.length){
+                        e.emit('endExtractConsoles',consoleScopes);
                     }
                 });
             }
