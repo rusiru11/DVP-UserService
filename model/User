@@ -20,7 +20,7 @@ var scopeSchema = new Schema({
     write: Boolean,
     delete: Boolean,
 
-});
+},{_id: false});
 
 
 
