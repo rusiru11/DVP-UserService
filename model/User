@@ -20,30 +20,39 @@ var scopeSchema = new Schema({
     write: Boolean,
     delete: Boolean,
 
-})
+});
+
+
+var consoleScopeSchema = new Schema({
+
+    consoleName: {type: String, required: true};
+    menus: [menuScopeSchema];
+
+});
+
 
 var menuScopeSchema = new Schema({
 
     menuItem: {type: String, required: true},
     menuAction: [scopeSchema],
-
-
-})
+});
 
 
 var userSchema = new Schema({
     name: String,
+    avatar: String,
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     phoneNumber: { type: contactSchema, required: true },
     email: { type: contactSchema, required: true },
+    veeryAccount: contactSchema,
     company: { type: Number, required: true },
     tenant: { type: Number, required: true },
     contacts: [contactSchema],
     user_meta: {},
     app_meta: {},
     user_scopes: [scopeSchema],
-    client_scopes: [menuScopeSchema],
+    client_scopes: [consoleScopeSchema],
     created_at: Date,
     updated_at: Date
 });

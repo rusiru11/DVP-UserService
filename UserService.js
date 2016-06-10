@@ -21,6 +21,15 @@ function GetUsers(req, res){
 
         }else{
 
+            if(users){
+
+                if (users.password) {
+
+                    delete req.body.password;
+                }
+
+            }
+
             jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
         }
@@ -313,7 +322,6 @@ function UniqueArray(array) {
     }
     return array;
 }
-
 
 function UniqueObjectArray(array, field) {
     var processed = [];
@@ -649,7 +657,6 @@ function UpdateAppMetadata(req, res){
 
 
 }
-
 
 function RemoveUserMetadata(req, res){
 
