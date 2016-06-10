@@ -10,7 +10,7 @@ var contactSchema = new Schema({
     contact:String,
     type:String,
     verified: Boolean
-});
+}, {_id: false});
 
 
 var scopeSchema = new Schema({

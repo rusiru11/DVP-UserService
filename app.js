@@ -106,7 +106,7 @@ app.put('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),aut
 app.put('/DVP/API/:version/User/:name/profile/email/:email', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfileEmail);
 app.put('/DVP/API/:version/User/:name/profile/phonen/:number', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfilePhone);
 app.put('/DVP/API/:version/User/:name/profile/contact/:contact', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfileContact);
-
+app.delete('/DVP/API/:version/User/:name/profile/contact/:contact', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"delete"}), userService.RemoveUserProfileContact);
 
 
 app.get('/DVP/API/:version/Organisations', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetOrganisations);

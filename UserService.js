@@ -165,7 +165,7 @@ function UpdateUser(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, users);
+            jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
 
         }
 
@@ -288,7 +288,7 @@ function UpdateUserProfile(req, res) {
 
         } else {
 
-            jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, users);
+            jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
 
         }
 
@@ -307,14 +307,14 @@ function UpdateUserProfileEmail(req, res) {
 
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { "email" : {contact:req.params.email, type:"email", verified: false}}, function (err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { email : {contact:req.params.email, type:"email", verified: false}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User email Failed", false, undefined);
 
         } else {
 
-            jsonString = messageFormatter.FormatMessage(err, "Update User email Successful", true, users);
+            jsonString = messageFormatter.FormatMessage(err, "Update User email Successful", true, undefined);
 
         }
 
@@ -333,7 +333,7 @@ function UpdateUserProfileContact(req, res) {
 
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { "phoneNumber" : {contact:req.params.email, type:"voice", verified: false}}, function (err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { $addToSet :{contacts : {contact:req.params.contact, type:req.body.type, verified: false}}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User phone number Failed", false, undefined);
@@ -345,6 +345,34 @@ function UpdateUserProfileContact(req, res) {
         }
 
         res.end(jsonString);
+    });
+
+}
+
+
+
+function RemoveUserProfileContact(req, res){
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ $pullAll: { 'contacts': {'contact':req.params.contact} } }, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
+
+
+        }else{
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
+
+        }
+
+        res.end(jsonString);
+
+
     });
 
 }
@@ -360,14 +388,14 @@ function UpdateUserProfilePhone(req, res) {
 
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { "phoneNumber" : {contact:req.params.email, type:"voice", verified: false}}, function (err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { phoneNumber : {contact:req.params.email, type:"voice", verified: false}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User phone number Failed", false, undefined);
 
         } else {
 
-            jsonString = messageFormatter.FormatMessage(err, "Update User phone number Successful", true, users);
+            jsonString = messageFormatter.FormatMessage(err, "Update User phone number Successful", true, undefined);
 
         }
 
@@ -375,10 +403,6 @@ function UpdateUserProfilePhone(req, res) {
     });
 
 }
-
-
-
-
 
 function FilterObjFromArray(itemArray, field, value){
     var resultObj;
@@ -452,7 +476,7 @@ function AddUserScopes(req, res){
                                             if (err) {
                                                 jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
                                             }else{
-                                                jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, assignUser);
+                                                jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
                                             }
                                             res.end(jsonString);
                                         });
@@ -485,7 +509,7 @@ function RemoveUserScopes(req, res){
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "user_scopes": [{"scope":req.params.scope}] } }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "user_scopes": {"scope":req.params.scope} } }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
@@ -493,7 +517,7 @@ function RemoveUserScopes(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, users);
+            jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
 
         }
 
@@ -544,14 +568,14 @@ function AddUserAppScopes(req, res){
                                                             if (err) {
                                                                 jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
                                                             }else{
-                                                                jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, assignUser);
+                                                                jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, undefined);
                                                                 consoleAccessLimitObj.currentAccess.push(assignUser.username);
                                                                 consoleAccessLimitObj.currentAccess = UniqueArray(consoleAccessLimitObj.currentAccess);
                                                                 Org.findOneAndUpdate({tenant: tenant, id: company},org, function(err, rOrg) {
                                                                     if (err) {
                                                                         jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
                                                                     }else {
-                                                                        jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, assignUser);
+                                                                        jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, undefined);
                                                                     }
                                                                     console.log(jsonString);
                                                                 });
@@ -589,7 +613,7 @@ function RemoveUserAppScopes(req, res){
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "client_scopes": [{"menuItem":req.params.scope}] } }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "client_scopes": {"menuItem":req.params.scope} } }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
@@ -597,7 +621,7 @@ function RemoveUserAppScopes(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, users);
+            jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
 
         }
 
@@ -688,7 +712,7 @@ function UpdateUserMetadata(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Update user meta Successful", true, users);
+            jsonString = messageFormatter.FormatMessage(err, "Update user meta Successful", true, undefined);
 
         }
 
@@ -719,7 +743,7 @@ function UpdateAppMetadata(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Update app meta Successful", true, users);
+            jsonString = messageFormatter.FormatMessage(err, "Update app meta Successful", true, undefined);
 
         }
 
@@ -739,7 +763,7 @@ function RemoveUserMetadata(req, res){
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "user_meta": [{"scope":req.params.usermeta}] } }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "user_meta": {"scope":req.params.usermeta} } }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Remove user meta Failed", false, undefined);
@@ -747,7 +771,7 @@ function RemoveUserMetadata(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(undefined, "Remove user meta successfully", false, users);
+            jsonString = messageFormatter.FormatMessage(undefined, "Remove user meta successfully", false, undefined);
 
         }
 
@@ -765,7 +789,7 @@ function RemoveAppMetadata(req, res){
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "app_meta": [{"scope":req.params.appmeta}] } }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pullAll": { "app_meta": {"scope":req.params.appmeta} } }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update app meta Failed", false, undefined);
@@ -773,7 +797,7 @@ function RemoveAppMetadata(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(undefined, "Update app meta successfully", false, users);
+            jsonString = messageFormatter.FormatMessage(undefined, "Update app meta successfully", false, undefined);
 
         }
 
@@ -870,4 +894,5 @@ module.exports.RemoveAppMetadata= RemoveAppMetadata;
 module.exports.UpdateUserProfileEmail = UpdateUserProfileEmail;
 module.exports.UpdateUserProfilePhone = UpdateUserProfilePhone;
 module.exports.UpdateUserProfileContact = UpdateUserProfileContact;
+module.exports.RemoveUserProfileContact = RemoveUserProfileContact;
 
