@@ -297,6 +297,89 @@ function UpdateUserProfile(req, res) {
 
 }
 
+function UpdateUserProfileEmail(req, res) {
+
+    logger.debug("DVP-UserService.UpdateUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+    req.body.updated_at = Date.now();
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { "email" : {contact:req.params.email, type:"email", verified: false}}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User email Failed", false, undefined);
+
+        } else {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User email Successful", true, users);
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+function UpdateUserProfileContact(req, res) {
+
+    logger.debug("DVP-UserService.UpdateUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+    req.body.updated_at = Date.now();
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { "phoneNumber" : {contact:req.params.email, type:"voice", verified: false}}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User phone number Failed", false, undefined);
+
+        } else {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User phone number Successful", true, users);
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+
+function UpdateUserProfilePhone(req, res) {
+
+    logger.debug("DVP-UserService.UpdateUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+    req.body.updated_at = Date.now();
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { "phoneNumber" : {contact:req.params.email, type:"voice", verified: false}}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User phone number Failed", false, undefined);
+
+        } else {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User phone number Successful", true, users);
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+
+
+
+
 function FilterObjFromArray(itemArray, field, value){
     var resultObj;
     for(var i in itemArray){
@@ -798,3 +881,7 @@ module.exports.GetUserScopes = GetUserScopes;
 module.exports.GetAppScopes = GetAppScopes;
 module.exports.RemoveUserMetadata = RemoveUserMetadata;
 module.exports.RemoveAppMetadata= RemoveAppMetadata;
+module.exports.UpdateUserProfileEmail = UpdateUserProfileEmail;
+module.exports.UpdateUserProfilePhone = UpdateUserProfilePhone;
+module.exports.UpdateUserProfileContact = UpdateUserProfileContact;
+
