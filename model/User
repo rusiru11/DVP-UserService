@@ -23,18 +23,20 @@ var scopeSchema = new Schema({
 });
 
 
-var consoleScopeSchema = new Schema({
-
-    consoleName: {type: String, required: true};
-    menus: [menuScopeSchema];
-
-});
 
 
 var menuScopeSchema = new Schema({
 
     menuItem: {type: String, required: true},
-    menuAction: [scopeSchema],
+    menuAction: [scopeSchema]
+});
+
+
+var consoleScopeSchema = new Schema({
+
+    consoleName: {type: String, required: true},
+    menus: [menuScopeSchema]
+
 });
 
 
