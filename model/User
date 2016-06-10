@@ -45,7 +45,7 @@ var userSchema = new Schema({
     password: { type: String, required: true },
     phoneNumber: { type: contactSchema, required: true },
     email: { type: contactSchema, required: true },
-    veeryAccount: {type: contactSchema, required: true },
+    veeryAccount: contactSchema,
     company: { type: Number, required: true },
     tenant: { type: Number, required: true },
     contacts: [contactSchema],
