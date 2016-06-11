@@ -8,6 +8,18 @@ var Console = require('./model/Console');
 var EventEmitter = require('events').EventEmitter;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
+function UniqueObjectArray(array, field) {
+    var processed = [];
+    for (var i=array.length-1; i>=0; i--) {
+        if (processed.indexOf(array[i][field])<0) {
+            processed.push(array[i][field]);
+        } else {
+            array.splice(i, 1);
+        }
+    }
+    return array;
+}
+
 function GetResources(resources){
     var e = new EventEmitter();
     process.nextTick(function () {
@@ -43,7 +55,24 @@ function GetAllConsoles(req, res){
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Failed", false, undefined);
         }else{
-            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, allConsole);
+            var newConsoles =[];
+            for(var a in allConsole) {
+                var console1 = allConsole[a];
+                var newResult = {consoleName: console1.consoleName};
+                for(var i in console1.consoleNavigation){
+                    var navigation = console1.consoleNavigation[i];
+                    var newNavigation = {navigationName: navigation.navigationName, navigationStatus: navigation.navigationStatus};
+                    var newResourceScopes = [];
+                    for(var j in navigation.resources){
+                        var resource = navigation.resources[j];
+                        newResourceScopes.push(resource.scopes);
+                    }
+                    newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
+                }
+                newResult.consoleNavigation = newNavigation;
+                newConsoles.push(newResult);
+            }
+            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, newConsoles);
         }
         res.end(jsonString);
     });
@@ -57,7 +86,24 @@ function GetAllConsolesByUserRole(req, res){
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Failed", false, undefined);
         }else{
-            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, allConsole);
+            var newConsoles =[];
+            for(var a in allConsole) {
+                var console1 = allConsole[a];
+                var newResult = {consoleName: console1.consoleName};
+                for(var i in console1.consoleNavigation){
+                    var navigation = console1.consoleNavigation[i];
+                    var newNavigation = {navigationName: navigation.navigationName, navigationStatus: navigation.navigationStatus};
+                    var newResourceScopes = [];
+                    for(var j in navigation.resources){
+                        var resource = navigation.resources[j];
+                        newResourceScopes.push(resource.scopes);
+                    }
+                    newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
+                }
+                newResult.consoleNavigation = newNavigation;
+                newConsoles.push(newResult);
+            }
+            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, newConsoles);
         }
         res.end(jsonString);
     });
@@ -70,6 +116,19 @@ function GetConsole(req, res){
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
         }else{
+            var newResult = {consoleName: console.consoleName};
+
+            for(var i in console.consoleNavigation){
+                var navigation = console.consoleNavigation[i];
+                var newNavigation = {navigationName: navigation.navigationName, navigationStatus: navigation.navigationStatus};
+                var newResourceScopes = [];
+                for(var j in navigation.resources){
+                    var resource = navigation.resources[j];
+                    newResourceScopes.push(resource.scopes);
+                }
+                newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
+            }
+            newResult.consoleNavigation = newNavigation;
             jsonString = messageFormatter.FormatMessage(err, "Get Console Successful", true, console);
         }
         res.end(jsonString);

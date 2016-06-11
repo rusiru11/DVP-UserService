@@ -70,7 +70,7 @@ function CreateResource(req, res){
     });
     for(var i in req.body.scopes) {
         var scope = req.body.scopes[i];
-        var tmpScope = {scopeName: scope.scopeName, actions: scope.actions};
+        var tmpScope = {scopeName: scope.scopeName, feature:scope.feature, actions: scope.actions};
         resource.scopes.push(tmpScope);
     }
 
