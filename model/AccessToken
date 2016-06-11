@@ -5,8 +5,8 @@ var Schema = mongoose.Schema;
 
 
 var accessTokenSchema = new Schema({
-    token:{ type: String, required: true,unique: true},
-    jti:{ type: String, required: true },
+
+    jti:{ type: String, required: true,unique: true},
     userId:{ type: String, required: true },
     clientId:{ type: String, required: true},
     scope: [String],

@@ -135,8 +135,33 @@ function CreateUser(req, res){
                     var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
                     if(limitObj){
                         if(limitObj.accessLimit > limitObj.currentAccess.length){
+
+                            if(!req.body.address)
+                            {
+                                req.body.address = {};
+                            }
+
+
                             var user = User({
                                 name: req.body.name,
+                                avatar: req.body.avatar,
+                                birthday: req.body.birthday,
+                                gender: req.body.gender,
+                                firstname: req.body.firstname,
+                                lastname: req.body.lastname,
+                                locale: req.body.locale,
+
+
+                                address:{
+                                    zipcode: req.body.address.zipcode,
+                                    number: req.body.address.number,
+                                    street: req.body.address.street,
+                                    city: req.body.address.city,
+                                    province: req.body.address.province,
+                                    country: req.body.address.country,
+
+
+                                },
                                 username: req.body.username,
                                 password: req.body.password,
                                 phoneNumber: {contact:req.body.phone, type: "phone", verified: false},
@@ -148,9 +173,14 @@ function CreateUser(req, res){
                                 updated_at: Date.now()
                             });
 
+
+
+
+
                             user.save(function(err, user) {
                                 if (err) {
                                     jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+                                    res.end(jsonString);
                                 }else{
                                     /*Org.findOneAndUpdate({company: company, tenant: tenant},{$filter: {input: "$consoleAccessLimits", as: "consoleAccessLimit", cond: { $eq: [ "$$consoleAccessLimit.accessType", userRole] }}, $addToSet :{$consoleAccessLimit : user.username}}, function(err, rUsers) {
                                         if (err) {
