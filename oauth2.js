@@ -612,14 +612,14 @@ function GetScopes(user, claims){
         var index = claims.indexOf("user_scopes");
 
         if (index > -1) {
-            payload.context.appmeta = user.user_scopes;
+            payload.context.userscopes = user.user_scopes;
             claims.splice(index, 1);
         }
 
         var index = claims.indexOf("client_scopes");
 
         if (index > -1) {
-            payload.context.appmeta = user.client_scopes;
+            payload.context.clientscopes = user.client_scopes;
             claims.splice(index, 1);
         }
 

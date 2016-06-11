@@ -446,12 +446,12 @@ function RemoveUserProfileContact(req, res){
     User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ $pull: { 'contacts': {'contact':req.params.contact} } }, function(err, users) {
         if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
+            jsonString = messageFormatter.FormatMessage(err, "Remove contact Failed", false, undefined);
 
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
+            jsonString = messageFormatter.FormatMessage(undefined, "Remove contact successfully", false, undefined);
 
         }
 
