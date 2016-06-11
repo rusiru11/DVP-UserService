@@ -225,6 +225,44 @@ function UpdateUser(req, res){
 
 }
 
+
+
+
+function GetMyrProfile(req, res){
+
+
+    logger.debug("DVP-UserService.GetUsers Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    User.findOne({username: req.user.iss,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+        }else{
+
+
+            var profile = {};
+            profile.name = users.name;
+            profile.phoneNumber = users.phoneNumber;
+            profile.email = users.email;
+            profile.company = users.company;
+            profile.tenant = users.tenant;
+            profile.contacts = users.contacts;
+
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+
+        }
+
+        res.end(jsonString);
+    });
+
+
+}
+
 function GetUserProfile(req, res){
 
 
@@ -994,4 +1032,5 @@ module.exports.UpdateUserProfileEmail = UpdateUserProfileEmail;
 module.exports.UpdateUserProfilePhone = UpdateUserProfilePhone;
 module.exports.UpdateUserProfileContact = UpdateUserProfileContact;
 module.exports.RemoveUserProfileContact = RemoveUserProfileContact;
+module.exports.GetMyrProfile = GetMyrProfile;
 
