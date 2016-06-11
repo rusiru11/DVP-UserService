@@ -430,7 +430,7 @@ function ExtractConsoles(consoles){
                                 var navigationResource = navigation.resources[k];
                                 for(var l in navigationResource.scopes){
                                     var navigationResourceScope = navigationResource.scopes[l];
-                                    var scope = {scope: navigationResourceScope.scopeName};
+                                    var scope = {scope: navigationResourceScope.scopeName, feature: navigationResourceScope.feature};
                                     for(var m in navigationResourceScope.actions){
                                         var action = navigationResourceScope.actions[m];
                                         if(action){

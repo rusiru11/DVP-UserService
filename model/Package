@@ -8,6 +8,7 @@ var consoleAccessLimitSchema = new Schema({
 
 var scopeSchema = new Schema({
     scopeName: { type: String, required: true, unique: true },
+    feature: String,
     actions: { type: [String], unique: true },
     limit: Number
 });

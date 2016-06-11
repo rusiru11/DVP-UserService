@@ -16,6 +16,7 @@ var contactSchema = new Schema({
 var scopeSchema = new Schema({
 
     scope: { type: String, required: true},
+    feature: String,
     read: Boolean,
     write: Boolean,
     delete: Boolean,
