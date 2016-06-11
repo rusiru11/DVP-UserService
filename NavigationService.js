@@ -49,6 +49,20 @@ function GetAllConsoles(req, res){
     });
 }
 
+function GetAllConsolesByUserRole(req, res){
+    logger.debug("DVP-UserService.GetAllConsolesByUserRole Internal method ");
+
+    var jsonString;
+    Console.find({consoleUserRoles:req.params.roleType}, function(err, allConsole) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Failed", false, undefined);
+        }else{
+            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, allConsole);
+        }
+        res.end(jsonString);
+    });
+}
+
 function GetConsole(req, res){
     logger.debug("DVP-UserService.GetConsole Internal method ");
     var jsonString;
@@ -216,3 +230,4 @@ module.exports.CreateConsole = CreateConsole;
 module.exports.UpdateConsole = UpdateConsole;
 module.exports.AddNavigationToConsole = AddNavigationToConsole;
 module.exports.RemoveNavigationFromConsole = RemoveNavigationFromConsole;
+module.exports.GetAllConsolesByUserRole = GetAllConsolesByUserRole;
