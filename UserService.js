@@ -84,21 +84,32 @@ function DeleteUser(req,res){
     var jsonString;
     User.findOneAndRemove({username: req.params.name,company: company, tenant: tenant}, function(err, user) {
         if (err) {
-
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
-
-
         }else{
-
-            jsonString = messageFormatter.FormatMessage(undefined, "Delete User Failed, user object is null", false, undefined);
-
-
-
+            Org.findOne({tenant: tenant, id: company}, function(err, org) {
+                if (err) {
+                    jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+                    console.log(jsonString);
+                } else {
+                    var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", user.user_meta.role);
+                    var userIndex = limitObj.currentAccess.indexOf(user.username);
+                    if(userIndex > -1){
+                        limitObj.currentAccess.splice(userIndex,1);
+                        Org.findOneAndUpdate({id: company, tenant: tenant},org, function(err, rOrg) {
+                            if (err) {
+                                jsonString = messageFormatter.FormatMessage(err, "Update Console Access Limit Failed", false, undefined);
+                                console.log(jsonString);
+                            } else {
+                                jsonString = messageFormatter.FormatMessage(err, "Update Console Access Limit Success", true, undefined);
+                                console.log(jsonString);
+                            }
+                        });
+                    }
+                }
+            });
+            jsonString = messageFormatter.FormatMessage(undefined, "Delete User Success", true, undefined);
         }
-
         res.end(jsonString);
-
-
     });
 
 
@@ -110,41 +121,77 @@ function DeleteUser(req,res){
 function CreateUser(req, res){
 
     logger.debug("DVP-UserService.CreateUser Internal method ");
-
-
-
-    var user = User({
-
-
-        name: req.body.name,
-        username: req.body.username,
-        password: req.body.password,
-        phoneNumber: {contact:req.body.phone, type: "phone", verified: false},
-        email:{contact:req.body.mail, type: "phone", verified: false},
-        company: parseInt(req.user.company),
-        tenant: parseInt(req.user.tenant),
-        created_at: Date.now(),
-        updated_at: Date.now()
-
-    });
-
-
-    var jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
-    user.save(function(err, user) {
+    var jsonString;
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+    Org.findOne({tenant: tenant, id: company}, function(err, org) {
         if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+            res.end(jsonString);
+        }else{
+            if(org){
+                if(req.body.role){
+                    var userRole = req.body.role.toLowerCase();
+                    var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
+                    if(limitObj){
+                        if(limitObj.accessLimit > limitObj.currentAccess.length){
+                            var user = User({
+                                name: req.body.name,
+                                username: req.body.username,
+                                password: req.body.password,
+                                phoneNumber: {contact:req.body.phone, type: "phone", verified: false},
+                                email:{contact:req.body.mail, type: "phone", verified: false},
+                                company: parseInt(req.user.company),
+                                tenant: parseInt(req.user.tenant),
+                                user_meta: {role: userRole},
+                                created_at: Date.now(),
+                                updated_at: Date.now()
+                            });
 
-            jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+                            user.save(function(err, user) {
+                                if (err) {
+                                    jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+                                }else{
+                                    /*Org.findOneAndUpdate({company: company, tenant: tenant},{$filter: {input: "$consoleAccessLimits", as: "consoleAccessLimit", cond: { $eq: [ "$$consoleAccessLimit.accessType", userRole] }}, $addToSet :{$consoleAccessLimit : user.username}}, function(err, rUsers) {
+                                        if (err) {
+                                            user.remove(function (err) {});
+                                            jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
+                                        }else{
+                                            jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
+                                        }
+                                        res.end(jsonString);
+                                    });*/
 
-
+                                    limitObj.currentAccess.push(user.username);
+                                    Org.findOneAndUpdate({id: company, tenant: tenant},org, function(err, rOrg) {
+                                        if (err) {
+                                            user.remove(function (err) {});
+                                            jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
+                                        }else{
+                                            jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
+                                        }
+                                        res.end(jsonString);
+                                    });
+                                }
+                            });
+                        }else{
+                            jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
+                            res.end(jsonString);
+                        }
+                    }else{
+                        jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
+                        res.end(jsonString);
+                    }
+                }else{
+                    jsonString = messageFormatter.FormatMessage(err, "No User Role Found", false, undefined);
+                    res.end(jsonString);
+                }
+            }else{
+                jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
+                res.end(jsonString);
+            }
         }
-
-        res.end(jsonString);
-
     });
-
-
-
-
 }
 
 function UpdateUser(req, res){
@@ -624,12 +671,27 @@ function AddUserAppScopes(req, res){
                                                     var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
                                                     //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
                                                     if(consoleAccessLimitObj) {
+                                                        var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction.scope);
                                                         var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
                                                         if(consoleScope){
                                                             consoleScope.menus.push(req.body);
                                                             consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
                                                         }else{
                                                             assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: [req.body]});
+                                                        }
+
+                                                        if(userScope){
+                                                            if(userScope.read == false && req.body.menuAction.read == true){
+                                                                userScope.read = true;
+                                                            }
+                                                            if(userScope.write == false && req.body.menuAction.write == true){
+                                                                userScope.write = true;
+                                                            }
+                                                            if(userScope.delete == false && req.body.menuAction.delete == true){
+                                                                userScope.delete = true;
+                                                            }
+                                                        }else{
+                                                            assignUser.user_scopes.push(req.body.menuAction);
                                                         }
                                                         User.findOneAndUpdate({
                                                             username: req.params.username,
