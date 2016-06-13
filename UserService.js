@@ -924,7 +924,6 @@ function AddUserAppScopes(req, res){
                                             var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
                                             //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
                                             if(consoleAccessLimitObj) {
-                                                var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction.scope);
                                                 var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
                                                 if(consoleScope){
                                                     consoleScope.menus.push(req.body);
@@ -932,19 +931,23 @@ function AddUserAppScopes(req, res){
                                                 }else{
                                                     assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: [req.body]});
                                                 }
-                                                if(userScope){
-                                                    if(userScope.read == false && req.body.menuAction.read == true){
-                                                        userScope.read = true;
+                                                for(var i in req.body.menuAction){
+                                                    var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction[i].scope);
+                                                    if(userScope){
+                                                        if(userScope.read == false && req.body.menuAction.read == true){
+                                                            userScope.read = true;
+                                                        }
+                                                        if(userScope.write == false && req.body.menuAction.write == true){
+                                                            userScope.write = true;
+                                                        }
+                                                        if(userScope.delete == false && req.body.menuAction.delete == true){
+                                                            userScope.delete = true;
+                                                        }
+                                                    }else{
+                                                        assignUser.user_scopes.push(req.body.menuAction);
                                                     }
-                                                    if(userScope.write == false && req.body.menuAction.write == true){
-                                                        userScope.write = true;
-                                                    }
-                                                    if(userScope.delete == false && req.body.menuAction.delete == true){
-                                                        userScope.delete = true;
-                                                    }
-                                                }else{
-                                                    assignUser.user_scopes.push(req.body.menuAction);
                                                 }
+
                                                 User.findOneAndUpdate({
                                                     username: req.params.username,
                                                     company: company,
