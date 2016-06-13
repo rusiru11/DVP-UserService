@@ -69,7 +69,7 @@ var userSchema = new Schema({
     twitter: contactSchema,
     linkedin: contactSchema,
     googleplus: contactSchema,
-    resourceid: { type: String, unique: true }
+    resourceid: { type: String, unique: true },
     company: { type: Number, required: true },
     tenant: { type: Number, required: true },
     contacts: [contactSchema],
