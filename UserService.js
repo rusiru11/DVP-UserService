@@ -829,29 +829,61 @@ function RemoveUserAppScopes(req, res){
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
+    var adminUserName = req.user.iss;
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOne({"client_scopes.consoleName": req.params.consoleName}, function(err, user) {
-        console.log(user);
-    });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pull": { "client_scopes": {"menuItem":req.params.scope} } }, function(err, users) {
+    User.findOne({username: adminUserName, company:company, tenant: tenant}, function(err, adminUser) {
         if (err) {
-
-            jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
-
-
-        }else{
-
-            jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
-
+            jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
+            res.end(jsonString);
+        } else {
+            User.findOne({
+                $and: [{"client_scopes.consoleName": req.params.consoleName}, {
+                    username: req.params.username,
+                    company: company,
+                    tenant: tenant
+                }]
+            }, function (err, user) {
+                if(err){
+                    jsonString = messageFormatter.FormatMessage(err, "Validate Assigned User Failed", false, undefined);
+                    res.end(jsonString);
+                }else {
+                    if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin") {
+                        for (var i in user.client_scopes) {
+                            var cScope = user.client_scopes[i];
+                            if (cScope.consoleName == req.params.consoleName) {
+                                for (var j in cScope.menus) {
+                                    var menu = cScope.menus[j];
+                                    if (menu.menuItem == req.params.navigation) {
+                                        cScope.menus.splice(j, 1);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        User.findOneAndUpdate({
+                            $and: [{"client_scopes.consoleName": req.params.consoleName}, {
+                                username: req.params.username,
+                                company: company,
+                                tenant: tenant
+                            }]
+                        }, user, function (err, users) {
+                            if (err) {
+                                jsonString = messageFormatter.FormatMessage(err, "Remove Navigation scope Failed", false, undefined);
+                            } else {
+                                jsonString = messageFormatter.FormatMessage(undefined, "Remove Navigation successfull", false, undefined);
+                            }
+                            res.end(jsonString);
+                        });
+                    }else {
+                        jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
+                        res.end(jsonString);
+                    }
+                }
+            });
         }
-
-        res.end(jsonString);
-
-
     });
-
 }
 
 function GetUserMeta(req, res){
