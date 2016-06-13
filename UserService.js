@@ -815,62 +815,42 @@ function AddUserScopes(req, res){
             jsonString = messageFormatter.FormatMessage(err, "Validate Organisation Failed", false, undefined);
             res.end(jsonString);
         }else{
-            VPackage.findOne({packageName: req.params.packageName}, function(err, vPackage) {
+            User.findOne({username: adminUserName,company: company, tenant: tenant}, function(err, adminUser) {
                 if (err) {
-                    jsonString = messageFormatter.FormatMessage(err, "Validate Package Failed", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
                     res.end(jsonString);
-                }else{
-
-                    User.findOne({username: adminUserName,company: company, tenant: tenant}, function(err, adminUser) {
+                } else {
+                    User.findOne({username: req.params.username,company: company, tenant: tenant}, function(err, assignUser) {
                         if (err) {
-                            jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
+                            jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
                             res.end(jsonString);
                         } else {
-                            User.findOne({username: req.params.assignUserName,company: company, tenant: tenant}, function(err, assignUser) {
-                                if (err) {
-                                    jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
-                                    res.end(jsonString);
-                                } else {
-                                    if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
-
-                                        /*
-                                        assignUser.user_scopes.push(req.body);
-                                        assignUser.user_scopes = UniqueObjectArray(assignUser.user_scopes,"scope");
-                                        User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},assignUser, function(err, rUsers) {
-                                            if (err) {
-                                                jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
-                                            }else{
-                                                jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
-                                            }
-                                            res.end(jsonString);
-                                        });
-
-                                        */
-
-
-
-                                        User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ $addToSet :{user_scopes : req.body}}, function(err, rUsers) {
-                                            if (err) {
-                                                jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
-                                            }else{
-                                                jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", true, undefined);
-                                            }
-                                            res.end(jsonString);
-                                        });
-
-
-                                        //{ $addToSet :{user_scopes : req.body}}
-
-
-
-
-
+                            if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
+                                 /*
+                                       assignUser.user_scopes.push(req.body);
+                                       assignUser.user_scopes = UniqueObjectArray(assignUser.user_scopes,"scope");
+                                       User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},assignUser, function(err, rUsers) {
+                                           if (err) {
+                                               jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
+                                           }else{
+                                               jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
+                                           }
+                                           res.end(jsonString);
+                                       });
+                                       */
+                                User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ $addToSet :{user_scopes : req.body}}, function(err, rUsers) {
+                                    if (err) {
+                                        jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
                                     }else{
-                                        jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
-                                        res.end(jsonString);
+                                        jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", true, undefined);
                                     }
-                                }
-                            });
+                                    res.end(jsonString);
+                                });
+                                //{ $addToSet :{user_scopes : req.body}}
+                            }else{
+                                jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
+                                res.end(jsonString);
+                            }
                         }
                     });
                 }
@@ -923,93 +903,86 @@ function AddUserAppScopes(req, res){
             jsonString = messageFormatter.FormatMessage(err, "Validate Organisation Failed", false, undefined);
             res.end(jsonString);
         }else{
-            VPackage.findOne({packageName: req.params.packageName}, function(err, vPackage) {
+
+            Console.findOne({consoleName: req.params.consoleName}, function(err, appConsole) {
                 if (err) {
-                    jsonString = messageFormatter.FormatMessage(err, "Validate Package Failed", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(err, "Validate Console Failed", false, undefined);
                     res.end(jsonString);
                 }else{
-                    Console.findOne({consoleName: req.params.consoleName}, function(err, appConsole) {
+                    User.findOne({username: adminUserName, company:company, tenant: tenant}, function(err, adminUser) {
                         if (err) {
-                            jsonString = messageFormatter.FormatMessage(err, "Validate Console Failed", false, undefined);
+                            jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
                             res.end(jsonString);
-                        }else{
-                            User.findOne({username: adminUserName, company:company, tenant: tenant}, function(err, adminUser) {
+                        } else {
+                            User.findOne({username: req.params.username,company: company, tenant: tenant}, function(err, assignUser) {
                                 if (err) {
-                                    jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
+                                    jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
                                     res.end(jsonString);
                                 } else {
-                                    User.findOne({username: req.params.username,company: company, tenant: tenant}, function(err, assignUser) {
-                                        if (err) {
-                                            jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
-                                            res.end(jsonString);
-                                        } else {
-                                            if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
-                                                if(appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1){
-                                                    var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
-                                                    //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
-                                                    if(consoleAccessLimitObj) {
-                                                        var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction.scope);
-                                                        var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
-                                                        if(consoleScope){
-                                                            consoleScope.menus.push(req.body);
-                                                            consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
-                                                        }else{
-                                                            assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: [req.body]});
-                                                        }
-
-                                                        if(userScope){
-                                                            if(userScope.read == false && req.body.menuAction.read == true){
-                                                                userScope.read = true;
-                                                            }
-                                                            if(userScope.write == false && req.body.menuAction.write == true){
-                                                                userScope.write = true;
-                                                            }
-                                                            if(userScope.delete == false && req.body.menuAction.delete == true){
-                                                                userScope.delete = true;
-                                                            }
-                                                        }else{
-                                                            assignUser.user_scopes.push(req.body.menuAction);
-                                                        }
-                                                        User.findOneAndUpdate({
-                                                            username: req.params.username,
-                                                            company: company,
-                                                            tenant: tenant
-                                                        }, assignUser, function (err, rUser) {
+                                    if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
+                                        if(appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1){
+                                            var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
+                                            //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
+                                            if(consoleAccessLimitObj) {
+                                                var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction.scope);
+                                                var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
+                                                if(consoleScope){
+                                                    consoleScope.menus.push(req.body);
+                                                    consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
+                                                }else{
+                                                    assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: [req.body]});
+                                                }
+                                                if(userScope){
+                                                    if(userScope.read == false && req.body.menuAction.read == true){
+                                                        userScope.read = true;
+                                                    }
+                                                    if(userScope.write == false && req.body.menuAction.write == true){
+                                                        userScope.write = true;
+                                                    }
+                                                    if(userScope.delete == false && req.body.menuAction.delete == true){
+                                                        userScope.delete = true;
+                                                    }
+                                                }else{
+                                                    assignUser.user_scopes.push(req.body.menuAction);
+                                                }
+                                                User.findOneAndUpdate({
+                                                    username: req.params.username,
+                                                    company: company,
+                                                    tenant: tenant
+                                                }, assignUser, function (err, rUser) {
+                                                    if (err) {
+                                                        jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
+                                                    } else {
+                                                        jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, undefined);
+                                                        consoleAccessLimitObj.currentAccess.push(assignUser.username);
+                                                        consoleAccessLimitObj.currentAccess = UniqueArray(consoleAccessLimitObj.currentAccess);
+                                                        Org.findOneAndUpdate({
+                                                            tenant: tenant,
+                                                            id: company
+                                                        }, org, function (err, rOrg) {
                                                             if (err) {
                                                                 jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
                                                             } else {
                                                                 jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, undefined);
-                                                                consoleAccessLimitObj.currentAccess.push(assignUser.username);
-                                                                consoleAccessLimitObj.currentAccess = UniqueArray(consoleAccessLimitObj.currentAccess);
-                                                                Org.findOneAndUpdate({
-                                                                    tenant: tenant,
-                                                                    id: company
-                                                                }, org, function (err, rOrg) {
-                                                                    if (err) {
-                                                                        jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
-                                                                    } else {
-                                                                        jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, undefined);
-                                                                    }
-                                                                    console.log(jsonString);
-                                                                });
                                                             }
-                                                            res.end(jsonString);
+                                                            console.log(jsonString);
                                                         });
-                                                    }else{
-                                                        //jsonString = messageFormatter.FormatMessage(err, "Access Denied, Console Access Limit Exceeded", false, undefined);
-                                                        jsonString = messageFormatter.FormatMessage(err, "Access Denied, No Console Access Limit Found", false, undefined);
-                                                        res.end(jsonString);
                                                     }
-                                                }else{
-                                                    jsonString = messageFormatter.FormatMessage(err, "Access Denied, No user permissions", false, undefined);
                                                     res.end(jsonString);
-                                                }
+                                                });
                                             }else{
-                                                jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
+                                                //jsonString = messageFormatter.FormatMessage(err, "Access Denied, Console Access Limit Exceeded", false, undefined);
+                                                jsonString = messageFormatter.FormatMessage(err, "Access Denied, No Console Access Limit Found", false, undefined);
                                                 res.end(jsonString);
                                             }
+                                        }else{
+                                            jsonString = messageFormatter.FormatMessage(err, "Access Denied, No user permissions", false, undefined);
+                                            res.end(jsonString);
                                         }
-                                    });
+                                    }else{
+                                        jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
+                                        res.end(jsonString);
+                                    }
                                 }
                             });
                         }
@@ -1024,26 +997,61 @@ function RemoveUserAppScopes(req, res){
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
+    var adminUserName = req.user.iss;
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pull": { "client_scopes": {"menuItem":req.params.scope} } }, function(err, users) {
+    User.findOne({username: adminUserName, company:company, tenant: tenant}, function(err, adminUser) {
         if (err) {
-
-            jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
-
-
-        }else{
-
-            jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
-
+            jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
+            res.end(jsonString);
+        } else {
+            User.findOne({
+                $and: [{"client_scopes.consoleName": req.params.consoleName}, {
+                    username: req.params.username,
+                    company: company,
+                    tenant: tenant
+                }]
+            }, function (err, user) {
+                if(err){
+                    jsonString = messageFormatter.FormatMessage(err, "Validate Assigned User Failed", false, undefined);
+                    res.end(jsonString);
+                }else {
+                    if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin") {
+                        for (var i in user.client_scopes) {
+                            var cScope = user.client_scopes[i];
+                            if (cScope.consoleName == req.params.consoleName) {
+                                for (var j in cScope.menus) {
+                                    var menu = cScope.menus[j];
+                                    if (menu.menuItem == req.params.navigation) {
+                                        cScope.menus.splice(j, 1);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        User.findOneAndUpdate({
+                            $and: [{"client_scopes.consoleName": req.params.consoleName}, {
+                                username: req.params.username,
+                                company: company,
+                                tenant: tenant
+                            }]
+                        }, user, function (err, users) {
+                            if (err) {
+                                jsonString = messageFormatter.FormatMessage(err, "Remove Navigation scope Failed", false, undefined);
+                            } else {
+                                jsonString = messageFormatter.FormatMessage(undefined, "Remove Navigation successfull", false, undefined);
+                            }
+                            res.end(jsonString);
+                        });
+                    }else {
+                        jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
+                        res.end(jsonString);
+                    }
+                }
+            });
         }
-
-        res.end(jsonString);
-
-
     });
-
 }
 
 function GetUserMeta(req, res){
