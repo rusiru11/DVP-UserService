@@ -928,7 +928,22 @@ function AddUserAppScopes(req, res){
                                                 if(consoleScope){
                                                     var menuItem = FilterObjFromArray(consoleScope.menus,"menuItem",req.body.menuItem);
                                                     if(menuItem){
-                                                        menuItem = req.body;
+                                                        for(var j in menuItem.menuAction){
+                                                            var menuAction = FilterObjFromArray(menuItem.menuAction, "scope", menuItem.menuAction[j].scope);
+                                                            if(menuAction){
+                                                                if(menuAction.read == false && req.body.menuAction[j].read == true){
+                                                                    menuAction.read = true;
+                                                                }
+                                                                if(menuAction.write == false && req.body.menuAction[j].write == true){
+                                                                    menuAction.write = true;
+                                                                }
+                                                                if(menuAction.delete == false && req.body.menuAction[j].delete == true){
+                                                                    menuAction.delete = true;
+                                                                }
+                                                            }else{
+                                                                assignUser.user_scopes.push(req.body.menuAction);
+                                                            }
+                                                        }
                                                     }else {
                                                         consoleScope.menus.push(req.body);
                                                         consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
@@ -939,13 +954,13 @@ function AddUserAppScopes(req, res){
                                                 for(var i in req.body.menuAction){
                                                     var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction[i].scope);
                                                     if(userScope){
-                                                        if(userScope.read == false && req.body.menuAction.read == true){
+                                                        if(userScope.read == false && req.body.menuAction[i].read == true){
                                                             userScope.read = true;
                                                         }
-                                                        if(userScope.write == false && req.body.menuAction.write == true){
+                                                        if(userScope.write == false && req.body.menuAction[i].write == true){
                                                             userScope.write = true;
                                                         }
-                                                        if(userScope.delete == false && req.body.menuAction.delete == true){
+                                                        if(userScope.delete == false && req.body.menuAction[i].delete == true){
                                                             userScope.delete = true;
                                                         }
                                                     }else{
