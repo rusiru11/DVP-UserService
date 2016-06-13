@@ -130,7 +130,6 @@ server.grant(oauth2orize.grant.token(function (client, user, ares,reqObj, done) 
     var accesstoken = accessToken({
 
         jti: jti,
-        token: token,
         userId: user.id,
         clientId: client.id,
         scope: reqObj.scope,
@@ -208,7 +207,6 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
 
                 var accesstoken = accessToken({
 
-                    token: token,
                     jti: jti,
                     userId: authCode.userId,
                     clientId: authCode.clientId,
@@ -385,7 +383,7 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
 
         var accesstoken = accessToken({
 
-            token: token,
+
             userId: user.id,
             clientId: client.id,
             jti: jti,
@@ -436,7 +434,7 @@ server.exchange(oauth2orize.exchange.clientCredentials(function (client, scope, 
 
     var accesstoken = accessToken({
 
-        token: token,
+
         userId: -1,
         clientId: client.id,
         scope: scope,
@@ -517,7 +515,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
 
             var accesstoken = accessToken({
 
-                token: token,
+
                 userId: refToken.userId,
                 clientId: client.id,
                 jti: jti,
