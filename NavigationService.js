@@ -65,7 +65,10 @@ function GetAllConsoles(req, res){
                     var newResourceScopes = [];
                     for(var j in navigation.resources){
                         var resource = navigation.resources[j];
-                        newResourceScopes.push(resource.scopes);
+                        for(var k in resource.scopes){
+                            var scope = resource.scopes[k];
+                            newResourceScopes.push(scope);
+                        }
                     }
                     newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
                 }
@@ -96,7 +99,10 @@ function GetAllConsolesByUserRole(req, res){
                     var newResourceScopes = [];
                     for(var j in navigation.resources){
                         var resource = navigation.resources[j];
-                        newResourceScopes.push(resource.scopes);
+                        for(var k in resource.scopes){
+                            var scope = resource.scopes[k];
+                            newResourceScopes.push(scope);
+                        }
                     }
                     newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
                 }
@@ -124,12 +130,15 @@ function GetConsole(req, res){
                 var newResourceScopes = [];
                 for(var j in navigation.resources){
                     var resource = navigation.resources[j];
-                    newResourceScopes.push(resource.scopes);
+                    for(var k in resource.scopes){
+                        var scope = resource.scopes[k];
+                        newResourceScopes.push(scope);
+                    }
                 }
                 newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
             }
             newResult.consoleNavigation = newNavigation;
-            jsonString = messageFormatter.FormatMessage(err, "Get Console Successful", true, console);
+            jsonString = messageFormatter.FormatMessage(err, "Get Console Successful", true, newResult);
         }
         res.end(jsonString);
     });
