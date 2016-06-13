@@ -9,6 +9,7 @@ var Schema = mongoose.Schema;
 var contactSchema = new Schema({
     contact:String,
     type:String,
+    display: String,
     verified: Boolean
 }, {_id: false});
 
@@ -64,7 +65,7 @@ var userSchema = new Schema({
     phoneNumber: { type: contactSchema, required: true },
     email: { type: contactSchema, required: true },
     veeryaccount: contactSchema,
-    LandPhone: contactSchema,
+    landnumber: contactSchema,
     facebook: contactSchema,
     twitter: contactSchema,
     linkedin: contactSchema,

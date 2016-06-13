@@ -325,6 +325,50 @@ function GetMyrProfile(req, res){
 
 }
 
+function GetUserProfileByResourceId(req, res){
+
+
+    logger.debug("DVP-UserService.GetUserProfileByResourceId Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+
+    var jsonString;
+
+
+
+    User.findOne({resourceid: req.params.resourceid ,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+        }else{
+
+
+
+            var userObj = users.toJSON();
+
+            if(userObj){
+
+                if (userObj.password) {
+
+                    delete userObj.password;
+                }
+
+            }
+
+
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObj);
+
+        }
+
+        res.end(jsonString);
+    });
+
+
+}
+
 function GetUserProfileByContact(req, res){
 
 
@@ -489,6 +533,104 @@ function UpdateUserProfile(req, res) {
 
 }
 
+
+
+
+
+
+function GetARDSFriendlyContactObject(req,res){
+
+
+    logger.debug("DVP-UserService.GetARDSFriendlyContactObject Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var contact = req.params.contact;
+    var jsonString;
+    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+        }else{
+
+
+
+            var contactObj = {};
+
+            /*
+
+             {"ContactName": "bob","Domain": "159.203.160.47","Extention":2002,"ContactType": "PRIVATE"}
+
+
+             var contactSchema = new Schema({
+             contact:String,
+             type:String,
+             display: String,
+             verified: Boolean
+             }, {_id: false});
+
+
+
+             */
+
+
+            ////////////////////////////////////////////
+            if(users) {
+
+
+                var contactinfo = users[contact];
+
+                if(!contactinfo){
+
+                }
+
+
+                if(contactinfo){
+
+
+                    if(contactinfo.display) {
+                        contactObj.ContactName = contactinfo.display;
+                    }else{
+
+                        contactObj.ContactName = contactinfo.contact;
+
+                    }
+
+                    var infoArr = contactinfo.contact.split("@");
+                    if(infoArr.length > 1){
+
+                        contactObj.Extention = infoArr[0];
+                        contactObj.Domain =  infoArr[1];
+                    }else{
+
+                        contactObj.Extention = contactinfo.contact;
+                    }
+
+                    contactObj.type = "PUBLIC";
+
+
+                    if(contact == "veeryaccount")
+                        contactObj.type = "PRIVATE";
+
+                }
+
+
+            }
+
+            ///////////////////////////////////////////
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, contactObj);
+
+        }
+
+        res.end(jsonString);
+    });
+
+
+}
+
+
 function UpdateUserProfileEmail(req, res) {
 
     logger.debug("DVP-UserService.UpdateUser Internal method ");
@@ -590,6 +732,32 @@ function UpdateUserProfilePhone(req, res) {
         } else {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User phone number Successful", true, undefined);
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+function SetUserProfileResoureId(req, res){
+
+    logger.debug("DVP-UserService.UpdateUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+    req.body.updated_at = Date.now();
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { resourceid : req.params.resourceid}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User resource id Failed", false, undefined);
+
+        } else {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User resource id Successful", true, undefined);
 
         }
 
@@ -1006,10 +1174,11 @@ function RemoveUserMetadata(req, res){
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
+    var metakey = req.params.usermeta;
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pull": { "user_meta": {"scope":req.params.usermeta} } }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "user_meta" : {} }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Remove user meta Failed", false, undefined);
@@ -1032,10 +1201,11 @@ function RemoveAppMetadata(req, res){
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
+    var metakey = req.params.appmeta;
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pull": { "app_meta": {"scope":req.params.appmeta} } }, function(err, users) {
+    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "app_meta" : {} }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update app meta Failed", false, undefined);
@@ -1143,4 +1313,7 @@ module.exports.UpdateUserProfilePhone = UpdateUserProfilePhone;
 module.exports.UpdateUserProfileContact = UpdateUserProfileContact;
 module.exports.RemoveUserProfileContact = RemoveUserProfileContact;
 module.exports.GetMyrProfile = GetMyrProfile;
+module.exports.SetUserProfileResoureId = SetUserProfileResoureId;
+module.exports.GetUserProfileByResourceId = GetUserProfileByResourceId;
+module.exports.GetARDSFriendlyContactObject = GetARDSFriendlyContactObject;
 
