@@ -72,7 +72,7 @@ function GetAllConsoles(req, res){
                     }
                     newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
                 }
-                newResult.consoleNavigation = newNavigation;
+                newResult.consoleNavigation.push(newNavigation);
                 newConsoles.push(newResult);
             }
             jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, newConsoles);
@@ -106,7 +106,7 @@ function GetAllConsolesByUserRole(req, res){
                     }
                     newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
                 }
-                newResult.consoleNavigation = newNavigation;
+                newResult.consoleNavigation.push(newNavigation);
                 newConsoles.push(newResult);
             }
             jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, newConsoles);
