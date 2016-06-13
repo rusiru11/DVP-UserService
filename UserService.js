@@ -926,8 +926,13 @@ function AddUserAppScopes(req, res){
                                             if(consoleAccessLimitObj) {
                                                 var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
                                                 if(consoleScope){
-                                                    consoleScope.menus.push(req.body);
-                                                    consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
+                                                    var menuItem = FilterObjFromArray(consoleScope.menus,"menuItem",req.body.menuItem);
+                                                    if(menuItem){
+                                                        menuItem = req.body;
+                                                    }else {
+                                                        consoleScope.menus.push(req.body);
+                                                        consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
+                                                    }
                                                 }else{
                                                     assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: [req.body]});
                                                 }
