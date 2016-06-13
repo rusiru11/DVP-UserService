@@ -177,8 +177,7 @@ function CreateUser(req, res){
                                 firstname: req.body.firstname,
                                 lastname: req.body.lastname,
                                 locale: req.body.locale,
-
-
+                                ssn: req.body.ssn,
                                 address:{
                                     zipcode: req.body.address.zipcode,
                                     number: req.body.address.number,
@@ -282,9 +281,6 @@ function UpdateUser(req, res){
 
 }
 
-
-
-
 function GetMyrProfile(req, res){
 
 
@@ -328,10 +324,6 @@ function GetMyrProfile(req, res){
 
 
 }
-
-
-
-
 
 function GetUserProfileByContact(req, res){
 

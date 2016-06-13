@@ -59,7 +59,7 @@ var userSchema = new Schema({
     lastname: { type: String, required: true },
     locale: String,
     username: { type: String, required: true, unique: true },
-    SSN: { type: String, required: true, unique: true },
+    ssn: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     phoneNumber: { type: contactSchema, required: true },
     email: { type: contactSchema, required: true },
@@ -69,6 +69,7 @@ var userSchema = new Schema({
     twitter: contactSchema,
     linkedin: contactSchema,
     googleplus: contactSchema,
+    resourceid: { type: String, unique: true }
     company: { type: Number, required: true },
     tenant: { type: Number, required: true },
     contacts: [contactSchema],
