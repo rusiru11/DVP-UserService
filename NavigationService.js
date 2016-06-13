@@ -58,7 +58,7 @@ function GetAllConsoles(req, res){
             var newConsoles =[];
             for(var a in allConsole) {
                 var console1 = allConsole[a];
-                var newResult = {consoleName: console1.consoleName};
+                var newResult = {consoleName: console1.consoleName, consoleNavigation: []};
                 for(var i in console1.consoleNavigation){
                     var navigation = console1.consoleNavigation[i];
                     var newNavigation = {navigationName: navigation.navigationName, navigationStatus: navigation.navigationStatus};
@@ -71,8 +71,8 @@ function GetAllConsoles(req, res){
                         }
                     }
                     newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
+                    newResult.consoleNavigation.push(newNavigation);
                 }
-                newResult.consoleNavigation.push(newNavigation);
                 newConsoles.push(newResult);
             }
             jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, newConsoles);
@@ -92,7 +92,7 @@ function GetAllConsolesByUserRole(req, res){
             var newConsoles =[];
             for(var a in allConsole) {
                 var console1 = allConsole[a];
-                var newResult = {consoleName: console1.consoleName};
+                var newResult = {consoleName: console1.consoleName, consoleNavigation: []};
                 for(var i in console1.consoleNavigation){
                     var navigation = console1.consoleNavigation[i];
                     var newNavigation = {navigationName: navigation.navigationName, navigationStatus: navigation.navigationStatus};
@@ -105,8 +105,8 @@ function GetAllConsolesByUserRole(req, res){
                         }
                     }
                     newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
+                    newResult.consoleNavigation.push(newNavigation);
                 }
-                newResult.consoleNavigation.push(newNavigation);
                 newConsoles.push(newResult);
             }
             jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, newConsoles);
