@@ -838,6 +838,196 @@ function UniqueObjectArray(array, field) {
     return array;
 }
 
+function AssignConsoleToUser(req,res){
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var adminUserName = req.user.iss;
+    var jsonString;
+    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Validate Organisation Failed", false, undefined);
+            res.end(jsonString);
+        }else{
+
+            Console.findOne({consoleName: req.params.consoleName}, function(err, appConsole) {
+                if (err) {
+                    jsonString = messageFormatter.FormatMessage(err, "Validate Console Failed", false, undefined);
+                    res.end(jsonString);
+                }else{
+                    User.findOne({username: adminUserName, company:company, tenant: tenant}, function(err, adminUser) {
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
+                            res.end(jsonString);
+                        } else {
+                            User.findOne({username: req.params.username,company: company, tenant: tenant}, function(err, assignUser) {
+                                if (err) {
+                                    jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
+                                    res.end(jsonString);
+                                } else {
+                                    if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
+                                        if(appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1){
+                                            var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
+                                            //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
+                                            if(consoleAccessLimitObj) {
+                                                var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
+                                                if(consoleScope){
+                                                    jsonString = messageFormatter.FormatMessage(err, "Console Already Added", false, undefined);
+                                                    res.end(jsonString);
+                                                }else{
+                                                    assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: []});
+                                                }
+
+
+                                                User.findOneAndUpdate({
+                                                    username: req.params.username,
+                                                    company: company,
+                                                    tenant: tenant
+                                                }, assignUser, function (err, rUser) {
+                                                    if (err) {
+                                                        jsonString = messageFormatter.FormatMessage(err, "Assign Console Failed", false, undefined);
+                                                    } else {
+                                                        jsonString = messageFormatter.FormatMessage(undefined, "Assign Console successfull", true, undefined);
+                                                        //consoleAccessLimitObj.currentAccess.push(assignUser.username);
+                                                        //consoleAccessLimitObj.currentAccess = UniqueArray(consoleAccessLimitObj.currentAccess);
+                                                        //Org.findOneAndUpdate({
+                                                        //    tenant: tenant,
+                                                        //    id: company
+                                                        //}, org, function (err, rOrg) {
+                                                        //    if (err) {
+                                                        //        jsonString = messageFormatter.FormatMessage(err, "Assign Console Failed", false, undefined);
+                                                        //    } else {
+                                                        //        jsonString = messageFormatter.FormatMessage(undefined, "Assign Console successfully", true, undefined);
+                                                        //    }
+                                                        //    console.log(jsonString);
+                                                        //});
+                                                    }
+                                                    res.end(jsonString);
+                                                });
+                                            }else{
+                                                //jsonString = messageFormatter.FormatMessage(err, "Access Denied, Console Access Limit Exceeded", false, undefined);
+                                                jsonString = messageFormatter.FormatMessage(err, "Access Denied, No Console Access Limit Found", false, undefined);
+                                                res.end(jsonString);
+                                            }
+                                        }else{
+                                            jsonString = messageFormatter.FormatMessage(err, "Access Denied, No user permissions", false, undefined);
+                                            res.end(jsonString);
+                                        }
+                                    }else{
+                                        jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
+                                        res.end(jsonString);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    });
+}
+
+function RemoveConsoleFromUser(req,res){
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var adminUserName = req.user.iss;
+    var jsonString;
+    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Validate Organisation Failed", false, undefined);
+            res.end(jsonString);
+        }else{
+
+            Console.findOne({consoleName: req.params.consoleName}, function(err, appConsole) {
+                if (err) {
+                    jsonString = messageFormatter.FormatMessage(err, "Validate Console Failed", false, undefined);
+                    res.end(jsonString);
+                }else{
+                    User.findOne({username: adminUserName, company:company, tenant: tenant}, function(err, adminUser) {
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
+                            res.end(jsonString);
+                        } else {
+                            User.findOne({username: req.params.username,company: company, tenant: tenant}, function(err, assignUser) {
+                                if (err) {
+                                    jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
+                                    res.end(jsonString);
+                                } else {
+                                    if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
+                                        if(appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1){
+                                            var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
+                                            //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
+                                            if(consoleAccessLimitObj) {
+                                                var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
+                                                if(consoleScope){
+                                                    for(var i in assignUser.client_scopes) {
+                                                        var cs = assignUser.client_scopes[i];
+                                                        if(cs.consoleName == appConsole.consoleName) {
+                                                            var index = parseInt(i);
+                                                            //for(var k in cs.)
+                                                            assignUser.client_scopes.splice(index, 1);
+                                                            break;
+                                                        }
+                                                    }
+                                                }else{
+                                                    jsonString = messageFormatter.FormatMessage(err, "Console Not Found", false, undefined);
+                                                    res.end(jsonString);
+                                                }
+
+
+                                                User.findOneAndUpdate({
+                                                    username: req.params.username,
+                                                    company: company,
+                                                    tenant: tenant
+                                                }, assignUser, function (err, rUser) {
+                                                    if (err) {
+                                                        jsonString = messageFormatter.FormatMessage(err, "Remove Console Failed", false, undefined);
+                                                    } else {
+                                                        jsonString = messageFormatter.FormatMessage(undefined, "Remove Console successfull", true, undefined);
+                                                        //for(var j in consoleAccessLimitObj.currentAccess) {
+                                                        //    var cAccess = consoleAccessLimitObj.currentAccess[j];
+                                                        //    if(cAccess == assignUser.username) {
+                                                        //        var index = parseInt(j);
+                                                        //        consoleAccessLimitObj.currentAccess.splice(index, 1);
+                                                        //        break;
+                                                        //    }
+                                                        //}
+                                                        //Org.findOneAndUpdate({
+                                                        //    tenant: tenant,
+                                                        //    id: company
+                                                        //}, org, function (err, rOrg) {
+                                                        //    if (err) {
+                                                        //        jsonString = messageFormatter.FormatMessage(err, "Remove Console Failed", false, undefined);
+                                                        //    } else {
+                                                        //        jsonString = messageFormatter.FormatMessage(undefined, "Remove Console successfully", true, undefined);
+                                                        //    }
+                                                        //    console.log(jsonString);
+                                                        //});
+                                                    }
+                                                    res.end(jsonString);
+                                                });
+                                            }else{
+                                                //jsonString = messageFormatter.FormatMessage(err, "Access Denied, Console Access Limit Exceeded", false, undefined);
+                                                jsonString = messageFormatter.FormatMessage(err, "Access Denied, No Console Access Limit Found", false, undefined);
+                                                res.end(jsonString);
+                                            }
+                                        }else{
+                                            jsonString = messageFormatter.FormatMessage(err, "Access Denied, No user permissions", false, undefined);
+                                            res.end(jsonString);
+                                        }
+                                    }else{
+                                        jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
+                                        res.end(jsonString);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    });
+}
+
 function AddUserScopes(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -958,27 +1148,38 @@ function AddUserAppScopes(req, res){
                                             var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
                                             //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
                                             if(consoleAccessLimitObj) {
-                                                var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction.scope);
                                                 var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
                                                 if(consoleScope){
-                                                    consoleScope.menus.push(req.body);
-                                                    consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
+                                                    var menuItem = FilterObjFromArray(consoleScope.menus,"menuItem",req.body.menuItem);
+                                                    if(menuItem){
+                                                        for(var j in menuItem.menuAction){
+                                                            var menuAction = FilterObjFromArray(menuItem.menuAction, "scope", menuItem.menuAction[j].scope);
+                                                            if(menuAction){
+                                                                menuAction.read = req.body.menuAction[j].read;
+                                                                menuAction.write = req.body.menuAction[j].write;
+                                                                menuAction.delete = req.body.menuAction[j].delete;
+                                                            }else{
+                                                                assignUser.user_scopes.push(req.body.menuAction);
+                                                            }
+                                                        }
+                                                    }else {
+                                                        consoleScope.menus.push(req.body);
+                                                        consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
+                                                    }
                                                 }else{
                                                     assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: [req.body]});
                                                 }
-                                                if(userScope){
-                                                    if(userScope.read == false && req.body.menuAction.read == true){
-                                                        userScope.read = true;
+                                                for(var i in req.body.menuAction){
+                                                    var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction[i].scope);
+                                                    if(userScope){
+                                                        userScope.read = req.body.menuAction[i].read;
+                                                        userScope.write = req.body.menuAction[i].write;
+                                                        userScope.delete = req.body.menuAction[i].delete;
+                                                    }else{
+                                                        assignUser.user_scopes.push(req.body.menuAction[i]);
                                                     }
-                                                    if(userScope.write == false && req.body.menuAction.write == true){
-                                                        userScope.write = true;
-                                                    }
-                                                    if(userScope.delete == false && req.body.menuAction.delete == true){
-                                                        userScope.delete = true;
-                                                    }
-                                                }else{
-                                                    assignUser.user_scopes.push(req.body.menuAction);
                                                 }
+
                                                 User.findOneAndUpdate({
                                                     username: req.params.username,
                                                     company: company,
@@ -987,20 +1188,20 @@ function AddUserAppScopes(req, res){
                                                     if (err) {
                                                         jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
                                                     } else {
-                                                        jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, undefined);
-                                                        consoleAccessLimitObj.currentAccess.push(assignUser.username);
-                                                        consoleAccessLimitObj.currentAccess = UniqueArray(consoleAccessLimitObj.currentAccess);
-                                                        Org.findOneAndUpdate({
-                                                            tenant: tenant,
-                                                            id: company
-                                                        }, org, function (err, rOrg) {
-                                                            if (err) {
-                                                                jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
-                                                            } else {
-                                                                jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, undefined);
-                                                            }
-                                                            console.log(jsonString);
-                                                        });
+                                                        jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", true, undefined);
+                                                        //consoleAccessLimitObj.currentAccess.push(assignUser.username);
+                                                        //consoleAccessLimitObj.currentAccess = UniqueArray(consoleAccessLimitObj.currentAccess);
+                                                        //Org.findOneAndUpdate({
+                                                        //    tenant: tenant,
+                                                        //    id: company
+                                                        //}, org, function (err, rOrg) {
+                                                        //    if (err) {
+                                                        //        jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
+                                                        //    } else {
+                                                        //        jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", false, undefined);
+                                                        //    }
+                                                        //    console.log(jsonString);
+                                                        //});
                                                     }
                                                     res.end(jsonString);
                                                 });
@@ -1074,7 +1275,7 @@ function RemoveUserAppScopes(req, res){
                             if (err) {
                                 jsonString = messageFormatter.FormatMessage(err, "Remove Navigation scope Failed", false, undefined);
                             } else {
-                                jsonString = messageFormatter.FormatMessage(undefined, "Remove Navigation successfull", false, undefined);
+                                jsonString = messageFormatter.FormatMessage(undefined, "Remove Navigation successfull", true, undefined);
                             }
                             res.end(jsonString);
                         });
@@ -1359,4 +1560,6 @@ module.exports.SetUserProfileResourceId = SetUserProfileResourceId;
 module.exports.GetUserProfileByResourceId = GetUserProfileByResourceId;
 module.exports.GetARDSFriendlyContactObject = GetARDSFriendlyContactObject;
 module.exports.UserExsists = UserExsists;
+module.exports.AssignConsoleToUser = AssignConsoleToUser;
+module.exports.RemoveConsoleFromUser = RemoveConsoleFromUser;
 
