@@ -19,30 +19,29 @@ function GetUsers(req, res){
 
             jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
-        }else{
+        }else {
 
+            if (users) {
+                var userObjectArray = [];
+                users.forEach(function (user) {
 
+                    var userObj;
 
+                    userObj = user.toJSON();
+                    if (userObj.password) {
 
+                        delete userObj.password;
+                        userObjectArray.push(userObj);
+                    }
+                });
 
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, userObjectArray);
 
+            }else{
 
+                jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
 
-            var userObjectArray = [];
-            users.forEach(function(user){
-
-                var userObj;
-
-                userObj = user.toJSON();
-                if (userObj.password) {
-
-                    delete userObj.password;
-                    userObjectArray.push(userObj);
-                }
-            });
-
-            jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, userObjectArray);
-
+            }
         }
 
         res.end(jsonString);
@@ -69,20 +68,21 @@ function GetUser(req, res){
 
         }else{
 
-            var userObj;
+            if(users) {
+                var userObj;
 
-            userObj = users.toJSON();
+                userObj = users.toJSON();
 
-            if(userObj){
+                if (userObj) {
 
-                if (userObj.password) {
+                    if (userObj.password) {
 
-                    delete userObj.password;
+                        delete userObj.password;
+                    }
+
                 }
 
             }
-
-
 
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObj);
@@ -340,18 +340,19 @@ function GetMyrProfile(req, res){
 
 
 
-
             var userObj;
+            if(users) {
 
-            userObj = users.toJSON();
 
-            if (userObj.password) {
+                userObj = users.toJSON();
 
-                delete userObj.password;
+                if (userObj.password) {
+
+                    delete userObj.password;
+                }
+
+
             }
-
-
-
 
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObj);
@@ -385,15 +386,19 @@ function GetUserProfileByResourceId(req, res){
 
 
 
-            var userObj = users.toJSON();
+            var userObj;
 
-            if(userObj){
+            if(users) {
+                userObj = users.toJSON();
 
-                if (userObj.password) {
+                if (userObj) {
 
-                    delete userObj.password;
+                    if (userObj.password) {
+
+                        delete userObj.password;
+                    }
+
                 }
-
             }
 
 
@@ -431,19 +436,20 @@ function GetUserProfileByContact(req, res){
 
 
             var userObjectArray = [];
-            users.forEach(function(user){
+            if(users) {
+                users.forEach(function (user) {
 
-                var userObj;
+                    var userObj;
 
-                userObj = user.toJSON();
-                if (userObj.password) {
+                    userObj = user.toJSON();
+                    if (userObj.password) {
 
-                    delete userObj.password;
-                    userObjectArray.push(userObj);
-                }
-            });
+                        delete userObj.password;
+                        userObjectArray.push(userObj);
+                    }
+                });
 
-
+            }
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObjectArray);
 
@@ -472,15 +478,19 @@ function GetUserProfile(req, res){
 
 
 
-            var userObj = users.toJSON();
+            var userObj ;
 
-            if(userObj){
+            if(users) {
+                userObj = users.toJSON();
 
-                if (userObj.password) {
+                if (userObj) {
 
-                    delete userObj.password;
+                    if (userObj.password) {
+
+                        delete userObj.password;
+                    }
+
                 }
-
             }
 
 
@@ -1298,13 +1308,19 @@ function GetUserMeta(req, res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
     User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
-        if (err) {
+        if (err ) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.user_meta);
+            if(users) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.user_meta);
+            }else{
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, undefined);
+
+            }
 
         }
 
@@ -1335,7 +1351,15 @@ function GetAppMeta(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.app_meta);
+            if(users){
+
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.app_meta);
+            }
+            else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
+            }
+
 
         }
 
@@ -1482,19 +1506,18 @@ function GetUserScopes(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User scope Successful", true, users.user_scopes);
+            if(users) {
+                jsonString = messageFormatter.FormatMessage(err, "Get User scope Successful", true, users.user_scopes);
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User scope Failed", false, undefined);
+
+            }
 
         }
 
         res.end(jsonString);
     });
-
-
-
-
-
-
-
 
 }
 
@@ -1513,19 +1536,17 @@ function GetAppScopes(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User app scope Successful", true, users.client_scopes);
+            if(users) {
+                jsonString = messageFormatter.FormatMessage(err, "Get User app scope Successful", true, users.client_scopes);
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
+            }
 
         }
 
         res.end(jsonString);
     });
-
-
-
-
-
-
-
 
 }
 
