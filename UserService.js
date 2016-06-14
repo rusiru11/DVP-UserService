@@ -101,6 +101,45 @@ function GetUser(req, res){
 
 }
 
+function UserExsists(req, res){
+
+
+    logger.debug("DVP-UserService.UserExsists Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+        }else{
+
+            var userObj = false;
+           if(users)
+           {
+               userObj = true;
+
+           }
+
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObj);
+
+        }
+
+        res.end(jsonString);
+    });
+
+
+
+
+
+
+
+
+}
+
 function DeleteUser(req,res){
 
 
@@ -533,11 +572,6 @@ function UpdateUserProfile(req, res) {
 
 }
 
-
-
-
-
-
 function GetARDSFriendlyContactObject(req,res){
 
 
@@ -582,6 +616,13 @@ function GetARDSFriendlyContactObject(req,res){
                 var contactinfo = users[contact];
 
                 if(!contactinfo){
+
+
+                    contactinfo = users.contacts.filter(function (item) {
+                        return item.contact == contact;
+                    });
+
+
 
                 }
 
@@ -630,7 +671,6 @@ function GetARDSFriendlyContactObject(req,res){
 
 }
 
-
 function UpdateUserProfileEmail(req, res) {
 
     logger.debug("DVP-UserService.UpdateUser Internal method ");
@@ -664,12 +704,6 @@ function UpdateUserProfileContact(req, res) {
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-
-
-
-
-
-
 
     req.body.updated_at = Date.now();
     User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { $addToSet :{contacts : {contact:req.params.contact, type:req.body.type, verified: false}}}, function (err, users) {
@@ -740,7 +774,7 @@ function UpdateUserProfilePhone(req, res) {
 
 }
 
-function SetUserProfileResoureId(req, res){
+function SetUserProfileResourceId(req, res){
 
     logger.debug("DVP-UserService.UpdateUser Internal method ");
 
@@ -1522,9 +1556,10 @@ module.exports.UpdateUserProfilePhone = UpdateUserProfilePhone;
 module.exports.UpdateUserProfileContact = UpdateUserProfileContact;
 module.exports.RemoveUserProfileContact = RemoveUserProfileContact;
 module.exports.GetMyrProfile = GetMyrProfile;
-module.exports.SetUserProfileResoureId = SetUserProfileResoureId;
+module.exports.SetUserProfileResourceId = SetUserProfileResourceId;
 module.exports.GetUserProfileByResourceId = GetUserProfileByResourceId;
 module.exports.GetARDSFriendlyContactObject = GetARDSFriendlyContactObject;
+module.exports.UserExsists = UserExsists;
 module.exports.AssignConsoleToUser = AssignConsoleToUser;
 module.exports.RemoveConsoleFromUser = RemoveConsoleFromUser;
 
