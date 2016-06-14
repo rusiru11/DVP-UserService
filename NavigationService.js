@@ -70,7 +70,7 @@ function GetAllConsoles(req, res){
                             newResourceScopes.push(scope);
                         }
                     }
-                    newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
+                    newNavigation.resources = newResourceScopes;//UniqueObjectArray(newResourceScopes,"scopes");
                     newResult.consoleNavigation.push(newNavigation);
                 }
                 newConsoles.push(newResult);
@@ -104,7 +104,7 @@ function GetAllConsolesByUserRole(req, res){
                             newResourceScopes.push(scope);
                         }
                     }
-                    newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
+                    newNavigation.resources = newResourceScopes//UniqueObjectArray(newResourceScopes,"scopes");
                     newResult.consoleNavigation.push(newNavigation);
                 }
                 newConsoles.push(newResult);
@@ -122,7 +122,7 @@ function GetConsole(req, res){
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
         }else{
-            var newResult = {consoleName: console.consoleName};
+            var newResult = {consoleName: console.consoleName, consoleNavigation:[]};
 
             for(var i in console.consoleNavigation){
                 var navigation = console.consoleNavigation[i];
@@ -135,9 +135,9 @@ function GetConsole(req, res){
                         newResourceScopes.push(scope);
                     }
                 }
-                newNavigation.resources = UniqueObjectArray(newResourceScopes,"scopes");
+                newNavigation.resources = newResourceScopes;//UniqueObjectArray(newResourceScopes,"scopes");
+                newResult.consoleNavigation.push(newNavigation);
             }
-            newResult.consoleNavigation = newNavigation;
             jsonString = messageFormatter.FormatMessage(err, "Get Console Successful", true, newResult);
         }
         res.end(jsonString);
