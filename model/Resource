@@ -3,9 +3,9 @@ var Schema = mongoose.Schema;
 
 
 var scopeSchema = new Schema({
-    scopeName: { type: String, required: true, unique: true },
+    scopeName: String,
     feature: String,
-    actions: { type: [String], unique: true }
+    actions: [String]
 });
 
 var resourceSchema = new Schema({
