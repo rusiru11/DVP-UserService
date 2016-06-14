@@ -7,14 +7,14 @@ var consoleAccessLimitSchema = new Schema({
 });
 
 var scopeSchema = new Schema({
-    scopeName: { type: String, required: true, unique: true },
+    scopeName: String,
     feature: String,
-    actions: { type: [String], unique: true },
+    actions: [String],
     limit: Number
 });
 
 var resourceSchema = new Schema({
-    resourceName: { type: String, required: true, unique: true },
+    resourceName: String,
     scopes: [scopeSchema]
 });
 

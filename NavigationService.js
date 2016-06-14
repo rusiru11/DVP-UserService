@@ -174,7 +174,7 @@ function CreateConsole(req, res){
     logger.debug("DVP-UserService.CreateConsole Internal method ");
     var jsonString;
 
-    var console = Console({
+    var console1 = Console({
         consoleName: req.body.consoleName,
         consoleUserRoles: req.body.consoleUserRoles,
         consoleNavigation: [],
@@ -183,11 +183,11 @@ function CreateConsole(req, res){
 
     });
 
-    console.save(function (err, console) {
+    console1.save(function (err, rConsole1) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Console save failed", false, undefined);
         } else {
-            jsonString = messageFormatter.FormatMessage(undefined, "Console saved successfully", true, console);
+            jsonString = messageFormatter.FormatMessage(undefined, "Console saved successfully", true, rConsole1);
         }
         res.end(jsonString);
     });

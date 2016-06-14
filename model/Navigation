@@ -2,18 +2,18 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var scopeSchema = new Schema({
-    scopeName: { type: String, required: true, unique: true },
+    scopeName: String,
     feature: String,
-    actions: { type: [String], unique: true }
+    actions: [String]
 });
 
 var resourceSchema = new Schema({
-    resourceName: { type: String, required: true, unique: true },
+    resourceName: String,
     scopes: [scopeSchema]
 });
 
 var navigationSchema = new Schema({
-    navigationName: { type: String, required: true, unique: true },
+    navigationName: String,
     navigationStatus: Boolean,
     resources: [resourceSchema],
     created_at: Date,
