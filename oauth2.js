@@ -638,7 +638,14 @@ function GetScopes(user, claims){
 
 
 
-        claims.forEach(function (value) {
+        var profileClaimsFound = claims.filter(function (item, index) {
+
+            claims.splice(index, 1);
+
+            return item.startsWith('profile_');
+        })
+
+        profileClaimsFound.forEach(function (value) {
 
 
             var arr = value.split("_");
@@ -650,7 +657,9 @@ function GetScopes(user, claims){
                 if(action == "profile"){
 
 
-                    if(resource == "passward"){
+                    if(resource == "password"){
+
+                        payload.context[resource] = undefined;
 
 
                     }
@@ -665,9 +674,7 @@ function GetScopes(user, claims){
             }});
 
 
-
-
-                /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
         claims.forEach(function (value) {
@@ -683,6 +690,7 @@ function GetScopes(user, claims){
                 var scopeFound = user.user_scopes.filter(function (item) {
                     return item.scope == resource;
                 })
+
 
                 if (scopeFound.length > 0) {
 
@@ -752,6 +760,8 @@ function GetScopes(user, claims){
 
                     payload.scope.push(myscope);
                 }
+
+
 
             }
         });

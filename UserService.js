@@ -815,7 +815,7 @@ function UpdateMyUserProfile(req, res) {
 
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: userName, company, tenant: tenant}, req.body, function (err, users) {
+    User.findOneAndUpdate({username: userName, company: company, tenant: tenant}, req.body, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
