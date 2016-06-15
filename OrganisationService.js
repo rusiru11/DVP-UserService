@@ -17,6 +17,18 @@ client.on("error", function (err) {
     console.log("Error " + err);
 });
 
+function FilterObjFromArray(itemArray, field, value){
+    var resultObj;
+    for(var i in itemArray){
+        var item = itemArray[i];
+        if(item[field] == value){
+            resultObj = item;
+            break;
+        }
+    }
+    return resultObj;
+}
+
 function UniqueArray(array) {
     var processed = [];
     for (var i=array.length-1; i>=0; i--) {
@@ -157,7 +169,9 @@ function CreateOrganisation(req, res){
             ];
 
             var user = User({
-                name: req.body.owner.name,
+                name: req.body.owner.username,
+                firstname: req.body.owner.firstname,
+                lastname: req.body.owner.lastname,
                 username: req.body.owner.username,
                 password: req.body.owner.password,
                 phoneNumber: {contact: req.body.owner.phone, type: "phone", verified: false},
@@ -488,7 +502,40 @@ function UpdateUser(ownerId, vPackage){
                         user.client_scopes.push(clientScopes[j]);
                     }
 
-                    user.client_scopes = UniqueObjectArray(user.client_scopes,"menuItem");
+                    user.client_scopes = UniqueObjectArray(user.client_scopes,"consoleName");
+                    for(var k in user.client_scopes){
+                        var ucs = user.client_scopes[k];
+                        ucs.menus = UniqueObjectArray(ucs.menus,"menuItem");
+                        for(var l in ucs.menus){
+                            var menu1 = ucs.menus[l];
+                            for(var m in menu1.menuAction){
+                                var menuAction = FilterObjFromArray(user.user_scopes, "scope", menu1.menuAction[m].scope);
+                                if(menuAction){
+                                    if(menu1.menuAction[m].read){
+                                        menuAction.read = menu1.menuAction[m].read;
+                                    }
+                                    if(menu1.menuAction[m].write){
+                                        menuAction.write = menu1.menuAction[m].write;
+                                    }
+                                    if(menu1.menuAction[m].delete){
+                                        menuAction.delete = menu1.menuAction[m].delete;
+                                    }
+                                }else{
+                                    var mAction = {scope:menu1.menuAction[m].scope};
+                                    if(menu1.menuAction[m].read){
+                                        mAction.read = menu1.menuAction[m].read;
+                                    }
+                                    if(menu1.menuAction[m].write){
+                                        mAction.write = menu1.menuAction[m].write;
+                                    }
+                                    if(menu1.menuAction[m].delete){
+                                        mAction.delete = menu1.menuAction[m].delete;
+                                    }
+                                    user.user_scopes.push(mAction);
+                                }
+                            }
+                        }
+                    }
                     user.user_scopes = UniqueObjectArray(user.user_scopes,"scope");
                     User.findOneAndUpdate({username: ownerId}, user, function (err, rUser) {
                         if (err) {
