@@ -342,6 +342,11 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
         if (!user) {
             return done(null, false);
         }
+
+        if(!password){
+
+            return done(null, false);
+        }
         if (password !== user.password) {
             return done(null, false);
         }
@@ -382,7 +387,6 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
 
 
         var accesstoken = accessToken({
-
 
             userId: user.id,
             clientId: client.id,
@@ -599,6 +603,7 @@ function GetScopes(user, claims){
             claims.splice(index, 1);
         }
 
+
         var index = claims.indexOf("app_meta");
 
         if (index > -1) {
@@ -621,7 +626,55 @@ function GetScopes(user, claims){
             claims.splice(index, 1);
         }
 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        var index = claims.indexOf("resourceid");
+
+        if (index > -1) {
+            payload.context.resourceid = user.resourceid;
+            claims.splice(index, 1);
+        }
+
+
+
+
+
+        var profileClaimsFound = claims.filter(function (item, index) {
+
+            claims.splice(index, 1);
+
+            return item.startsWith('profile_');
+        })
+
+        profileClaimsFound.forEach(function (value) {
+
+
+            var arr = value.split("_");
+            if (arr.length > 1) {
+
+                var action = arr[0];
+                var resource = arr[1];
+
+                if(action == "profile"){
+
+
+                    if(resource == "password"){
+
+                        payload.context[resource] = undefined;
+
+
+                    }
+                    else{
+
+                        payload.context[resource] = user[resource];
+
+                    }
+
+                }
+
+            }});
+
+
+       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
         claims.forEach(function (value) {
@@ -637,6 +690,7 @@ function GetScopes(user, claims){
                 var scopeFound = user.user_scopes.filter(function (item) {
                     return item.scope == resource;
                 })
+
 
                 if (scopeFound.length > 0) {
 
@@ -706,6 +760,8 @@ function GetScopes(user, claims){
 
                     payload.scope.push(myscope);
                 }
+
+
 
             }
         });

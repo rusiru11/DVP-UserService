@@ -14,43 +14,80 @@ function GetUsers(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.find({company: company, tenant: tenant}, function(err, users) {
+    User.find({company: company, tenant: tenant, systemuser: true}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
-        }else{
+        }else {
 
+            if (users) {
+                var userObjectArray = [];
+                users.forEach(function (user) {
 
+                    var userObj;
 
+                    userObj = user.toJSON();
+                    if (userObj.password) {
 
+                        delete userObj.password;
+                        userObjectArray.push(userObj);
+                    }
+                });
 
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, userObjectArray);
 
+            }else{
 
+                jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
 
-            var userObjectArray = [];
-            users.forEach(function(user){
-
-                var userObj;
-
-                userObj = user.toJSON();
-                if (userObj.password) {
-
-                    delete userObj.password;
-                    userObjectArray.push(userObj);
-                }
-            });
-
-            jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, userObjectArray);
-
+            }
         }
 
         res.end(jsonString);
     });
 
+}
 
 
+function GetExternalUsers(req, res){
 
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    User.find({company: company, tenant: tenant, systemuser: false}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+
+        }else {
+
+            if (users) {
+                var userObjectArray = [];
+                users.forEach(function (user) {
+
+                    var userObj;
+
+                    userObj = user.toJSON();
+                    if (userObj.password) {
+
+                        delete userObj.password;
+                        userObjectArray.push(userObj);
+                    }
+                });
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, userObjectArray);
+
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+
+            }
+        }
+
+        res.end(jsonString);
+    });
 
 }
 
@@ -69,20 +106,21 @@ function GetUser(req, res){
 
         }else{
 
-            var userObj;
+            if(users) {
+                var userObj;
 
-            userObj = users.toJSON();
+                userObj = users.toJSON();
 
-            if(userObj){
+                if (userObj) {
 
-                if (userObj.password) {
+                    if (userObj.password) {
 
-                    delete userObj.password;
+                        delete userObj.password;
+                    }
+
                 }
 
             }
-
-
 
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObj);
@@ -209,6 +247,7 @@ function CreateUser(req, res){
 
 
                             var user = User({
+                                systemuser: true,
                                 name: req.body.name,
                                 avatar: req.body.avatar,
                                 birthday: req.body.birthday,
@@ -289,6 +328,66 @@ function CreateUser(req, res){
     });
 }
 
+function CreateExternalUser(req, res) {
+
+    logger.debug("DVP-UserService.CreateUser Internal method ");
+    var jsonString;
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+
+    if(req.body) {
+
+        if (!req.body.address) {
+            req.body.address = {};
+        }
+
+
+        var user = User({
+            systemuser: false,
+            name: req.body.name,
+            avatar: req.body.avatar,
+            birthday: req.body.birthday,
+            gender: req.body.gender,
+            firstname: req.body.firstname,
+            lastname: req.body.lastname,
+            locale: req.body.locale,
+            ssn: req.body.ssn,
+            address: {
+                zipcode: req.body.address.zipcode,
+                number: req.body.address.number,
+                street: req.body.address.street,
+                city: req.body.address.city,
+                province: req.body.address.province,
+                country: req.body.address.country,
+            },
+            username: req.body.username,
+            phoneNumber: {contact: req.body.phone, type: "phone", verified: false},
+            email: {contact: req.body.mail, type: "phone", verified: false},
+            company: parseInt(req.user.company),
+            tenant: parseInt(req.user.tenant),
+            created_at: Date.now(),
+            updated_at: Date.now()
+        });
+
+
+        user.save(function (err, user) {
+            if (err) {
+                jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+
+            } else {
+                jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
+            }
+            res.end(jsonString);
+        });
+    }else{
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Requestbody empty", false, undefined);
+        res.end(jsonString);
+
+
+    }
+}
+
 function UpdateUser(req, res){
 
 
@@ -340,18 +439,19 @@ function GetMyrProfile(req, res){
 
 
 
-
             var userObj;
+            if(users) {
 
-            userObj = users.toJSON();
 
-            if (userObj.password) {
+                userObj = users.toJSON();
 
-                delete userObj.password;
+                if (userObj.password) {
+
+                    delete userObj.password;
+                }
+
+
             }
-
-
-
 
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObj);
@@ -361,6 +461,34 @@ function GetMyrProfile(req, res){
         res.end(jsonString);
     });
 
+
+}
+
+function UpdateMyUser(req, res){
+
+
+
+    logger.debug("DVP-UserService.UpdateUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var userName = req.user.iss;
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+    User.findOneAndUpdate({username: userName,company: company, tenant: tenant}, req.body, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
+
+        }else{
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
+
+        }
+
+        res.end(jsonString);
+    });
 
 }
 
@@ -385,15 +513,19 @@ function GetUserProfileByResourceId(req, res){
 
 
 
-            var userObj = users.toJSON();
+            var userObj;
 
-            if(userObj){
+            if(users) {
+                userObj = users.toJSON();
 
-                if (userObj.password) {
+                if (userObj) {
 
-                    delete userObj.password;
+                    if (userObj.password) {
+
+                        delete userObj.password;
+                    }
+
                 }
-
             }
 
 
@@ -431,21 +563,65 @@ function GetUserProfileByContact(req, res){
 
 
             var userObjectArray = [];
-            users.forEach(function(user){
+            if(users) {
+                users.forEach(function (user) {
 
-                var userObj;
+                    var userObj;
 
-                userObj = user.toJSON();
-                if (userObj.password) {
+                    userObj = user.toJSON();
+                    if (userObj.password) {
 
-                    delete userObj.password;
-                    userObjectArray.push(userObj);
-                }
-            });
+                        delete userObj.password;
+                        userObjectArray.push(userObj);
+                    }
+                });
 
-
+            }
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObjectArray);
+
+        }
+
+        res.end(jsonString);
+    });
+
+
+}
+
+function GetExternalUserProfile(req, res){
+
+
+    logger.debug("DVP-UserService.GetExternalUserProfile Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
+
+        }else{
+
+
+
+            var userObj ;
+
+            if(users) {
+                userObj = users.toJSON();
+
+                if (userObj) {
+
+                    if (userObj.password) {
+
+                        delete userObj.password;
+                    }
+
+                }
+            }
+
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, userObj);
 
         }
 
@@ -472,15 +648,19 @@ function GetUserProfile(req, res){
 
 
 
-            var userObj = users.toJSON();
+            var userObj ;
 
-            if(userObj){
+            if(users) {
+                userObj = users.toJSON();
 
-                if (userObj.password) {
+                if (userObj) {
 
-                    delete userObj.password;
+                    if (userObj.password) {
+
+                        delete userObj.password;
+                    }
+
                 }
-
             }
 
 
@@ -557,6 +737,85 @@ function UpdateUserProfile(req, res) {
 
     req.body.updated_at = Date.now();
     User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, req.body, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
+
+        } else {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+function UpdateMyUserProfile(req, res) {
+
+    logger.debug("DVP-UserService.UpdateUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var userName = req.user.iss;
+    var jsonString;
+
+
+    if (req.body.name) {
+
+        delete req.body.name;
+    }
+
+    if (req.body.password) {
+
+        delete req.body.password;
+
+    }
+
+    if (req.body.company) {
+
+        delete req.body.company;
+
+    }
+
+
+    if (req.body.contacts) {
+
+        delete req.body.contacts;
+
+    }
+
+
+    if (req.body.user_meta) {
+
+        delete req.body.user_meta;
+
+    }
+
+    if (req.body.app_meta) {
+
+        delete req.body.app_meta;
+
+    }
+
+
+    if (req.body.user_scopes) {
+
+        delete req.body.user_scopes;
+
+    }
+
+
+    if (req.body.client_scopes) {
+
+        delete req.body.client_scopes;
+
+    }
+
+
+    req.body.updated_at = Date.now();
+    User.findOneAndUpdate({username: userName, company: company, tenant: tenant}, req.body, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
@@ -707,6 +966,59 @@ function UpdateUserProfileContact(req, res) {
 
     req.body.updated_at = Date.now();
     User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { $addToSet :{contacts : {contact:req.params.contact, type:req.body.type, verified: false}}}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User phone number Failed", false, undefined);
+
+        } else {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User phone number Successful", true, users);
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+function RemoveMyUserProfileContact(req, res){
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var userName = req.user.iss;
+    var jsonString;
+
+    //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
+    User.findOneAndUpdate({username: userName,company: company, tenant: tenant},{ $pull: { 'contacts': {'contact':req.params.contact} } }, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Remove contact Failed", false, undefined);
+
+
+        }else{
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Remove contact successfully", false, undefined);
+
+        }
+
+        res.end(jsonString);
+
+
+    });
+
+}
+
+function UpdateMyUserProfileContact(req, res) {
+
+    logger.debug("DVP-UserService.UpdateUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var userName = req.user.iss;
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+    User.findOneAndUpdate({username: userName,company: company, tenant: tenant}, { $addToSet :{contacts : {contact:req.params.contact, type:req.body.type, verified: false}}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User phone number Failed", false, undefined);
@@ -1298,13 +1610,19 @@ function GetUserMeta(req, res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
     User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
-        if (err) {
+        if (err ) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.user_meta);
+            if(users) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.user_meta);
+            }else{
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, undefined);
+
+            }
 
         }
 
@@ -1335,7 +1653,15 @@ function GetAppMeta(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.app_meta);
+            if(users){
+
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.app_meta);
+            }
+            else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
+            }
+
 
         }
 
@@ -1482,19 +1808,18 @@ function GetUserScopes(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User scope Successful", true, users.user_scopes);
+            if(users) {
+                jsonString = messageFormatter.FormatMessage(err, "Get User scope Successful", true, users.user_scopes);
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User scope Failed", false, undefined);
+
+            }
 
         }
 
         res.end(jsonString);
     });
-
-
-
-
-
-
-
 
 }
 
@@ -1513,19 +1838,17 @@ function GetAppScopes(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User app scope Successful", true, users.client_scopes);
+            if(users) {
+                jsonString = messageFormatter.FormatMessage(err, "Get User app scope Successful", true, users.client_scopes);
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
+            }
 
         }
 
         res.end(jsonString);
     });
-
-
-
-
-
-
-
 
 }
 
@@ -1555,11 +1878,20 @@ module.exports.UpdateUserProfileEmail = UpdateUserProfileEmail;
 module.exports.UpdateUserProfilePhone = UpdateUserProfilePhone;
 module.exports.UpdateUserProfileContact = UpdateUserProfileContact;
 module.exports.RemoveUserProfileContact = RemoveUserProfileContact;
+
+
 module.exports.GetMyrProfile = GetMyrProfile;
+module.exports.UpdateMyUser = UpdateMyUser;
+module.exports.UpdateMyUserProfile = UpdateMyUserProfile;
+module.exports.UpdateMyUserProfileContact = UpdateMyUserProfileContact;
+module.exports.RemoveMyUserProfileContact =RemoveMyUserProfileContact;
+module.exports.GetExternalUsers = GetExternalUsers;
+
 module.exports.SetUserProfileResourceId = SetUserProfileResourceId;
 module.exports.GetUserProfileByResourceId = GetUserProfileByResourceId;
 module.exports.GetARDSFriendlyContactObject = GetARDSFriendlyContactObject;
 module.exports.UserExsists = UserExsists;
 module.exports.AssignConsoleToUser = AssignConsoleToUser;
 module.exports.RemoveConsoleFromUser = RemoveConsoleFromUser;
+module.exports.CreateExternalUser =CreateExternalUser;
 
