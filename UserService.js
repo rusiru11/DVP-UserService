@@ -1008,7 +1008,6 @@ function RemoveMyUserProfileContact(req, res){
 
 }
 
-
 function UpdateMyUserProfileContact(req, res) {
 
     logger.debug("DVP-UserService.UpdateUser Internal method ");
@@ -1060,7 +1059,6 @@ function RemoveUserProfileContact(req, res){
     });
 
 }
-
 
 function UpdateUserProfilePhone(req, res) {
 

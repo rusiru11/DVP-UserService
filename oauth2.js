@@ -388,7 +388,6 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
 
         var accesstoken = accessToken({
 
-
             userId: user.id,
             clientId: client.id,
             jti: jti,
@@ -604,6 +603,7 @@ function GetScopes(user, claims){
             claims.splice(index, 1);
         }
 
+
         var index = claims.indexOf("app_meta");
 
         if (index > -1) {
@@ -626,7 +626,48 @@ function GetScopes(user, claims){
             claims.splice(index, 1);
         }
 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        var index = claims.indexOf("resourceid");
+
+        if (index > -1) {
+            payload.context.resourceid = user.resourceid;
+            claims.splice(index, 1);
+        }
+
+
+
+
+
+        claims.forEach(function (value) {
+
+
+            var arr = value.split("_");
+            if (arr.length > 1) {
+
+                var action = arr[0];
+                var resource = arr[1];
+
+                if(action == "profile"){
+
+
+                    if(resource == "passward"){
+
+
+                    }
+                    else{
+
+                        payload.context[resource] = user[resource];
+
+                    }
+
+                }
+
+            }});
+
+
+
+
+                /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
         claims.forEach(function (value) {
