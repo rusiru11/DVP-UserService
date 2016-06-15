@@ -640,12 +640,7 @@ function GetScopes(user, claims){
 
         var profileClaimsFound = claims.filter(function (item, index) {
 
-            var startWith = item.startsWith('profile_');
-
-            if(startWith)
-                claims.splice(index, 1);
-
-            return startWith;
+            return item.startsWith('profile_');
         })
 
         profileClaimsFound.forEach(function (value) {
