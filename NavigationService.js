@@ -238,15 +238,27 @@ function AddNavigationToConsole(req, res){
                 res.end(jsonString);
             }else{
                 if(console) {
-                    console.updated_at = Date.now();
-                    console.consoleNavigation.push(navigation);
-                    Console.findOneAndUpdate({consoleName: req.params.consoleName}, console, function (err, rConsole) {
-                        if (err) {
-                            jsonString = messageFormatter.FormatMessage(err, "Navigation save failed", false, undefined);
-                        } else {
-                            jsonString = messageFormatter.FormatMessage(undefined, "Navigation saved successfully", true, console);
+                    Console.findOne({"consoleNavigation.navigationName":navigation.navigationName}, function(err, isExists) {
+                        if(isExists){
+                            console.updated_at = Date.now();
+                            for (var i = 0; i < console.consoleNavigation.length; i++) {
+                                if (console.consoleNavigation[i].navigationName.search(navigation.navigationName) != -1) {
+                                    console.consoleNavigation[i] = navigation;
+                                    break;
+                                }
+                            }
+                        }else{
+                            console.updated_at = Date.now();
+                            console.consoleNavigation.push(navigation);
                         }
-                        res.end(jsonString);
+                        Console.findOneAndUpdate({consoleName: req.params.consoleName}, console, function (err, rConsole) {
+                            if (err) {
+                                jsonString = messageFormatter.FormatMessage(err, "Navigation save failed", false, undefined);
+                            } else {
+                                jsonString = messageFormatter.FormatMessage(undefined, "Navigation saved successfully", true, console);
+                            }
+                            res.end(jsonString);
+                        });
                     });
                 }else{
                     jsonString = messageFormatter.FormatMessage(err, "No Console Found", false, undefined);
@@ -272,6 +284,7 @@ function RemoveNavigationFromConsole(req,res){
                 for (var i = 0; i < console.consoleNavigation.length; i++) {
                     if (console.consoleNavigation[i].navigationName.search(req.params.navigationName) != -1) {
                         console.consoleNavigation.splice(i, 1);
+                        break;
                     }
                 }
                 Console.findOneAndUpdate({consoleName: req.params.consoleName}, console, function (err, rConsole) {
