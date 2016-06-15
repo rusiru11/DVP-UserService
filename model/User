@@ -45,6 +45,7 @@ var consoleScopeSchema = new Schema({
 var userSchema = new Schema({
     name: { type: String, required: true },
     avatar: String,
+    systemuser: Boolean,
     birthday: { type: Date, required: true },
     joined: Date,
     gender: { type: String, required: true },
@@ -81,6 +82,8 @@ var userSchema = new Schema({
     created_at: Date,
     updated_at: Date
 });
+
+
 
 
 

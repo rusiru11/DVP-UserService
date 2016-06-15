@@ -342,6 +342,11 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
         if (!user) {
             return done(null, false);
         }
+
+        if(!password){
+
+            return done(null, false);
+        }
         if (password !== user.password) {
             return done(null, false);
         }
