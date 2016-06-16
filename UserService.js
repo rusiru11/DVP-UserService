@@ -869,7 +869,7 @@ function GetARDSFriendlyContactObject(req,res){
 
 
             ////////////////////////////////////////////
-            if(users) {
+            if(users && users.contacts) {
 
 
                 var contactinfo = users[contact];
@@ -888,26 +888,31 @@ function GetARDSFriendlyContactObject(req,res){
                 }
 
 
-                if(contactinfo){
+                if(contactinfo && contactinfo.contact){
 
 
-                    if(contactinfo.display) {
-                        contactObj.ContactName = contactinfo.display;
-                    }else{
 
-                        contactObj.ContactName = contactinfo.contact;
-
-                    }
 
                     var infoArr = contactinfo.contact.split("@");
                     if(infoArr.length > 1){
 
-                        contactObj.Extention = infoArr[0];
+                        contactObj.ContactName = infoArr[0];
                         contactObj.Domain =  infoArr[1];
                     }else{
 
-                        contactObj.Extention = contactinfo.contact;
+                        contactObj.ContactName = contactinfo.contact;
                     }
+
+
+                    if(contactinfo.display) {
+                        contactObj.Extention = contactinfo.display;
+                    }else{
+
+                        contactObj.Extention = contactObj.ContactName;
+
+
+                    }
+
 
                     contactObj.type = "PUBLIC";
 
