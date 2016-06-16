@@ -914,11 +914,11 @@ function GetARDSFriendlyContactObject(req,res){
                     }
 
 
-                    contactObj.type = "PUBLIC";
+                    contactObj.ContactType = "PUBLIC";
 
 
                     if(contact == "veeryaccount")
-                        contactObj.type = "PRIVATE";
+                        contactObj.ContactType = "PRIVATE";
 
                 }
 
