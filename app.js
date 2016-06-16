@@ -113,7 +113,7 @@ app.get('/DVP/API/:version/MyUserprofile',jwt({secret: secret.Secret}),authoriza
 app.get('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfile);
 app.get('/DVP/API/:version/User/profilebycontact/:category/:contact', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfileByContact);
 app.get('/DVP/API/:version/User/profilebyresourceid/:resourceid', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfileByResourceId);
-app.get('/DVP/API/:version/User/:name/profil/veeryformat/:contact', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetARDSFriendlyContactObject);
+app.get('/DVP/API/:version/User/:name/profile/veeryformat/:contact', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetARDSFriendlyContactObject);
 
 app.put('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfile);
 app.put('/DVP/API/:version/User/:name/myprofile', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}), userService.UpdateMyUserProfile);
