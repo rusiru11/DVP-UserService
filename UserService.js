@@ -874,6 +874,8 @@ function GetARDSFriendlyContactObject(req,res){
 
                 var contactinfo = users[contact];
 
+                contactObj.Profile = users.username;
+
                 if(!contactinfo){
 
 
