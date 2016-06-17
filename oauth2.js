@@ -675,94 +675,138 @@ function GetScopes(user, claims){
        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-        claims.forEach(function (value) {
+
+        var index = claims.indexOf("all_all");
+
+        if (index > -1) {
 
 
-            var arr = value.split("_");
-            if (arr.length > 1) {
-
-                var action = arr[0];
-                var resource = arr[1];
+            user.user_scopes.forEach(function (item){
 
 
-                var scopeFound = user.user_scopes.filter(function (item) {
-                    return item.scope == resource;
-                })
+                var actionObj = {};
+                actionObj.resource = item.scope;
+                actionObj.actions = [];
+
+                if(item.read){
+
+                    actionObj.actions.push("read");
+                }
+
+                if(item.write){
+
+                    actionObj.actions.push("write");
 
 
-                if (scopeFound.length > 0) {
+                }
 
-                    var myscope = {};
-                    myscope.resource = scopeFound[0].scope;
-                    myscope.actions = [];
+                if(item.delete){
 
-                    if (action == "read") {
-
-                        var actionArray = [];
-                        if (scopeFound[0].read) {
-
-                            actionArray.push("read");
-
-                        }
-
-                        myscope.actions = myscope.actions.concat(actionArray);
+                    actionObj.actions.push("delete");
 
 
-                    }
-                    else if (action == "write") {
-
-
-                        var actionArray = [];
-                        if (scopeFound[0].read) {
-
-                            actionArray.push("read");
-
-                        }
-
-                        if (scopeFound[0].write) {
-
-                            actionArray.push("write");
-
-                        }
-
-
-                        myscope.actions = myscope.actions.concat(actionArray);
-
-                    }
-                    else if (action == "all") {
-
-
-                        var actionArray = [];
-                        if (scopeFound[0].read) {
-
-                            actionArray.push("read");
-
-                        }
-
-                        if (scopeFound[0].write) {
-
-                            actionArray.push("write");
-
-                        }
-
-
-                        if (scopeFound[0].delete) {
-
-                            actionArray.push("delete");
-
-                        }
-
-                        myscope.actions = myscope.actions.concat(actionArray);
-
-                    }
-
-                    payload.scope.push(myscope);
                 }
 
 
 
-            }
-        });
+                payload.scope.push(actionObj);
+
+            });
+
+
+
+
+
+        }else {
+
+            claims.forEach(function (value) {
+
+
+                var arr = value.split("_");
+                if (arr.length > 1) {
+
+                    var action = arr[0];
+                    var resource = arr[1];
+
+
+                    var scopeFound = user.user_scopes.filter(function (item) {
+                        return item.scope == resource;
+                    })
+
+
+                    if (scopeFound.length > 0) {
+
+                        var myscope = {};
+                        myscope.resource = scopeFound[0].scope;
+                        myscope.actions = [];
+
+                        if (action == "read") {
+
+                            var actionArray = [];
+                            if (scopeFound[0].read) {
+
+                                actionArray.push("read");
+
+                            }
+
+                            myscope.actions = myscope.actions.concat(actionArray);
+
+
+                        }
+                        else if (action == "write") {
+
+
+                            var actionArray = [];
+                            if (scopeFound[0].read) {
+
+                                actionArray.push("read");
+
+                            }
+
+                            if (scopeFound[0].write) {
+
+                                actionArray.push("write");
+
+                            }
+
+
+                            myscope.actions = myscope.actions.concat(actionArray);
+
+                        }
+                        else if (action == "all") {
+
+
+                            var actionArray = [];
+                            if (scopeFound[0].read) {
+
+                                actionArray.push("read");
+
+                            }
+
+                            if (scopeFound[0].write) {
+
+                                actionArray.push("write");
+
+                            }
+
+
+                            if (scopeFound[0].delete) {
+
+                                actionArray.push("delete");
+
+                            }
+
+                            myscope.actions = myscope.actions.concat(actionArray);
+
+                        }
+
+                        payload.scope.push(myscope);
+                    }
+
+
+                }
+            });
+        }
     }
 
 

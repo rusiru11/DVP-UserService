@@ -248,6 +248,7 @@ function CreateUser(req, res){
 
                             var user = User({
                                 systemuser: true,
+                                title: req.body.title,
                                 name: req.body.name,
                                 avatar: req.body.avatar,
                                 birthday: req.body.birthday,
