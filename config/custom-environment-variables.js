@@ -51,6 +51,12 @@ module.exports = {
         "ip": "LB_FRONTEND",
         "port": "LB_PORT"
 
+    },
+    "Services" : {
+        "accessToken": "HOST_TOKEN",
+        "resourceServiceHost": "SYS_RESOURCESERVICE_HOST",
+        "resourceServicePort": "SYS_RESOURCESERVICE_PORT",
+        "resourceServiceVersion": "SYS_RESOURCESERVICE_VERSION"
     }
 };
 

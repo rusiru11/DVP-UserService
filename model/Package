@@ -22,7 +22,8 @@ var packageSchema = new Schema({
     packageName: { type: String, required: true, unique: true },
     consoleAccessLimit: [consoleAccessLimitSchema],
     resources: [resourceSchema],
-    consoles: [String]
+    consoles: [String],
+    veeryTask:[String]
 });
 
 var Package = mongoose.model('Package', packageSchema);

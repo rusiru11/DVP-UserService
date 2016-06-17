@@ -10,6 +10,10 @@ var VPackage = require('./model/Package');
 var Console = require('./model/Console');
 var EventEmitter = require('events').EventEmitter;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
+var util = require('util');
+var restClientHandler = require('./RestClient.js');
+var config = require('config');
+var validator = require('validator');
 
 client = redis.createClient(config.Redis.port, config.Redis.ip);
 client.auth(config.Redis.password);
@@ -136,25 +140,40 @@ function DeleteOrganisation(req,res){
     });
 }
 
+function CreateOwner(req, res){
+    var user = User({
+        name: req.body.username,
+        firstname: req.body.firstname,
+        lastname: req.body.lastname,
+        username: req.body.username,
+        password: req.body.password,
+        phoneNumber: {contact: req.body.phone, type: "phone", verified: false},
+        email: {contact: req.body.mail, type: "phone", verified: false},
+        user_meta: {role: "admin"},
+        systemuser: true,
+        user_scopes: [],
+        company: 0,
+        tenant: 1,
+        created_at: Date.now(),
+        updated_at: Date.now()
+
+    });
+    user.save(function (err, rUser) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Create Owner failed", false, undefined);
+            res.end(jsonString);
+        } else {
+            jsonString = messageFormatter.FormatMessage(undefined, "Create Owner successfully", true, rUser);
+            res.end(jsonString);
+        }
+    });
+}
+
 function CreateOrganisation(req, res){
     logger.debug("DVP-UserService.CreateOrganisation Internal method ");
     var jsonString;
     GetNewCompanyId(function(cid){
         if(cid != null && cid > 0) {
-            var userScopes = [
-                {scope: "user", read: true, write: true, delete: true},
-                {scope: "userProfile", read: true, write: true, delete: true},
-                {scope: "organisation", read: true, write: true},
-                {scope: "resource", read: true},
-                {scope: "package", read: true},
-                {scope: "console", read: true},
-                {scope: "userScope", read: true, write: true, delete: true},
-                {scope: "userAppScope", read: true, write: true, delete: true},
-                {scope: "userMeta", read: true, write: true, delete: true},
-                {scope: "userAppMeta", read: true, write: true, delete: true},
-                {scope: "client", read: true, write: true, delete: true},
-                {scope: "clientScope", read: true, write: true, delete: true}
-            ];
 
             User.findOne({username: req.user.username}, function(err, user) {
                 if (err) {
@@ -163,8 +182,8 @@ function CreateOrganisation(req, res){
                 }else{
                     if(user.company == 0){
                         var org = Org({
-                            ownerId: req.body.owner.username,
-                            companyName: req.body.name,
+                            ownerId: req.user.username,
+                            companyName: req.body.organisationName,
                             companyEnabled: true,
                             id: cid,
                             tenant: 1,
@@ -174,7 +193,12 @@ function CreateOrganisation(req, res){
                             updated_at: Date.now()
                         });
                         user.user_meta = {role: "admin"};
-                        user.user_scopes = userScopes;
+                        user.user_scopes =[
+                            {scope: "organisation", read: true, write: true},
+                            {scope: "resource", read: true},
+                            {scope: "package", read: true},
+                            {scope: "console", read: true}
+                        ];
                         user.company = cid;
                         user.updated_at = Date.now();
                         org.save(function (err, org) {
@@ -182,9 +206,7 @@ function CreateOrganisation(req, res){
                                 jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
                                 res.end(jsonString);
                             } else {
-                                User.findOneAndUpdate({
-                                    username: req.params.username
-                                }, user, function (err, rUser) {
+                                User.findOneAndUpdate({username: req.user.username}, user, function (err, rUser) {
                                     if (err) {
                                         org.remove(function (err) {
                                         });
@@ -301,6 +323,7 @@ function AssignPackageToOrganisation(req,res){
                                     jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
                                 } else {
                                     UpdateUser(org.ownerId, vPackage);
+                                    AssignTaskToOrganisation(company,tenant,vPackage.veeryTask);
                                     jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
                                 }
                                 res.end(jsonString);
@@ -315,6 +338,39 @@ function AssignPackageToOrganisation(req,res){
                     }
                 }
             });
+        }
+    });
+}
+
+function AssignTaskToOrganisation(company, tenant, taskList){
+    var taskInfoUrl = util.format("http://%s/DVP/API/%s/ResourceManager/TaskInfo",config.Services.resourceServiceHost, config.Services.resourceServiceVersion);
+    var taskUrl = util.format("http://%s/DVP/API/%s/ResourceManager/Task",config.Services.resourceServiceHost, config.Services.resourceServiceVersion);
+    if(validator.isIP(config.Services.resourceServiceHost))
+    {
+        taskUrl = util.format("http://%s:%s/DVP/API/%s/ResourceManager/Task", config.Services.resourceServiceHost, config.Services.resourceServicePort, config.Services.resourceServiceVersion);
+        taskInfoUrl = util.format("http://%s:%s/DVP/API/%s/ResourceManager/TaskInfo", config.Services.resourceServiceHost, config.Services.resourceServicePort, config.Services.resourceServiceVersion);
+    }
+    var companyInfo = util.format("%d:%d", tenant, company);
+    restClientHandler.DoGet(companyInfo, taskInfoUrl, "", function (err, res, result) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            var jResult = JSON.parse(result);
+            for(var i in taskList) {
+                var task = FilterObjFromArray(jResult.Result,"TaskType",taskList[i]);
+                if(task) {
+                    var body = {"TaskInfoId": task.TaskInfoId};
+                    restClientHandler.DoPost(companyInfo, taskUrl, body, function (err, res, result) {
+                        if (err) {
+                            console.log(err);
+                        }
+                        else {
+                            console.log("Assign Task Success");
+                        }
+                    });
+                }
+            }
         }
     });
 }
@@ -591,3 +647,4 @@ module.exports.CreateOrganisation = CreateOrganisation;
 module.exports.UpdateOrganisation = UpdateOrganisation;
 module.exports.AssignPackageToOrganisation = AssignPackageToOrganisation;
 module.exports.RemovePackageFromOrganisation = RemovePackageFromOrganisation;
+module.exports.CreateOwner = CreateOwner;
