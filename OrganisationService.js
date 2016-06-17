@@ -141,25 +141,13 @@ function CreateOrganisation(req, res){
     var jsonString;
     GetNewCompanyId(function(cid){
         if(cid != null && cid > 0) {
-            var org = Org({
-                ownerId: req.body.owner.username,
-                companyName: req.body.name,
-                companyEnabled: true,
-                id: cid,
-                tenant: 1,
-                packages:[],
-                consoleAccessLimits:[],
-                created_at: Date.now(),
-                updated_at: Date.now()
-            });
-
             var userScopes = [
                 {scope: "user", read: true, write: true, delete: true},
                 {scope: "userProfile", read: true, write: true, delete: true},
-                {scope: "organisation", read: true, write: true, delete: true},
-                {scope: "resource", read: true, write: true, delete: true},
-                {scope: "package", read: true, write: true, delete: true},
-                {scope: "console", read: true, write: true, delete: true},
+                {scope: "organisation", read: true, write: true},
+                {scope: "resource", read: true},
+                {scope: "package", read: true},
+                {scope: "console", read: true},
                 {scope: "userScope", read: true, write: true, delete: true},
                 {scope: "userAppScope", read: true, write: true, delete: true},
                 {scope: "userMeta", read: true, write: true, delete: true},
@@ -168,40 +156,71 @@ function CreateOrganisation(req, res){
                 {scope: "clientScope", read: true, write: true, delete: true}
             ];
 
-            var user = User({
-                name: req.body.owner.username,
-                firstname: req.body.owner.firstname,
-                lastname: req.body.owner.lastname,
-                username: req.body.owner.username,
-                password: req.body.owner.password,
-                phoneNumber: {contact: req.body.owner.phone, type: "phone", verified: false},
-                email: {contact: req.body.owner.mail, type: "phone", verified: false},
-                user_meta: {role: "admin"},
-                user_scopes: userScopes,
-                company: cid,
-                tenant: 1,
-                created_at: Date.now(),
-                updated_at: Date.now()
-
-            });
-
-            user.save(function (err, user) {
+            User.findOne({username: req.user.username}, function(err, user) {
                 if (err) {
-                    jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(err, "Invalid User", false, undefined);
                     res.end(jsonString);
-                } else {
-                    org.save(function (err, org) {
-                        if (err) {
-                            user.remove(function (err) {
-                            });
-                            jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
-                        } else {
-                            jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
-                        }
+                }else{
+                    if(user.company == 0){
+                        var org = Org({
+                            ownerId: req.body.owner.username,
+                            companyName: req.body.name,
+                            companyEnabled: true,
+                            id: cid,
+                            tenant: 1,
+                            packages:[],
+                            consoleAccessLimits:[],
+                            created_at: Date.now(),
+                            updated_at: Date.now()
+                        });
+                        user.user_meta = {role: "admin"};
+                        user.user_scopes = userScopes;
+                        user.company = cid;
+                        user.updated_at = Date.now();
+                        org.save(function (err, org) {
+                            if (err) {
+                                jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
+                                res.end(jsonString);
+                            } else {
+                                User.findOneAndUpdate({
+                                    username: req.params.username
+                                }, user, function (err, rUser) {
+                                    if (err) {
+                                        org.remove(function (err) {
+                                        });
+                                        jsonString = messageFormatter.FormatMessage(err, "Update Admin User Failed", false, undefined);
+                                        res.end(jsonString);
+                                    } else {
+                                        jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
+                                        res.end(jsonString);
+                                    }
+                                });
+                            }
+                        });
+                    }else{
+                        jsonString = messageFormatter.FormatMessage(err, "User Already Assign To an Organisation", false, undefined);
                         res.end(jsonString);
-                    });
+                    }
                 }
             });
+
+            //user.save(function (err, user) {
+            //    if (err) {
+            //        jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+            //        res.end(jsonString);
+            //    } else {
+            //        org.save(function (err, org) {
+            //            if (err) {
+            //                user.remove(function (err) {
+            //                });
+            //                jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
+            //            } else {
+            //                jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
+            //            }
+            //            res.end(jsonString);
+            //        });
+            //    }
+            //});
         }else{
             jsonString = messageFormatter.FormatMessage(undefined, "Create new organisation id failed", false, undefined);
             res.end(jsonString);
@@ -490,8 +509,23 @@ function UpdateUser(ownerId, vPackage){
             jsonString = messageFormatter.FormatMessage(err, "Find Owner Failed", false, undefined);
             return jsonString;
         } else {
+            var fixUserScopes = [
+                {scope: "user", read: true, write: true, delete: true},
+                {scope: "userProfile", read: true, write: true, delete: true},
+                {scope: "organisation", read: true, write: true},
+                {scope: "resource", read: true},
+                {scope: "package", read: true},
+                {scope: "console", read: true},
+                {scope: "userScope", read: true, write: true, delete: true},
+                {scope: "userAppScope", read: true, write: true, delete: true},
+                {scope: "userMeta", read: true, write: true, delete: true},
+                {scope: "userAppMeta", read: true, write: true, delete: true},
+                {scope: "client", read: true, write: true, delete: true},
+                {scope: "clientScope", read: true, write: true, delete: true}
+            ];
             var er = ExtractResources(vPackage.resources);
             er.on('endExtractResources', function(userScopes){
+                userScopes = userScopes.concat(fixUserScopes);
                 var uScopes = UniqueObjectArray(userScopes,"scope");
                 for(var i in uScopes){
                     user.user_scopes.push(uScopes[i]);
