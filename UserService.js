@@ -178,6 +178,37 @@ function UserExsists(req, res){
 
 }
 
+function OwnerExsists(req, res){
+
+
+    logger.debug("DVP-UserService.OwnerExsists Internal method ");
+
+
+    var jsonString;
+    User.findOne({username: req.params.name}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Owner Failed", false, undefined);
+
+        }else{
+
+            var userObj = false;
+            if(users)
+            {
+                userObj = true;
+
+            }
+
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Owner Successful", true, userObj);
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
 function DeleteUser(req,res){
 
 
@@ -2044,4 +2075,5 @@ module.exports.RemoveConsoleFromUser = RemoveConsoleFromUser;
 module.exports.CreateExternalUser =CreateExternalUser;
 module.exports.GetMyAppScopes = GetMyAppScopes;
 module.exports.GetMyARDSFriendlyContactObject = GetMyARDSFriendlyContactObject;
+module.exports.OwnerExsists = OwnerExsists;
 

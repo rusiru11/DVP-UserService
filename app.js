@@ -93,6 +93,13 @@ app.post('/oauth/token', oauth2.token);
 
 
 
+
+
+
+
+app.get('/DVP/API/:version/Owner/:name/exsists', userService.OwnerExsists);
+
+
 app.get('/DVP/API/:version/Users', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsers);
 app.get('/DVP/API/:version/ExternalUsers', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"read"}), userService.GetExternalUsers);
 
