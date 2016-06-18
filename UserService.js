@@ -832,6 +832,113 @@ function UpdateMyUserProfile(req, res) {
 
 }
 
+function GetMyARDSFriendlyContactObject(req,res){
+
+
+    logger.debug("DVP-UserService.GetARDSFriendlyContactObject Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var username = req.user.iss;
+    var contact = req.params.contact;
+    var jsonString;
+    User.findOne({username: username,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+        }else{
+
+
+
+            var contactObj = {};
+
+            /*
+
+             {"ContactName": "bob","Domain": "159.203.160.47","Extention":2002,"ContactType": "PRIVATE"}
+
+
+             var contactSchema = new Schema({
+             contact:String,
+             type:String,
+             display: String,
+             verified: Boolean
+             }, {_id: false});
+
+
+
+             */
+
+
+            ////////////////////////////////////////////
+            if(users && users.contacts) {
+
+
+                var contactinfo = users[contact];
+
+                contactObj.Profile = users.username;
+
+                if(!contactinfo){
+
+
+                    contactinfo = users.contacts.filter(function (item) {
+                        return item.contact == contact;
+                    });
+
+
+
+                }
+
+
+                if(contactinfo && contactinfo.contact){
+
+
+
+
+                    var infoArr = contactinfo.contact.split("@");
+                    if(infoArr.length > 1){
+
+                        contactObj.ContactName = infoArr[0];
+                        contactObj.Domain =  infoArr[1];
+                    }else{
+
+                        contactObj.ContactName = contactinfo.contact;
+                    }
+
+
+                    if(contactinfo.display) {
+                        contactObj.Extention = contactinfo.display;
+                    }else{
+
+                        contactObj.Extention = contactObj.ContactName;
+
+
+                    }
+
+
+                    contactObj.ContactType = "PUBLIC";
+
+
+                    if(contact == "veeryaccount")
+                        contactObj.ContactType = "PRIVATE";
+
+                }
+
+
+            }
+
+            ///////////////////////////////////////////
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, contactObj);
+
+        }
+
+        res.end(jsonString);
+    });
+
+
+}
+
 function GetARDSFriendlyContactObject(req,res){
 
 
@@ -1862,6 +1969,39 @@ function GetAppScopes(req, res){
 
 
 
+
+function GetMyAppScopes(req, res){
+
+
+    logger.debug("DVP-UserService.GetUsers Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.user.iss;
+    var jsonString;
+    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
+
+        }else{
+
+            if(users) {
+                jsonString = messageFormatter.FormatMessage(err, "Get User app scope Successful", true, users.client_scopes);
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
+            }
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+
+
 module.exports.GetUser = GetUser;
 module.exports.GetUsers = GetUsers;
 module.exports.DeleteUser = DeleteUser;
@@ -1902,4 +2042,6 @@ module.exports.UserExsists = UserExsists;
 module.exports.AssignConsoleToUser = AssignConsoleToUser;
 module.exports.RemoveConsoleFromUser = RemoveConsoleFromUser;
 module.exports.CreateExternalUser =CreateExternalUser;
+module.exports.GetMyAppScopes = GetMyAppScopes;
+module.exports.GetMyARDSFriendlyContactObject = GetMyARDSFriendlyContactObject;
 
