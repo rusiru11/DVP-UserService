@@ -113,7 +113,7 @@ function GetOrganisationPackages(req, res){
         }else{
 
             if(org) {
-                jsonString = messageFormatter.FormatMessage(err, "Get Organisation packages Successful", true, org.packages);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get Organisation packages Successful", true, org.packages);
             }
             else{
 

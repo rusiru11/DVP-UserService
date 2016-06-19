@@ -2001,6 +2001,65 @@ function GetAppScopes(req, res){
 
 
 
+
+
+
+function GetMyAppScopesByConsole(req, res){
+
+
+    logger.debug("DVP-UserService.GetUsers Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.user.iss;
+    var console = req.params.console;
+    var jsonString;
+
+    ////client_scopes:{$elemMatch: {consoleName: console}}
+
+
+    User.findOne({username: user,company: company, tenant: tenant, }, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
+
+        }else{
+
+            if(users) {
+
+                if(users.client_scopes) {
+
+                    var obj = users.client_scopes.filter(function(obj, index){
+
+                        return obj.consoleName == console;
+
+                    });
+
+                    if(obj) {
+                        jsonString = messageFormatter.FormatMessage(err, "Get User app scope Successful", true, obj);
+                    }else{
+
+                        jsonString = messageFormatter.FormatMessage(err, "No Access found to "+ console, false, undefined);
+                    }
+                }
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
+            }
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+
+
+
+
+
+
 function GetMyAppScopes(req, res){
 
 
@@ -2010,7 +2069,7 @@ function GetMyAppScopes(req, res){
     var tenant = parseInt(req.user.tenant);
     var user = req.user.iss;
     var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+    User.findOne({username: user,company: company, tenant: tenant}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
@@ -2074,6 +2133,9 @@ module.exports.AssignConsoleToUser = AssignConsoleToUser;
 module.exports.RemoveConsoleFromUser = RemoveConsoleFromUser;
 module.exports.CreateExternalUser =CreateExternalUser;
 module.exports.GetMyAppScopes = GetMyAppScopes;
+
+
+module.exports.GetMyAppScopesByConsole = GetMyAppScopesByConsole;
 module.exports.GetMyARDSFriendlyContactObject = GetMyARDSFriendlyContactObject;
 module.exports.OwnerExsists = OwnerExsists;
 

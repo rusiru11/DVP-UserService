@@ -179,7 +179,11 @@ app.put('/DVP/API/:version/Users/:name/Scope', jwt({secret: secret.Secret}),auth
 app.delete('/DVP/API/:version/User/:username/Scope/:scope', jwt({secret: secret.Secret}),authorization({resource:"userScope", action:"delete"}), userService.RemoveUserScopes);
 
 app.get('/DVP/API/:version/Users/:name/AppScope',jwt({secret: secret.Secret}), authorization({resource:"userAppScope", action:"read"}), userService.GetAppScopes);
-app.get('/DVP/API/:version/MyAppScopes/MyAppScopes',jwt({secret: secret.Secret}), authorization({resource:"myAppScope", action:"read"}), userService.GetMyAppScopes);
+app.get('/DVP/API/:version/MyAppScopes/MyAppScopes/:console',jwt({secret: secret.Secret}), authorization({resource:"console", action:"read"}), userService.GetMyAppScopesByConsole);
+
+
+
+
 app.delete('/DVP/API/:version/User/:username/Console/:consoleName/Navigation/:navigation', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"delete"}), userService.RemoveUserAppScopes);
 app.put('/DVP/API/:version/User/:username/Console/:consoleName/Navigation', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"write"}), userService.AddUserAppScopes);
 app.delete('/DVP/API/:version/User/:username/Console/:consoleName', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"delete"}), userService.RemoveConsoleFromUser);
