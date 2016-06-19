@@ -1355,7 +1355,7 @@ function AssignConsoleToUser(req,res){
                                                             username: req.params.username,
                                                             company: company,
                                                             tenant: tenant
-                                                        }, {$addToSet: {user_scopes: basicscopes}}, function (err, rUsers) {
+                                                        }, {$addToSet: {user_scopes: {$each: basicscopes}}}, function (err, rUsers) {
                                                             if (err) {
                                                                 jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
                                                             } else {
