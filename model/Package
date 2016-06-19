@@ -23,7 +23,8 @@ var packageSchema = new Schema({
     consoleAccessLimit: [consoleAccessLimitSchema],
     resources: [resourceSchema],
     consoles: [String],
-    veeryTask:[String]
+    veeryTask:[String],
+    price: String
 });
 
 var Package = mongoose.model('Package', packageSchema);
