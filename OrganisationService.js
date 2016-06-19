@@ -7,7 +7,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var Org = require('./model/Organisation');
 var User = require('./model/User');
 var VPackage = require('./model/Package');
-var Console = require('./model/Console');
+var resConsole = require('./model/Console');
 var EventEmitter = require('events').EventEmitter;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var util = require('util');
@@ -580,14 +580,14 @@ function ExtractConsoles(consoles){
             var consoleScopes = [];
             for (var i in consoles) {
                 var consoleName = consoles[i];
-                Console.findOne({consoleName: consoleName}, function(err, console) {
+                resConsole.findOne({consoleName: consoleName}, function(err, rConsole) {
                     if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
                         res.end(jsonString);
                     }else{
-                        var consoleScope = {consoleName: console.consoleName, menus: []};
-                        for(var j in console.consoleNavigation){
-                            var navigation = console.consoleNavigation[j];
+                        var consoleScope = {consoleName: rConsole.consoleName, menus: []};
+                        for(var j in rConsole.consoleNavigation){
+                            var navigation = rConsole.consoleNavigation[j];
                             var menuScope = {menuItem: navigation.navigationName, menuAction: []};
                             for(var k in navigation.resources){
                                 var navigationResource = navigation.resources[k];
