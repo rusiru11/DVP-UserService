@@ -224,7 +224,9 @@ function CreateOrganisation(req, res){
                             {scope: "organisation", read: true, write: true},
                             {scope: "resource", read: true},
                             {scope: "package", read: true},
-                            {scope: "console", read: true}
+                            {scope: "console", read: true},
+                            {"scope": "myNavigation", "read": true},
+                            {"scope": "myUserProfile", "read": true}
                         ];
                         user.company = cid;
                         user.updated_at = Date.now();
