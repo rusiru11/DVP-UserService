@@ -1343,8 +1343,37 @@ function AssignConsoleToUser(req,res){
                                                 }, assignUser, function (err, rUser) {
                                                     if (err) {
                                                         jsonString = messageFormatter.FormatMessage(err, "Assign Console Failed", false, undefined);
+                                                        res.end(jsonString);
                                                     } else {
                                                         jsonString = messageFormatter.FormatMessage(undefined, "Assign Console successfull", true, undefined);
+
+
+                                                        var basicscopes = [{
+                                                            "scope": "myNavigation",
+                                                            "read": true
+                                                        },
+                                                            {
+                                                                "scope": "myUserProfile",
+                                                                "read": true
+                                                            }];
+
+
+                                                        User.findOneAndUpdate({
+                                                            username: req.params.name,
+                                                            company: company,
+                                                            tenant: tenant
+                                                        }, {$addToSet: {user_scopes: basicscopes}}, function (err, rUsers) {
+                                                            if (err) {
+                                                                jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
+                                                            } else {
+                                                                jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", true, undefined);
+                                                            }
+                                                            res.end(jsonString);
+                                                        });
+
+                                                        //res.end(jsonString);
+
+
                                                         //consoleAccessLimitObj.currentAccess.push(assignUser.username);
                                                         //consoleAccessLimitObj.currentAccess = UniqueArray(consoleAccessLimitObj.currentAccess);
                                                         //Org.findOneAndUpdate({
@@ -1359,7 +1388,7 @@ function AssignConsoleToUser(req,res){
                                                         //    console.log(jsonString);
                                                         //});
                                                     }
-                                                    res.end(jsonString);
+
                                                 });
                                             }else{
                                                 //jsonString = messageFormatter.FormatMessage(err, "Access Denied, Console Access Limit Exceeded", false, undefined);
