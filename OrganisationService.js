@@ -100,7 +100,6 @@ function GetOrganisation(req, res){
     });
 }
 
-
 function GetOrganisationPackages(req, res){
     logger.debug("DVP-UserService.GetOrganisationPackages Internal method ");
 
@@ -125,7 +124,6 @@ function GetOrganisationPackages(req, res){
         res.end(jsonString);
     });
 }
-
 
 function DeleteOrganisation(req,res){
     logger.debug("DVP-UserService.DeleteOrganisation Internal method ");
@@ -669,6 +667,8 @@ function UpdateUser(ownerId, vPackage){
         }
     });
 }
+
+
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
 module.exports.DeleteOrganisation = DeleteOrganisation;
