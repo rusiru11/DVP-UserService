@@ -583,7 +583,7 @@ function ExtractConsoles(consoles){
                 resConsole.findOne({consoleName: consoleName}, function(err, rConsole) {
                     if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
-                        res.end(jsonString);
+                        console.log(jsonString);
                     }else{
                         var consoleScope = {consoleName: rConsole.consoleName, menus: []};
                         for(var j in rConsole.consoleNavigation){
