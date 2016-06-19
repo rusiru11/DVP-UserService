@@ -106,9 +106,9 @@ function GetOrganisationPackages(req, res){
 
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
-    var owner = req.user.company;
+    var owner = req.user.iss;
     var jsonString;
-    Org.findOne({owner:owner, tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({ownerId:owner, tenant: tenant, id: company}, function(err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
         }else{
