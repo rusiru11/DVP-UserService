@@ -7,7 +7,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var Org = require('./model/Organisation');
 var User = require('./model/User');
 var VPackage = require('./model/Package');
-var Console = require('./model/Console');
+var resConsole = require('./model/Console');
 var EventEmitter = require('events').EventEmitter;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var util = require('util');
@@ -297,6 +297,7 @@ function UpdateOrganisation(req, res){
 
 function AssignPackageToOrganisation(req,res){
     logger.debug("DVP-UserService.AssignPackageToOrganisation Internal method ");
+    logger.debug(req.params.packageName);
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -379,7 +380,7 @@ function AssignTaskToOrganisation(company, tenant, taskList){
         taskInfoUrl = util.format("http://%s:%s/DVP/API/%s/ResourceManager/TaskInfo", config.Services.resourceServiceHost, config.Services.resourceServicePort, config.Services.resourceServiceVersion);
     }
     var companyInfo = util.format("%d:%d", tenant, company);
-    restClientHandler.DoGet(companyInfo, taskInfoUrl, "", function (err, res, result) {
+    restClientHandler.DoGet(companyInfo, taskInfoUrl, "", function (err, res1, result) {
         if (err) {
             console.log(err);
         }
@@ -389,7 +390,7 @@ function AssignTaskToOrganisation(company, tenant, taskList){
                 var task = FilterObjFromArray(jResult.Result,"TaskType",taskList[i]);
                 if(task) {
                     var body = {"TaskInfoId": task.TaskInfoId};
-                    restClientHandler.DoPost(companyInfo, taskUrl, body, function (err, res, result) {
+                    restClientHandler.DoPost(companyInfo, taskUrl, body, function (err, res1, result) {
                         if (err) {
                             console.log(err);
                         }
@@ -420,7 +421,7 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant){
         ClientCompany: company
 
     };
-    restClientHandler.DoPost(companyInfo, contextUrl, contextReqBody, function (err, res, result) {
+    restClientHandler.DoPost(companyInfo, contextUrl, contextReqBody, function (err, res1, result) {
         if (err) {
             console.log(err);
         }
@@ -434,7 +435,7 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant){
                 ClientCompany: company
             };
             console.log("Assign context Success: ", result);
-            restClientHandler.DoPost(companyInfoForCloudEndUser, cloudEndUserUrl, cloudEndUserReqBody, function (err, res, result) {
+            restClientHandler.DoPost(companyInfoForCloudEndUser, cloudEndUserUrl, cloudEndUserReqBody, function (err, res1, result) {
                 if (err) {
                     console.log(err);
                 }
@@ -578,14 +579,14 @@ function ExtractConsoles(consoles){
             var consoleScopes = [];
             for (var i in consoles) {
                 var consoleName = consoles[i];
-                Console.findOne({consoleName: consoleName}, function(err, console) {
+                resConsole.findOne({consoleName: consoleName}, function(err, rConsole) {
                     if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
-                        res.end(jsonString);
+                        console.log(jsonString);
                     }else{
-                        var consoleScope = {consoleName: console.consoleName, menus: []};
-                        for(var j in console.consoleNavigation){
-                            var navigation = console.consoleNavigation[j];
+                        var consoleScope = {consoleName: rConsole.consoleName, menus: []};
+                        for(var j in rConsole.consoleNavigation){
+                            var navigation = rConsole.consoleNavigation[j];
                             var menuScope = {menuItem: navigation.navigationName, menuAction: []};
                             for(var k in navigation.resources){
                                 var navigationResource = navigation.resources[k];

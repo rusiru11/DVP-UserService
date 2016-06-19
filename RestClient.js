@@ -35,7 +35,7 @@ var DoGet = function (companyInfo, serviceurl, postData, callback) {
     var options = {
         url: serviceurl,
         headers: {
-            'content-type': 'text/plain',
+            'content-type': 'application/json',
             'authorization': accessToken,
             'companyinfo': companyInfo
         }
