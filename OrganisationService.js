@@ -100,6 +100,33 @@ function GetOrganisation(req, res){
     });
 }
 
+
+function GetOrganisationPackages(req, res){
+    logger.debug("DVP-UserService.GetOrganisationPackages Internal method ");
+
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+    var owner = req.user.iss;
+    var jsonString;
+    Org.findOne({ownerId:owner, tenant: tenant, id: company}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+        }else{
+
+            if(org) {
+                jsonString = messageFormatter.FormatMessage(err, "Get Organisation packages Successful", true, org.packages);
+            }
+            else{
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+            }
+
+        }
+        res.end(jsonString);
+    });
+}
+
+
 function DeleteOrganisation(req,res){
     logger.debug("DVP-UserService.DeleteOrganisation Internal method ");
 
@@ -151,7 +178,9 @@ function CreateOwner(req, res){
         email: {contact: req.body.mail, type: "phone", verified: false},
         user_meta: {role: "admin"},
         systemuser: true,
-        user_scopes: [],
+        user_scopes: [{
+            "scope" : "package",
+            "read" : true}],
         company: 0,
         tenant: 1,
         created_at: Date.now(),
@@ -706,3 +735,4 @@ module.exports.UpdateOrganisation = UpdateOrganisation;
 module.exports.AssignPackageToOrganisation = AssignPackageToOrganisation;
 module.exports.RemovePackageFromOrganisation = RemovePackageFromOrganisation;
 module.exports.CreateOwner = CreateOwner;
+module.exports.GetOrganisationPackages = GetOrganisationPackages;

@@ -93,6 +93,13 @@ app.post('/oauth/token', oauth2.token);
 
 
 
+
+
+
+
+app.get('/DVP/API/:version/Owner/:name/exsists', userService.OwnerExsists);
+
+
 app.get('/DVP/API/:version/Users', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsers);
 app.get('/DVP/API/:version/ExternalUsers', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"read"}), userService.GetExternalUsers);
 
@@ -109,14 +116,16 @@ app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({r
 
 //////////////////////////////Organisation API/////////////////////////////////////////////////////
 
-app.get('/DVP/API/:version/MyUserprofile',jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}),userService.GetMyrProfile);
+app.get('/DVP/API/:version/Myprofile',jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}),userService.GetMyrProfile);
 app.get('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfile);
 app.get('/DVP/API/:version/User/profilebycontact/:category/:contact', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfileByContact);
 app.get('/DVP/API/:version/User/profilebyresourceid/:resourceid', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfileByResourceId);
 app.get('/DVP/API/:version/User/:name/profile/veeryformat/:contact', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetARDSFriendlyContactObject);
+app.get('/DVP/API/:version/Myprofile/veeryformat/:contact', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"read"}), userService.GetMyARDSFriendlyContactObject);
+
 
 app.put('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfile);
-app.put('/DVP/API/:version/User/:name/myprofile', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}), userService.UpdateMyUserProfile);
+app.put('/DVP/API/:version/Myprofile', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}), userService.UpdateMyUserProfile);
 
 app.put('/DVP/API/:version/User/:name/profile/resource/:resourceid', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.SetUserProfileResourceId);
 
@@ -127,8 +136,8 @@ app.put('/DVP/API/:version/User/:name/profile/contact/:contact', jwt({secret: se
 app.delete('/DVP/API/:version/User/:name/profile/contact/:contact', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"delete"}), userService.RemoveUserProfileContact);
 
 
-app.put('/DVP/API/:version/User/:name/profile/contact/:contact', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}), userService.UpdateMyUserProfileContact);
-app.delete('/DVP/API/:version/User/:name/profile/contact/:contact', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"delete"}), userService.RemoveMyUserProfileContact);
+app.put('/DVP/API/:version/Myprofile/contact/:contact', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}), userService.UpdateMyUserProfileContact);
+app.delete('/DVP/API/:version/Myprofile/contact/:contact', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"delete"}), userService.RemoveMyUserProfileContact);
 
 
 
@@ -140,6 +149,7 @@ app.post('/DVP/API/:version/Organisation/Owner', organisationService.CreateOwner
 app.put('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.UpdateOrganisation);
 app.put('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.AssignPackageToOrganisation);
 app.delete('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.RemovePackageFromOrganisation);
+app.get('/DVP/API/:version/MyOrganization/mypackages', jwt({secret: secret.Secret}),authorization({resource:"package", action:"read"}), organisationService.GetOrganisationPackages);
 
 app.get('/DVP/API/:version/Resources', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"read"}), resourceService.GetResources);
 app.get('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"read"}), resourceService.GetResource);
@@ -152,6 +162,7 @@ app.get('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),a
 app.delete('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"package", action:"delete"}), packageService.DeletePackage);
 app.post('/DVP/API/:version/Package', jwt({secret: secret.Secret}),authorization({resource:"package", action:"write"}), packageService.CreatePackage);
 app.put('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"package", action:"write"}), packageService.UpdatePackage);
+
 
 app.get('/DVP/API/:version/Consoles', jwt({secret: secret.Secret}),authorization({resource:"console", action:"read"}), navigationService.GetAllConsoles);
 app.get('/DVP/API/:version/Consoles/:roleType', jwt({secret: secret.Secret}),authorization({resource:"console", action:"read"}), navigationService.GetAllConsolesByUserRole);
@@ -168,6 +179,7 @@ app.put('/DVP/API/:version/Users/:name/Scope', jwt({secret: secret.Secret}),auth
 app.delete('/DVP/API/:version/User/:username/Scope/:scope', jwt({secret: secret.Secret}),authorization({resource:"userScope", action:"delete"}), userService.RemoveUserScopes);
 
 app.get('/DVP/API/:version/Users/:name/AppScope',jwt({secret: secret.Secret}), authorization({resource:"userAppScope", action:"read"}), userService.GetAppScopes);
+app.get('/DVP/API/:version/MyAppScopes/MyAppScopes',jwt({secret: secret.Secret}), authorization({resource:"myAppScope", action:"read"}), userService.GetMyAppScopes);
 app.delete('/DVP/API/:version/User/:username/Console/:consoleName/Navigation/:navigation', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"delete"}), userService.RemoveUserAppScopes);
 app.put('/DVP/API/:version/User/:username/Console/:consoleName/Navigation', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"write"}), userService.AddUserAppScopes);
 app.delete('/DVP/API/:version/User/:username/Console/:consoleName', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"delete"}), userService.RemoveConsoleFromUser);
