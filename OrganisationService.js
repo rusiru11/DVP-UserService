@@ -548,7 +548,7 @@ function ExtractResources(resources){
         if (Array.isArray(resources)) {
             var count = 0;
             var userScopes = [];
-            for (var i in resources) {
+            for (var i = 0; i< resources.length; i++) {
                 var resource = resources[i];
                 var gus  = GetUserScopes(resource.scopes);
                 gus.on('getUserScopes', function(scope){
@@ -575,9 +575,10 @@ function ExtractConsoles(consoles){
     var e = new EventEmitter();
     process.nextTick(function () {
         if (Array.isArray(consoles)) {
+            logger.debug("consoles Length: "+ consoles.length);
             var count = 0;
             var consoleScopes = [];
-            for (var i in consoles) {
+            for (var i = 0; i< consoles.length;i++) {
                 var consoleName = consoles[i];
                 logger.debug("consoleName: "+ consoleName);
                 Console.findOne({consoleName: consoleName}, function(err, rConsole) {
