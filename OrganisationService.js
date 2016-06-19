@@ -577,6 +577,7 @@ function ExtractConsoles(consoles){
     var e = new EventEmitter();
     process.nextTick(function () {
         if (Array.isArray(consoles)) {
+            logger.debug("consoles Length: "+ consoles.length);
             var count = 0;
             var consoleScopes = [];
             for (var i in consoles) {
