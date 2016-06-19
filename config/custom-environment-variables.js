@@ -56,7 +56,13 @@ module.exports = {
         "accessToken": "HOST_TOKEN",
         "resourceServiceHost": "SYS_RESOURCESERVICE_HOST",
         "resourceServicePort": "SYS_RESOURCESERVICE_PORT",
-        "resourceServiceVersion": "SYS_RESOURCESERVICE_VERSION"
+        "resourceServiceVersion": "SYS_RESOURCESERVICE_VERSION",
+        "sipuserendpointserviceHost": "SYS_SIPUSERENDPOINTSERVICE_HOST",
+        "sipuserendpointservicePort": "SYS_SIPUSERENDPOINTSERVICE_PORT",
+        "sipuserendpointserviceVersion": "SYS_SIPUSERENDPOINTSERVICE_VERSION",
+        "clusterconfigserviceHost": "SYS_CLUSTERCONFIG_HOST",
+        "clusterconfigservicePort": "SYS_CLUSTERCONFIG_PORT",
+        "clusterconfigserviceVersion": "SYS_CLUSTERCONFIG_VERSION"
     }
 };
 
