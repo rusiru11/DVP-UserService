@@ -29,11 +29,11 @@ var DoPost = function (companyInfo, serviceurl, postData, callback) {
 
 var DoGet = function (companyInfo, serviceurl, postData, callback) {
     var jsonStr = JSON.stringify(postData);
-    var httpUrl = util.format('%s? %s', serviceurl, jsonStr);
+    //var httpUrl = util.format('%s? %s', serviceurl, jsonStr);
     var accessToken = util.format("bearer %s", config.Services.accessToken);
-    console.log('RouteRequest:: %s', httpUrl);
+    console.log('RouteRequest:: %s', serviceurl);
     var options = {
-        url: httpUrl,
+        url: serviceurl,
         headers: {
             'content-type': 'text/plain',
             'authorization': accessToken,
