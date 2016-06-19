@@ -1352,7 +1352,7 @@ function AssignConsoleToUser(req,res){
 
 
                                                         User.findOneAndUpdate({
-                                                            username: req.params.name,
+                                                            username: req.params.username,
                                                             company: company,
                                                             tenant: tenant
                                                         }, {$addToSet: {user_scopes: basicscopes}}, function (err, rUsers) {
