@@ -299,6 +299,7 @@ function UpdateOrganisation(req, res){
 
 function AssignPackageToOrganisation(req,res){
     logger.debug("DVP-UserService.AssignPackageToOrganisation Internal method ");
+    logger.debug(req.params.packageName);
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
