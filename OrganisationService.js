@@ -324,6 +324,7 @@ function AssignPackageToOrganisation(req,res){
                                 } else {
                                     UpdateUser(org.ownerId, vPackage);
                                     AssignTaskToOrganisation(company,tenant,vPackage.veeryTask);
+                                    AssignContextAndCloudEndUserToOrganisation(company, tenant);
                                     jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
                                 }
                                 res.end(jsonString);
@@ -374,6 +375,50 @@ function AssignTaskToOrganisation(company, tenant, taskList){
         }
     });
 }
+
+function AssignContextAndCloudEndUserToOrganisation(company, tenant){
+    var contextUrl = util.format("http://%s/DVP/API/%s/SipUser/Context",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointserviceVersion);
+    var cloudEndUserUrl = util.format("http://%s/DVP/API/%s/CloudConfiguration/CloudEndUser",config.Services.clusterconfigserviceHost, config.Services.clusterconfigserviceVersion);
+    if(validator.isIP(config.Services.resourceServiceHost))
+    {
+        cloudEndUserUrl = util.format("http://%s:%s/DVP/API/%s/CloudConfiguration/CloudEndUser", config.Services.clusterconfigserviceHost, config.Services.sipuserendpointservicePort, config.Services.clusterconfigserviceVersion);
+        contextUrl = util.format("http://%s:%s/DVP/API/%s/SipUser/Context", config.Services.sipuserendpointserviceHost, config.Services.clusterconfigservicePort, config.Services.sipuserendpointserviceVersion);
+    }
+    var companyInfo = util.format("%d:%d", tenant, company);
+    var contextReqBody = {
+        ContextCat: 'INTERNAL',
+        Context: util.format("%d_%d_CONTEXT",tenant, company),
+        Description: 'Default Internal Context',
+        ClientTenant: tenant,
+        ClientCompany: company
+
+    };
+    restClientHandler.DoPost(companyInfo, contextUrl, contextReqBody, function (err, res, result) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            var companyInfoForCloudEndUser = util.format("%d:%d", 1, 3);
+            var cloudEndUserReqBody = {
+                ClusterID: 2,
+                Domain: "159.203.160.47",
+                Provision: 1,
+                ClientTenant: tenant,
+                ClientCompany: company
+            };
+            console.log("Assign context Success: ", result);
+            restClientHandler.DoPost(companyInfoForCloudEndUser, cloudEndUserUrl, cloudEndUserReqBody, function (err, res, result) {
+                if (err) {
+                    console.log(err);
+                }
+                else {
+                    console.log("Assign cloudEndUser Success: ", result);
+                }
+            });
+        }
+    });
+}
+
 
 function RemovePackageFromOrganisation(req,res){
     logger.debug("DVP-UserService.RemovePackageFromOrganisation Internal method ");
@@ -584,7 +629,20 @@ function UpdateUser(ownerId, vPackage){
                 userScopes = userScopes.concat(fixUserScopes);
                 var uScopes = UniqueObjectArray(userScopes,"scope");
                 for(var i in uScopes){
-                    user.user_scopes.push(uScopes[i]);
+                    var eUserScope = FilterObjFromArray(user.user_scopes, "scope", uScopes[i]);
+                    if(eUserScope){
+                        if(uScopes[i].read && (!eUserScope.read || eUserScope.read == false)){
+                            eUserScope.read = uScopes[i].read;
+                        }
+                        if(uScopes[i].write && (!eUserScope.write || eUserScope.write == false)){
+                            eUserScope.write = uScopes[i].write;
+                        }
+                        if(uScopes[i].delete && (!eUserScope.delete || eUserScope.delete == false)){
+                            eUserScope.delete = uScopes[i].read;
+                        }
+                    }else {
+                        user.user_scopes.push(uScopes[i]);
+                    }
                 }
                 var ec = ExtractConsoles(vPackage.consoles);
                 ec.on('endExtractConsoles', function(clientScopes){
