@@ -128,6 +128,8 @@ function CreatePackage(req, res){
     var vPackage = VPackage({
         packageName: req.body.packageName,
         consoleAccessLimit: req.body.consoleAccessLimit,
+        veeryTask: req.body.veeryTask,
+        price: req.body.price,
         created_at: Date.now(),
         updated_at: Date.now()
 
