@@ -381,7 +381,7 @@ function AssignTaskToOrganisation(company, tenant, taskList){
         taskInfoUrl = util.format("http://%s:%s/DVP/API/%s/ResourceManager/TaskInfo", config.Services.resourceServiceHost, config.Services.resourceServicePort, config.Services.resourceServiceVersion);
     }
     var companyInfo = util.format("%d:%d", tenant, company);
-    restClientHandler.DoGet(companyInfo, taskInfoUrl, "", function (err, res, result) {
+    restClientHandler.DoGet(companyInfo, taskInfoUrl, "", function (err, res1, result) {
         if (err) {
             console.log(err);
         }
@@ -391,7 +391,7 @@ function AssignTaskToOrganisation(company, tenant, taskList){
                 var task = FilterObjFromArray(jResult.Result,"TaskType",taskList[i]);
                 if(task) {
                     var body = {"TaskInfoId": task.TaskInfoId};
-                    restClientHandler.DoPost(companyInfo, taskUrl, body, function (err, res, result) {
+                    restClientHandler.DoPost(companyInfo, taskUrl, body, function (err, res1, result) {
                         if (err) {
                             console.log(err);
                         }
@@ -422,7 +422,7 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant){
         ClientCompany: company
 
     };
-    restClientHandler.DoPost(companyInfo, contextUrl, contextReqBody, function (err, res, result) {
+    restClientHandler.DoPost(companyInfo, contextUrl, contextReqBody, function (err, res1, result) {
         if (err) {
             console.log(err);
         }
@@ -436,7 +436,7 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant){
                 ClientCompany: company
             };
             console.log("Assign context Success: ", result);
-            restClientHandler.DoPost(companyInfoForCloudEndUser, cloudEndUserUrl, cloudEndUserReqBody, function (err, res, result) {
+            restClientHandler.DoPost(companyInfoForCloudEndUser, cloudEndUserUrl, cloudEndUserReqBody, function (err, res1, result) {
                 if (err) {
                     console.log(err);
                 }
