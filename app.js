@@ -89,11 +89,7 @@ app.get('/oauth/authorize', oauth2.authorization);
 app.get('/dialog/authorize', oauth2.authorization);
 app.post('/dialog/authorize/decision', oauth2.decision);
 app.post('/oauth/token', oauth2.token);
-
-
-
-
-
+app.delete('/oauth/token/revoke/:jti', jwt({secret: secret.Secret}), oauth2.revoketoken);
 
 
 
@@ -145,6 +141,15 @@ app.get('/DVP/API/:version/Organisations', jwt({secret: secret.Secret}),authoriz
 app.get('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetOrganisation);
 app.delete('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"delete"}), organisationService.DeleteOrganisation);
 app.post('/DVP/API/:version/Organisation', passport.authenticate('local', { session: false }), organisationService.CreateOrganisation);
+
+
+
+
+
+
+
+
+
 app.post('/DVP/API/:version/Organisation/Owner', organisationService.CreateOwner);
 app.put('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.UpdateOrganisation);
 app.put('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.AssignPackageToOrganisation);
