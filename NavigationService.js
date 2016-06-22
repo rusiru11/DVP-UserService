@@ -238,7 +238,7 @@ function AddNavigationToConsole(req, res){
                 res.end(jsonString);
             }else{
                 if(console) {
-                    Console.findOne({"consoleNavigation.navigationName":navigation.navigationName}, function(err, isExists) {
+                    Console.findOne({$and:[{"consoleNavigation.navigationName":navigation.navigationName},{"consoleName":req.params.consoleName}]}, function(err, isExists) {
                         if(isExists){
                             console.updated_at = Date.now();
                             for (var i = 0; i < console.consoleNavigation.length; i++) {
