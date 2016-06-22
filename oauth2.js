@@ -20,6 +20,7 @@ var util = require("util");
 var moment = require('moment');
 var redis = require('redis');
 var config = require('config');
+var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 
 var redisip = config.Redis.ip;
@@ -330,7 +331,6 @@ server.exchange('urn:ietf:params:oauth:grant-type:jwt-bearer', jwtBearer(functio
     });
 }));
 
-
 server.exchange(oauth2orize.exchange.password(function (client, username, password, scope, done) {
     //Validate the user
 
@@ -576,6 +576,43 @@ exports.token = [
     server.errorHandler()
 ]
 
+
+exports.revoketoken = function(req, res, next) {
+    var id = req.params.jti;
+    var jsonString = {};
+    var iss = req.user.iss;
+
+    jsonString = messageFormatter.FormatMessage(undefined, "Revoke token failed", false, undefined);
+    if(iss) {
+        accessToken.remove({jti: id}, function (err) {
+
+            if (err) {
+                jsonString = messageFormatter.FormatMessage(err, "Revoke token failed", false, undefined);
+            } else {
+
+
+                var redisKey = "token:iss:" + iss + ":" + id;
+                redisClient.del(redisKey, redis.print);
+
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Revoke token successful", true, undefined);
+            }
+
+            res.end(jsonString);
+
+        });
+
+
+
+    } else{
+
+        res.end(jsonString);
+    }
+
+
+
+
+}
 
 
 

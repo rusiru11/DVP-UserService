@@ -100,7 +100,6 @@ function GetOrganisation(req, res){
     });
 }
 
-
 function GetOrganisationPackages(req, res){
     logger.debug("DVP-UserService.GetOrganisationPackages Internal method ");
 
@@ -114,7 +113,7 @@ function GetOrganisationPackages(req, res){
         }else{
 
             if(org) {
-                jsonString = messageFormatter.FormatMessage(err, "Get Organisation packages Successful", true, org.packages);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get Organisation packages Successful", true, org.packages);
             }
             else{
 
@@ -125,7 +124,6 @@ function GetOrganisationPackages(req, res){
         res.end(jsonString);
     });
 }
-
 
 function DeleteOrganisation(req,res){
     logger.debug("DVP-UserService.DeleteOrganisation Internal method ");
@@ -226,7 +224,9 @@ function CreateOrganisation(req, res){
                             {scope: "organisation", read: true, write: true},
                             {scope: "resource", read: true},
                             {scope: "package", read: true},
-                            {scope: "console", read: true}
+                            {scope: "console", read: true},
+                            {"scope": "myNavigation", "read": true},
+                            {"scope": "myUserProfile", "read": true}
                         ];
                         user.company = cid;
                         user.updated_at = Date.now();
@@ -731,6 +731,8 @@ function UpdateUser(ownerId, vPackage){
         }
     });
 }
+
+
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
 module.exports.DeleteOrganisation = DeleteOrganisation;
