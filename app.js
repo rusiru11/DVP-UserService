@@ -27,6 +27,7 @@ var organisationService = require("./OrganisationService");
 var resourceService = require("./ResourceService");
 var packageService = require("./PackageService");
 var navigationService = require('./NavigationService');
+var externalUserService = require("./ExternalUserService");
 var config = require('config');
 var jwt = require('restify-jwt');
 var util = require('util');
@@ -144,12 +145,6 @@ app.post('/DVP/API/:version/Organisation', passport.authenticate('local', { sess
 
 
 
-
-
-
-
-
-
 app.post('/DVP/API/:version/Organisation/Owner', organisationService.CreateOwner);
 app.put('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.UpdateOrganisation);
 app.put('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.AssignPackageToOrganisation);
@@ -213,6 +208,24 @@ app.post('/DVP/API/:version/Client', jwt({secret: secret.Secret}),authorization(
 app.get('/DVP/API/:version/Client/:id/claims',jwt({secret: secret.Secret}), authorization({resource:"clientScope", action:"read"}), clientService.GetClientClaims);
 app.put('/DVP/API/:version/Client/:id/claim', jwt({secret: secret.Secret}),authorization({resource:"clientScope", action:"write"}), clientService.AddClientClaim);
 app.delete('/DVP/API/:version/Client/:id/claim/:claim', jwt({secret: secret.Secret}),authorization({resource:"clientScope", action:"delete"}), clientService.RemoveClientClaim);
+
+
+
+app.get('/DVP/API/:version/ExternalUsers',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUsers);
+app.get('/DVP/API/:version/ExternalUser/:id',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUser);
+app.delete('/DVP/API/:version/ExternalUser/:id',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"delete"}), externalUserService.DeleteExternalUser);
+app.post('/DVP/API/:version/ExternalUser',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.CreateExternalUser);
+app.put('/DVP/API/:version/ExternalUser',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUser);
+app.get('/DVP/API/:version/ExternalUser/ByContact/:category/:contact',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUserProfileByContact);
+app.get('/DVP/API/:version/ExternalUser/ByField/:field/:value',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUserProfileByField);
+app.put('/DVP/API/:version/ExternalUser/Contact/:id/:contact',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfileContact);
+app.put('/DVP/API/:version/ExternalUser/Email/:id/:email',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfileEmail);
+app.delete('/DVP/API/:version/ExternalUser/Contact/:id/:contact',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"delete"}), externalUserService.RemoveExternalUserProfileContact);
+app.put('/DVP/API/:version/ExternalUser/Email/:id/:phone',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfilePhone);
+app.get('/DVP/API/:version/ExternalUser/BySSN/:ssn',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUserProfileBySSN);
+
+
+
 
 
 

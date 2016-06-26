@@ -49,7 +49,6 @@ function GetUsers(req, res){
 
 }
 
-
 function GetExternalUsers(req, res){
 
 
