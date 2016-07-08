@@ -1247,9 +1247,11 @@ function SetUserProfileResourceId(req, res){
             jsonString = messageFormatter.FormatMessage(err, "Update User resource id Failed", false, undefined);
 
         } else {
-
-            jsonString = messageFormatter.FormatMessage(err, "Update User resource id Successful", true, undefined);
-
+            if(users) {
+                jsonString = messageFormatter.FormatMessage(err, "Update User resource id Successful", true, undefined);
+            }else{
+                jsonString = messageFormatter.FormatMessage(err, "No User Found", false, undefined);
+            }
         }
 
         res.end(jsonString);
@@ -2075,6 +2077,57 @@ function GetMyAppScopesByConsole(req, res){
 
 }
 
+function GetMyAppScopesByConsoles(req, res){
+
+
+    logger.debug("DVP-UserService.GetUsers Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.user.iss;
+    var consoles = req.query.consoles.split(",");
+    var jsonString;
+
+    ////client_scopes:{$elemMatch: {consoleName: console}}
+
+
+    User.findOne({username: user,company: company, tenant: tenant, }, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
+
+        }else{
+
+            if(users) {
+
+                if(users.client_scopes) {
+                    var consoleObjects = [];
+                    for(var i =0; i< consoles.length; i++) {
+                        var obj = users.client_scopes.filter(function (obj, index) {
+                            return obj.consoleName == consoles[i];
+                        });
+                        if(obj && obj.length>0) {
+                            consoleObjects.push(obj[0]);
+                        }
+                    }
+                    if(consoleObjects) {
+                        jsonString = messageFormatter.FormatMessage(err, "Get User app scope Successful", true, consoleObjects);
+                    }else{
+
+                        jsonString = messageFormatter.FormatMessage(err, "No Access found to "+ console, false, undefined);
+                    }
+                }
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
+            }
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
 
 
 
@@ -2157,6 +2210,7 @@ module.exports.GetMyAppScopes = GetMyAppScopes;
 
 
 module.exports.GetMyAppScopesByConsole = GetMyAppScopesByConsole;
+module.exports.GetMyAppScopesByConsoles = GetMyAppScopesByConsoles
 module.exports.GetMyARDSFriendlyContactObject = GetMyARDSFriendlyContactObject;
 module.exports.OwnerExsists = OwnerExsists;
 
