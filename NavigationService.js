@@ -23,7 +23,7 @@ function UniqueObjectArray(array, field) {
 function GetResources(resources){
     var e = new EventEmitter();
     process.nextTick(function () {
-        if (Array.isArray(resources)) {
+        if (Array.isArray(resources) && resources.length > 0) {
             var count = 0;
             for (var i in resources) {
                 var resource = resources[i];
