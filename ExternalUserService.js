@@ -3,7 +3,7 @@
  */
 var mongoose = require('mongoose');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
-var ExternalUser = require('./model/ExternalUser');
+var ExternalUser = require('dvp-mongomodels/model/ExternalUser');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var regex = require('regex');
 
@@ -12,6 +12,7 @@ var regex = require('regex');
 function GetExternalUsers(req, res){
 
 
+    logger.debug("DVP-UserService.GetExternalUsers Internal method ");
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
@@ -47,7 +48,7 @@ function GetExternalUser(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.findOne({id: req.params.id,company: company, tenant: tenant}, function(err, users) {
+    ExternalUser.findOne({_id: req.params.id,company: company, tenant: tenant}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
@@ -79,7 +80,7 @@ function DeleteExternalUser(req,res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.findOneAndRemove({id: req.params.id,company: company, tenant: tenant}, function(err, user) {
+    ExternalUser.findOneAndRemove({_id: req.params.id,company: company, tenant: tenant}, function(err, user) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
         }else{
@@ -96,49 +97,56 @@ function CreateExternalUser(req, res) {
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
 
-    var user = User({
-        title: req.body.title,
-        name: req.body.name,
-        avatar: req.body.avatar,
-        birthday: req.body.birthday,
-        gender: req.body.gender,
-        firstname: req.body.firstname,
-        lastname: req.body.lastname,
-        locale: req.body.locale,
-        ssn: req.body.ssn,
-        address: {
-            zipcode: req.body.address.zipcode,
-            number: req.body.address.number,
-            street: req.body.address.street,
-            city: req.body.address.city,
-            province: req.body.address.province,
-            country: req.body.address.country,
+    if(req.body && req.body.firstname && req.body.lastname && req.body.phone && req.body.email) {
+        var extUser = ExternalUser({
+            title: req.body.title,
+            name: req.body.name,
+            avatar: req.body.avatar,
+            birthday: req.body.birthday,
+            gender: req.body.gender,
+            firstname: req.body.firstname,
+            lastname: req.body.lastname,
+            locale: req.body.locale,
+            ssn: req.body.ssn,
+            address: {
+                zipcode: req.body.address.zipcode,
+                number: req.body.address.number,
+                street: req.body.address.street,
+                city: req.body.address.city,
+                province: req.body.address.province,
+                country: req.body.address.country,
 
 
-        },
+            },
 
 
-        phoneNumber: {contact: req.body.phone, type: "phone", verified: false},
-        email: {contact: req.body.mail, type: "phone", verified: false},
-        company: parseInt(req.user.company),
-        tenant: parseInt(req.user.tenant),
-        user_meta: {role: userRole},
-        created_at: Date.now(),
-        updated_at: Date.now()
-    });
+            phone: req.body.phone,
+            email: req.body.email,
+            company: parseInt(req.user.company),
+            tenant: parseInt(req.user.tenant),
+            created_at: Date.now(),
+            updated_at: Date.now()
+        });
 
 
-    ExternalUser.save(function (err, user) {
-        if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
-            res.end(jsonString);
-        } else {
+        extUser.save(function (err, user) {
+            if (err) {
+                jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+                res.end(jsonString);
+            } else {
 
 
-            jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
-            res.end(jsonString);
-        }
-    });
+                jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
+                res.end(jsonString);
+            }
+        });
+    }else{
+
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Requre fields not found", false, undefined);
+        res.end(jsonString);
+
+    }
 }
 
 function UpdateExternalUser(req, res){
@@ -151,7 +159,7 @@ function UpdateExternalUser(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    ExternalUser.findOneAndUpdate({id: req.params.id,company: company, tenant: tenant}, req.body, function(err, users) {
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, req.body, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update External User Failed", false, undefined);
@@ -179,8 +187,25 @@ function GetExternalUserProfileByContact(req, res){
     var jsonString;
 
     var queryObject = {company: company, tenant: tenant};
-    queryObject[category+".contact"] = contact
-    ExternalUser.find(queryObject, function(err, users) {
+    queryObject[category] = contact;
+
+    var otherQuery = {company: company, tenant: tenant, "contacts.type":category ,"contacts.contact": contact};
+
+    var orQuery = {$or:[queryObject, otherQuery]};
+
+    /*
+     Person.findOne({_id: personId, 'things.id': 2}, {'things.$': 1},
+     function(err, person) { ...
+
+     User.find( { $or:[ {'_id':objId}, {'name':param}, {'nickname':param} ]},
+     function(err,docs){
+     if(!err) res.send(docs);
+     });
+
+     */
+
+
+    ExternalUser.find(orQuery, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
@@ -244,10 +269,6 @@ function GetExternalUserProfileBySSN(req, res){
 
 }
 
-
-
-//{name: new RegExp('^'+name+'$', "i")}
-
 function GetExternalUserProfileByField(req, res){
 
 
@@ -296,7 +317,7 @@ function UpdateExternalUserProfileContact(req, res) {
     var jsonString;
 
     req.body.updated_at = Date.now();
-    ExternalUser.findOneAndUpdate({id: req.params.id,company: company, tenant: tenant}, { $addToSet :{contacts : {contact:req.params.contact, type:req.body.type, verified: false}}}, function (err, users) {
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { $addToSet :{contacts : {contact:req.params.contact, type:req.body.type, verified: false}}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update External user contact Failed", false, undefined);
@@ -310,7 +331,7 @@ function UpdateExternalUserProfileContact(req, res) {
         res.end(jsonString);
     });
 
-}
+};
 
 function UpdateExternalUserProfileEmail(req, res) {
 
@@ -322,7 +343,7 @@ function UpdateExternalUserProfileEmail(req, res) {
 
 
     req.body.updated_at = Date.now();
-    ExternalUser.findOneAndUpdate({id: req.params.id,company: company, tenant: tenant}, { email : {contact:req.params.email, type:"email", verified: false}}, function (err, users) {
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { email : req.params.email}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User email Failed", false, undefined);
@@ -345,7 +366,7 @@ function RemoveExternalUserProfileContact(req, res){
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    ExternalUser.findOneAndUpdate({id: req.params.id,company: company, tenant: tenant},{ $pull: { 'contacts': {'contact':req.params.contact} } }, function(err, users) {
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant},{ $pull: { 'contacts': {'contact':req.params.contact} } }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Remove External User Contact Failed", false, undefined);
@@ -362,6 +383,13 @@ function RemoveExternalUserProfileContact(req, res){
 
     });
 
+    /*
+
+
+     Person.findOne({_id: personId, 'things.id': 2}, {'things.$': 1},
+     function(err, person) { ...
+     */
+
 }
 
 function UpdateExternalUserProfilePhone(req, res) {
@@ -374,7 +402,7 @@ function UpdateExternalUserProfilePhone(req, res) {
 
 
     req.body.updated_at = Date.now();
-    ExternalUser.findOneAndUpdate({id: req.params.id,company: company, tenant: tenant}, { phoneNumber : {contact:req.params.phone, type:"voice", verified: false}}, function (err, users) {
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { phone : req.params.phone}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update External User phone number Failed", false, undefined);
@@ -391,6 +419,54 @@ function UpdateExternalUserProfilePhone(req, res) {
 }
 
 
+function BulkCreate(req, res){
+
+
+    /*
+
+     var arr = [{ name: 'Star Wars' }, { name: 'The Empire Strikes Back' }];
+     Movies.insertMany(arr, function(error, docs) {});
+
+     */
+
+
+    logger.debug("DVP-UserService.BulkCreate Internal method ");
+    var jsonString;
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+
+
+    if(req.body  ) {
+
+        req.body.forEach( function (item)
+        {
+            item.company = company;
+            item.tenant = tenant;
+
+        });
+
+
+        ExternalUser.insertMany(req.body,function (err, docs) {
+            if (err) {
+                jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+                res.end(jsonString);
+            } else {
+
+
+                jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, docs);
+                res.end(jsonString);
+            }
+        });
+
+    }else{
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Object validation failed", false, undefined);
+        res.end(jsonString);
+
+    }
+}
+
+
 module.exports.GetExternalUsers = GetExternalUsers;
 module.exports.GetExternalUser = GetExternalUser;
 module.exports.DeleteExternalUser = DeleteExternalUser;
@@ -403,3 +479,4 @@ module.exports.UpdateExternalUserProfileEmail = UpdateExternalUserProfileEmail;
 module.exports.RemoveExternalUserProfileContact =RemoveExternalUserProfileContact;
 module.exports.UpdateExternalUserProfilePhone = UpdateExternalUserProfilePhone;
 module.exports.GetExternalUserProfileBySSN = GetExternalUserProfileBySSN;
+module.exports.BulkCreate = BulkCreate;

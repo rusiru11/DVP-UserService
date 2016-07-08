@@ -2,10 +2,10 @@
  * Created by Heshan.i on 6/7/2016.
  */
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
-var Resource = require('./model/Resource');
-var VPackage = require('./model/Package');
+var Resource = require('dvp-mongomodels/model/Resource');
+var VPackage = require('dvp-mongomodels/model/Package');
 var EventEmitter = require('events').EventEmitter;
-var Console = require('./model/Console');
+var Console = require('dvp-mongomodels/model/Console');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 function ValidateResources(resources){

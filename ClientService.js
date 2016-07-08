@@ -4,7 +4,7 @@
 
 var mongoose = require('mongoose');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
-var Client = require('./model/Client');
+var Client = require('dvp-mongomodels/model/Client');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 var FlakeIdGen = require('flake-idgen')

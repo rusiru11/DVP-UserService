@@ -6,9 +6,9 @@ var LocalStrategy = require('passport-local').Strategy;
 var BasicStrategy = require('passport-http').BasicStrategy;
 var ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy;
 var BearerStrategy = require('passport-http-bearer').Strategy;
-var User = require('./model/User');
-var Client = require('./model/Client');
-var AccessToken = require ('./model/AccessToken');
+var User = require('dvp-mongomodels/model/User');
+var Client = require('dvp-mongomodels/model/Client');
+var AccessToken = require ('dvp-mongomodels/model/AccessToken');
 
 
 /**

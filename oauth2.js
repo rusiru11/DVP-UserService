@@ -6,11 +6,11 @@
 var oauth2orize = require('oauth2orize');
 var passport = require('passport');
 var login = require('connect-ensure-login');
-var Client = require('./model/Client');
-var User = require('./model/User');
-var RefreshToken = require("./model/RefreshToken");
-var AuthorizationCode = require('./model/AuthorizationCodes');
-var accessToken = require ('./model/AccessToken');
+var Client = require('dvp-mongomodels/model/Client');
+var User = require('dvp-mongomodels/model/User');
+var RefreshToken = require("dvp-mongomodels/model/RefreshToken");
+var AuthorizationCode = require('dvp-mongomodels/model/AuthorizationCodes');
+var accessToken = require ('dvp-mongomodels/model/AccessToken');
 var FlakeIdGen = require('flake-idgen')
 var intformat = require('biguint-format')
 var uuid = require('node-uuid');

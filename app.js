@@ -98,8 +98,6 @@ app.get('/DVP/API/:version/Owner/:name/exsists', userService.OwnerExsists);
 
 
 app.get('/DVP/API/:version/Users', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsers);
-app.get('/DVP/API/:version/ExternalUsers', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"read"}), userService.GetExternalUsers);
-
 app.get('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUser);
 app.get('/DVP/API/:version/User/:name/exsists', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserExsists);
 
@@ -211,6 +209,8 @@ app.delete('/DVP/API/:version/Client/:id/claim/:claim', jwt({secret: secret.Secr
 
 
 
+//
+app.post('/DVP/API/:version/BulkExternalUser',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.BulkCreate);
 app.get('/DVP/API/:version/ExternalUsers',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUsers);
 app.get('/DVP/API/:version/ExternalUser/:id',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUser);
 app.delete('/DVP/API/:version/ExternalUser/:id',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"delete"}), externalUserService.DeleteExternalUser);
@@ -218,11 +218,14 @@ app.post('/DVP/API/:version/ExternalUser',jwt({secret: secret.Secret}), authoriz
 app.put('/DVP/API/:version/ExternalUser',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUser);
 app.get('/DVP/API/:version/ExternalUser/ByContact/:category/:contact',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUserProfileByContact);
 app.get('/DVP/API/:version/ExternalUser/ByField/:field/:value',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUserProfileByField);
-app.put('/DVP/API/:version/ExternalUser/Contact/:id/:contact',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfileContact);
-app.put('/DVP/API/:version/ExternalUser/Email/:id/:email',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfileEmail);
-app.delete('/DVP/API/:version/ExternalUser/Contact/:id/:contact',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"delete"}), externalUserService.RemoveExternalUserProfileContact);
-app.put('/DVP/API/:version/ExternalUser/Email/:id/:phone',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfilePhone);
+app.put('/DVP/API/:version/ExternalUser/:id/Contact/:contact',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfileContact);
+app.put('/DVP/API/:version/ExternalUser/:id/Email/:email',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfileEmail);
+app.delete('/DVP/API/:version/ExternalUser/:id/Contact/:contact',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"delete"}), externalUserService.RemoveExternalUserProfileContact);
+app.put('/DVP/API/:version/ExternalUser/:id/Phone/:phone',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfilePhone);
 app.get('/DVP/API/:version/ExternalUser/BySSN/:ssn',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUserProfileBySSN);
+
+
+
 
 
 

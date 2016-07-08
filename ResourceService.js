@@ -2,7 +2,7 @@
  * Created by Heshan.i on 6/7/2016.
  */
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
-var Resource = require('./model/Resource');
+var Resource = require('dvp-mongomodels/model/Resource');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 function GetResources(req, res){

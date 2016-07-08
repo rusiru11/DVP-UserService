@@ -1,9 +1,9 @@
 var mongoose = require('mongoose');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
-var User = require('./model/User');
-var Org = require('./model/Organisation');
-var VPackage = require('./model/Package');
-var Console = require('./model/Console');
+var User = require('dvp-mongomodels/model/User');
+var Org = require('dvp-mongomodels/model/Organisation');
+var VPackage = require('dvp-mongomodels/model/Package');
+var Console = require('dvp-mongomodels/model/Console');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 
