@@ -7,6 +7,10 @@ var ExternalUser = require('dvp-mongomodels/model/ExternalUser');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var regex = require('regex');
 
+var util = require('util');
+
+
+
 
 
 function GetExternalUsers(req, res){
@@ -331,32 +335,6 @@ function UpdateExternalUserProfileContact(req, res) {
         res.end(jsonString);
     });
 
-};
-
-function UpdateExternalUserProfileEmail(req, res) {
-
-    logger.debug("DVP-UserService.UpdateExternalUserProfileEmail Internal method ");
-
-    var company = parseInt(req.user.company);
-    var tenant = parseInt(req.user.tenant);
-    var jsonString;
-
-
-    req.body.updated_at = Date.now();
-    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { email : req.params.email}, function (err, users) {
-        if (err) {
-
-            jsonString = messageFormatter.FormatMessage(err, "Update User email Failed", false, undefined);
-
-        } else {
-
-            jsonString = messageFormatter.FormatMessage(err, "Update User email Successful", true, undefined);
-
-        }
-
-        res.end(jsonString);
-    });
-
 }
 
 function RemoveExternalUserProfileContact(req, res){
@@ -418,6 +396,31 @@ function UpdateExternalUserProfilePhone(req, res) {
 
 }
 
+function UpdateExternalUserProfileEmail(req, res) {
+
+    logger.debug("DVP-UserService.UpdateExternalUserProfileEmail Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+    req.body.updated_at = Date.now();
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { email : req.params.email}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User email Failed", false, undefined);
+
+        } else {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User email Successful", true, undefined);
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
 
 function BulkCreate(req, res){
 
@@ -466,6 +469,120 @@ function BulkCreate(req, res){
     }
 }
 
+function SearchExternalUsers(req, res){
+
+    logger.debug("DVP-UserService.SearchExternalUsers Internal method ");
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    ExternalUser.find({$text : { $search : req.params.text } , company: company, tenant: tenant},{ score : { $meta: "textScore" } }).sort({ score : { $meta : 'textScore' } })
+        .exec(function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
+
+        }else {
+
+            if (users) {
+
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "No External Users Found", false, undefined);
+
+            }
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+function UpdateExternalUserProfileDynamicFields(req, res) {
+
+    logger.debug("DVP-UserService.UpdateExternalUserProfileDynamicFields Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+
+
+    var form;
+    if(util.isArray(req.body)){
+
+        fields = [];
+
+        req.body.forEach(function(item){
+            //console.log(item)
+
+            fields.push({field:item.field, value:item.value});
+
+        });
+
+        form = {dynamic_form : {$each: fields}};
+
+    }else{
+
+
+        form = {dynamic_form : {field:req.body.field, value: req.body.value}};
+
+    }
+
+
+    // dynamic_form:[{field:{ type: String, required: true}, value:{ type: String, required: true}}],
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { $addToSet :form}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update External user fields Failed", false, undefined);
+
+        } else {
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Update External User fields Successful", true, undefined);
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+function RemoveExternalUserProfileDynamicFields(req, res){
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant},{ $pull: { 'dynamic_form': {'field':req.params.field} } }, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Remove External User fields Failed", false, undefined);
+
+
+        }else{
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Remove External User fields successfully", false, undefined);
+
+        }
+
+        res.end(jsonString);
+
+
+    });
+
+    /*
+
+
+     Person.findOne({_id: personId, 'things.id': 2}, {'things.$': 1},
+     function(err, person) { ...
+     */
+
+}
+
 
 module.exports.GetExternalUsers = GetExternalUsers;
 module.exports.GetExternalUser = GetExternalUser;
@@ -480,3 +597,5 @@ module.exports.RemoveExternalUserProfileContact =RemoveExternalUserProfileContac
 module.exports.UpdateExternalUserProfilePhone = UpdateExternalUserProfilePhone;
 module.exports.GetExternalUserProfileBySSN = GetExternalUserProfileBySSN;
 module.exports.BulkCreate = BulkCreate;
+module.exports.SearchExternalUsers =SearchExternalUsers;
+module.exports.UpdateExternalUserProfileDynamicFields = UpdateExternalUserProfileDynamicFields;

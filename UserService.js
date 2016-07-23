@@ -7,6 +7,7 @@ var Console = require('dvp-mongomodels/model/Console');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 
+var util = require('util');
 
 function GetUsers(req, res){
 
@@ -14,7 +15,12 @@ function GetUsers(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.find({company: company, tenant: tenant, systemuser: true}, function(err, users) {
+
+
+
+    User.find({company: company, tenant: tenant, systemuser: true})
+        .select("-password")
+        .exec( function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
@@ -22,20 +28,8 @@ function GetUsers(req, res){
         }else {
 
             if (users) {
-                var userObjectArray = [];
-                users.forEach(function (user) {
 
-                    var userObj;
-
-                    userObj = user.toJSON();
-                    if (userObj.password) {
-
-                        delete userObj.password;
-                        userObjectArray.push(userObj);
-                    }
-                });
-
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, userObjectArray);
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
             }else{
 
@@ -55,7 +49,9 @@ function GetExternalUsers(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.find({company: company, tenant: tenant, systemuser: false}, function(err, users) {
+    User.find({company: company, tenant: tenant, systemuser: false})
+        .select("-password")
+        .exec( function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
@@ -63,20 +59,9 @@ function GetExternalUsers(req, res){
         }else {
 
             if (users) {
-                var userObjectArray = [];
-                users.forEach(function (user) {
 
-                    var userObj;
 
-                    userObj = user.toJSON();
-                    if (userObj.password) {
-
-                        delete userObj.password;
-                        userObjectArray.push(userObj);
-                    }
-                });
-
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, userObjectArray);
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
             }else{
 
@@ -98,31 +83,19 @@ function GetUser(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+
+    var query = {username: req.params.name,company: company, tenant: tenant};
+
+    User.findOne(query)
+        .select("-password")
+        .exec( function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
         }else{
 
-            if(users) {
-                var userObj;
-
-                userObj = users.toJSON();
-
-                if (userObj) {
-
-                    if (userObj.password) {
-
-                        delete userObj.password;
-                    }
-
-                }
-
-            }
-
-
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObj);
+            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
         }
 
@@ -135,6 +108,40 @@ function GetUser(req, res){
 
 
 
+
+}
+
+function GetUsersByIDs(req, res){
+
+
+    logger.debug("DVP-UserService.GetUsersByID Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    var query = {_id: {$in:req.query.id},company: company, tenant: tenant};
+
+    if(!util.isArray(req.query.id))
+        query = {_id: req.query.id,company: company, tenant: tenant};
+
+
+
+    User.findOne(query).select("-password")
+        .exec(  function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+        }else{
+
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+
+        }
+
+        res.end(jsonString);
+    });
 
 }
 
@@ -458,7 +465,8 @@ function GetMyrProfile(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.user.iss,company: company, tenant: tenant}, function(err, users) {
+    User.findOne({username: req.user.iss,company: company, tenant: tenant}).select("-password")
+        .exec(   function(err, users) {
         if (err) {
 
 
@@ -468,24 +476,7 @@ function GetMyrProfile(req, res){
 
         }else{
 
-
-
-            var userObj;
-            if(users) {
-
-
-                userObj = users.toJSON();
-
-                if (userObj.password) {
-
-                    delete userObj.password;
-                }
-
-
-            }
-
-
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObj);
+            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
         }
 
@@ -535,7 +526,8 @@ function GetUserProfileByResourceId(req, res){
 
 
 
-    User.findOne({resourceid: req.params.resourceid ,company: company, tenant: tenant}, function(err, users) {
+    User.findOne({resourceid: req.params.resourceid ,company: company, tenant: tenant}).select("-password")
+        .exec(   function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
@@ -543,25 +535,7 @@ function GetUserProfileByResourceId(req, res){
         }else{
 
 
-
-            var userObj;
-
-            if(users) {
-                userObj = users.toJSON();
-
-                if (userObj) {
-
-                    if (userObj.password) {
-
-                        delete userObj.password;
-                    }
-
-                }
-            }
-
-
-
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObj);
+            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
         }
 
@@ -584,32 +558,15 @@ function GetUserProfileByContact(req, res){
 
     var queryObject = {company: company, tenant: tenant};
     queryObject[category+".contact"] = contact
-    User.find(queryObject, function(err, users) {
+    User.find(queryObject).select("-password")
+        .exec(   function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
         }else{
 
-
-
-            var userObjectArray = [];
-            if(users) {
-                users.forEach(function (user) {
-
-                    var userObj;
-
-                    userObj = user.toJSON();
-                    if (userObj.password) {
-
-                        delete userObj.password;
-                        userObjectArray.push(userObj);
-                    }
-                });
-
-            }
-
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObjectArray);
+            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
         }
 
@@ -627,7 +584,8 @@ function GetExternalUserProfile(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+    User.findOne({username: req.params.name,company: company, tenant: tenant}).select("-password")
+        .exec(   function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
@@ -635,24 +593,7 @@ function GetExternalUserProfile(req, res){
         }else{
 
 
-
-            var userObj ;
-
-            if(users) {
-                userObj = users.toJSON();
-
-                if (userObj) {
-
-                    if (userObj.password) {
-
-                        delete userObj.password;
-                    }
-
-                }
-            }
-
-
-            jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, userObj);
+            jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
 
         }
 
@@ -670,7 +611,8 @@ function GetUserProfile(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+    User.findOne({username: req.params.name,company: company, tenant: tenant}).select("-password")
+        .exec(  function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
@@ -678,24 +620,7 @@ function GetUserProfile(req, res){
         }else{
 
 
-
-            var userObj ;
-
-            if(users) {
-                userObj = users.toJSON();
-
-                if (userObj) {
-
-                    if (userObj.password) {
-
-                        delete userObj.password;
-                    }
-
-                }
-            }
-
-
-            jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, userObj);
+            jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users);
 
         }
 
@@ -2021,12 +1946,6 @@ function GetAppScopes(req, res){
 
 }
 
-
-
-
-
-
-
 function GetMyAppScopesByConsole(req, res){
 
 
@@ -2130,10 +2049,6 @@ function GetMyAppScopesByConsoles(req, res){
 }
 
 
-
-
-
-
 function GetMyAppScopes(req, res){
 
 
@@ -2168,6 +2083,7 @@ function GetMyAppScopes(req, res){
 
 module.exports.GetUser = GetUser;
 module.exports.GetUsers = GetUsers;
+module.exports.GetUsersByIDs = GetUsersByIDs;
 module.exports.DeleteUser = DeleteUser;
 module.exports.CreateUser = CreateUser;
 module.exports.UpdateUser = UpdateUser;
