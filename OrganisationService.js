@@ -392,6 +392,11 @@ function AssignTaskToOrganisation(company, tenant, taskList){
                 var task = FilterObjFromArray(jResult.Result,"TaskType",taskList[i]);
                 if(task) {
                     var body = {"TaskInfoId": task.TaskInfoId};
+                    if(task.TaskType == "CALL" || task.TaskType == "CHAT"){
+                        body.AddToProductivity = true;
+                    }else{
+                        body.AddToProductivity = false;
+                    }
                     restClientHandler.DoPost(companyInfo, taskUrl, body, function (err, res1, result) {
                         if (err) {
                             console.log(err);
