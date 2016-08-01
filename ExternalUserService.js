@@ -556,30 +556,18 @@ function RemoveExternalUserProfileDynamicFields(req, res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
     ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant},{ $pull: { 'dynamic_form': {'field':req.params.field} } }, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Remove External User fields Failed", false, undefined);
 
-
         }else{
 
             jsonString = messageFormatter.FormatMessage(undefined, "Remove External User fields successfully", false, undefined);
-
         }
-
         res.end(jsonString);
 
-
     });
-
-    /*
-
-
-     Person.findOne({_id: personId, 'things.id': 2}, {'things.$': 1},
-     function(err, person) { ...
-     */
 
 }
 
