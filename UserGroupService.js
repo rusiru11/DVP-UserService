@@ -1,16 +1,13 @@
 /**
  * Created by a on 7/23/2016.
  */
-
 var mongoose = require('mongoose');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var UserGroup = require('dvp-mongomodels/model/UserGroup').UserGroup;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var User = require('dvp-mongomodels/model/User');
 var regex = require('regex');
-
 var util = require('util');
-
 
 
 function GetUserGroups(req, res){
@@ -43,7 +40,6 @@ function GetUserGroups(req, res){
     });
 
 }
-
 function GetUserGroup(req, res){
 
 
@@ -77,7 +73,6 @@ function GetUserGroup(req, res){
     });
 
 }
-
 function DeleteUserGroup(req,res){
 
 
@@ -95,7 +90,6 @@ function DeleteUserGroup(req,res){
         res.end(jsonString);
     });
 }
-
 function CreateUserGroup(req, res) {
 
     logger.debug("DVP-UserService.CreateUserGroup Internal method ");
@@ -132,7 +126,6 @@ function CreateUserGroup(req, res) {
 
     }
 }
-
 function UpdateUserGroup(req, res){
 
 
@@ -158,7 +151,6 @@ function UpdateUserGroup(req, res){
     });
 
 }
-
 function UpdateUserGroupMembers(req, res) {
 
     logger.debug("DVP-UserService.UpdateUserGroupMembers Internal method ");
@@ -207,7 +199,6 @@ function UpdateUserGroupMembers(req, res) {
 
 
 }
-
 function RemoveUserGroupMembers(req, res){
 
     logger.debug("DVP-UserService.RemoveUserGroupMembers Internal method ");
@@ -235,7 +226,6 @@ function RemoveUserGroupMembers(req, res){
 
 
 }
-
 function FindUserGroupsByMember(req, res) {
 
     logger.debug("DVP-UserService.FindUserGroupsByMember Internal method ");
