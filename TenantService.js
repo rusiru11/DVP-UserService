@@ -115,8 +115,9 @@ function GetCompanyDomain(req, res){
 
             if (organizationData) {
 
+                var domainData=req.params.companyname+"."+organizationData.tenantRef.rootDomain;
                 var organizationDomain= {
-                    Domain:req.params.companyname+"."+organizationData.tenantRef.rootDomain
+                    Domain:domainData.toLowerCase()
                 };
 
 
