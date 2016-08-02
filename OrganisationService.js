@@ -216,6 +216,7 @@ function CreateOrganisation(req, res){
                             tenant: 1,
                             packages:[],
                             consoleAccessLimits:[],
+                            tenantRef:req.body.tenantRef,
                             created_at: Date.now(),
                             updated_at: Date.now()
                         });
