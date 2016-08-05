@@ -36,28 +36,36 @@ function FilterObjFromArray(itemArray, field, value){
 
 function UniqueArray(array) {
     var processed = [];
-    for (var i=array.length-1; i>=0; i--) {
-        if (array[i]!= null) {
-            if (processed.indexOf(array[i])<0) {
-                processed.push(array[i]);
-            } else {
-                array.splice(i, 1);
+    if(array && Array.isArray(array)) {
+        for (var i = array.length - 1; i >= 0; i--) {
+            if (array[i] != null) {
+                if (processed.indexOf(array[i]) < 0) {
+                    processed.push(array[i]);
+                } else {
+                    array.splice(i, 1);
+                }
             }
         }
+        return array;
+    }else{
+        return [];
     }
-    return array;
 }
 
 function UniqueObjectArray(array, field) {
     var processed = [];
-    for (var i=array.length-1; i>=0; i--) {
-            if (processed.indexOf(array[i][field])<0) {
+    if(array && Array.isArray(array)) {
+        for (var i = array.length - 1; i >= 0; i--) {
+            if (processed.indexOf(array[i][field]) < 0) {
                 processed.push(array[i][field]);
             } else {
                 array.splice(i, 1);
             }
+        }
+        return array;
+    }else{
+        return [];
     }
-    return array;
 }
 
 function GetNewCompanyId(callback){
