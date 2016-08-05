@@ -14,6 +14,7 @@ var util = require('util');
 var restClientHandler = require('./RestClient.js');
 var config = require('config');
 var validator = require('validator');
+var Tenant = require('dvp-mongomodels/model/Tenant').Tenant;
 
 client = redis.createClient(config.Redis.port, config.Redis.ip);
 client.auth(config.Redis.password);
@@ -208,47 +209,70 @@ function CreateOrganisation(req, res){
                     res.end(jsonString);
                 }else{
                     if(user.company == 0){
-                        var org = Org({
-                            ownerId: req.user.username,
-                            companyName: req.body.organisationName,
-                            companyEnabled: true,
-                            id: cid,
-                            tenant: 1,
-                            packages:[],
-                            consoleAccessLimits:[],
-                            tenantRef:req.body.tenantRef,
-                            created_at: Date.now(),
-                            updated_at: Date.now()
-                        });
-                        user.user_meta = {role: "admin"};
-                        user.user_scopes =[
-                            {scope: "organisation", read: true, write: true},
-                            {scope: "resource", read: true},
-                            {scope: "package", read: true},
-                            {scope: "console", read: true},
-                            {"scope": "myNavigation", "read": true},
-                            {"scope": "myUserProfile", "read": true}
-                        ];
-                        user.company = cid;
-                        user.updated_at = Date.now();
-                        org.save(function (err, org) {
+
+                        Tenant.findOne({},function(err, Tenants) {
                             if (err) {
-                                jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
-                                res.end(jsonString);
-                            } else {
-                                User.findOneAndUpdate({username: req.user.username}, user, function (err, rUser) {
-                                    if (err) {
-                                        org.remove(function (err) {
-                                        });
-                                        jsonString = messageFormatter.FormatMessage(err, "Update Admin User Failed", false, undefined);
-                                        res.end(jsonString);
-                                    } else {
-                                        jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
-                                        res.end(jsonString);
-                                    }
-                                });
+
+                                jsonString = messageFormatter.FormatMessage(err, "Get Tenant Failed", false, undefined);
+
+                            }else {
+
+                                if (Tenants) {
+
+
+                                    var org = Org({
+                                        ownerId: req.user.username,
+                                        companyName: req.body.organisationName,
+                                        companyEnabled: true,
+                                        id: cid,
+                                        tenant: 1,
+                                        packages:[],
+                                        consoleAccessLimits:[],
+                                        tenantRef:Tenants._id,
+                                        created_at: Date.now(),
+                                        updated_at: Date.now()
+                                    });
+                                    user.user_meta = {role: "admin"};
+                                    user.user_scopes =[
+                                        {scope: "organisation", read: true, write: true},
+                                        {scope: "resource", read: true},
+                                        {scope: "package", read: true},
+                                        {scope: "console", read: true},
+                                        {"scope": "myNavigation", "read": true},
+                                        {"scope": "myUserProfile", "read": true}
+                                    ];
+                                    user.company = cid;
+                                    user.updated_at = Date.now();
+                                    org.save(function (err, org) {
+                                        if (err) {
+                                            jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
+                                            res.end(jsonString);
+                                        } else {
+                                            User.findOneAndUpdate({username: req.user.username}, user, function (err, rUser) {
+                                                if (err) {
+                                                    org.remove(function (err) {
+                                                    });
+                                                    jsonString = messageFormatter.FormatMessage(err, "Update Admin User Failed", false, undefined);
+                                                    res.end(jsonString);
+                                                } else {
+                                                    jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
+                                                    res.end(jsonString);
+                                                }
+                                            });
+                                        }
+                                    });
+
+                                }else{
+
+                                    jsonString = messageFormatter.FormatMessage(undefined, "No Tenant Found", false, undefined);
+                                    res.end(jsonString);
+
+                                }
                             }
+
+
                         });
+
                     }else{
                         jsonString = messageFormatter.FormatMessage(err, "User Already Assign To an Organisation", false, undefined);
                         res.end(jsonString);
@@ -311,12 +335,21 @@ function AssignPackageToOrganisation(req,res){
             jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
             res.end(jsonString);
         }else{
-            Org.findOne({tenant: tenant, id: company}, function(err, org) {
+            Org.findOne({tenant: tenant, id: company}).populate('tenantRef').exec( function(err, org) {
+
+
+
                 if (err) {
                     jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
                     res.end(jsonString);
                 }else{
                     if(org) {
+
+
+                        var domainData= "127.0.0.1";
+                        if(org.tenantRef && org.tenantRef.rootDomain)
+                          domainData=org.companyName+"."+org.tenantRef.rootDomain;
+
                         if(org.packages.indexOf(req.params.packageName) == -1) {
                             org.updated_at = Date.now();
                             org.packages.push(req.params.packageName);
@@ -355,7 +388,7 @@ function AssignPackageToOrganisation(req,res){
                                 } else {
                                     UpdateUser(org.ownerId, vPackage);
                                     AssignTaskToOrganisation(company,tenant,vPackage.veeryTask);
-                                    AssignContextAndCloudEndUserToOrganisation(company, tenant);
+                                    AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
                                     jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
                                 }
                                 res.end(jsonString);
@@ -412,7 +445,7 @@ function AssignTaskToOrganisation(company, tenant, taskList){
     });
 }
 
-function AssignContextAndCloudEndUserToOrganisation(company, tenant){
+function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
     var contextUrl = util.format("http://%s/DVP/API/%s/SipUser/Context",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointserviceVersion);
     var cloudEndUserUrl = util.format("http://%s/DVP/API/%s/CloudConfiguration/CloudEndUser",config.Services.clusterconfigserviceHost, config.Services.clusterconfigserviceVersion);
     if(validator.isIP(config.Services.resourceServiceHost))
@@ -436,8 +469,8 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant){
         else {
             var companyInfoForCloudEndUser = util.format("%d:%d", 1, 3);
             var cloudEndUserReqBody = {
-                ClusterID: 2,
-                Domain: "159.203.160.47",
+                ClusterID: 1,
+                Domain: domain,
                 Provision: 1,
                 ClientTenant: tenant,
                 ClientCompany: company
