@@ -56,12 +56,12 @@ function GetAllConsoles(req, res){
             jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Failed", false, undefined);
         }else{
             var newConsoles =[];
-            if(allConsole && Array.isArray(allConsole)) {
+            if(allConsole) {
                 for (var a = 0; i < allConsole.length; i++) {
 
                     var console1 = allConsole[a];
                     var newResult = {consoleName: console1.consoleName, consoleNavigation: []};
-                    if(console1.consoleNavigation && Array.isArray(console1.consoleNavigation)) {
+                    if(console1.consoleNavigation) {
                         for (var i = 0; i < console1.consoleNavigation.length; i++) {
                             var navigation = console1.consoleNavigation[i];
                             var newNavigation = {
@@ -69,7 +69,7 @@ function GetAllConsoles(req, res){
                                 navigationStatus: navigation.navigationStatus
                             };
                             var newResourceScopes = [];
-                            if(navigation.resources && Array.isArray(navigation.resources)) {
+                            if(navigation.resources) {
                                 for (var j = 0; j < navigation.resources.length; j++) {
                                     var resource = navigation.resources[j];
                                     for (var k in resource.scopes) {
@@ -100,11 +100,11 @@ function GetAllConsolesByUserRole(req, res){
             jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Failed", false, undefined);
         }else{
             var newConsoles =[];
-            if(allConsole && Array.isArray(allConsole)) {
+            if(allConsole) {
                 for (var a = 0; i < allConsole.length; i++) {
                     var console1 = allConsole[a];
                     var newResult = {consoleName: console1.consoleName, consoleNavigation: []};
-                    if(console1.consoleNavigation && Array.isArray(console1.consoleNavigation)) {
+                    if(console1.consoleNavigation) {
                         for (var i = 0; i < console1.consoleNavigation.length; i++) {
                             var navigation = console1.consoleNavigation[i];
                             var newNavigation = {
@@ -112,7 +112,7 @@ function GetAllConsolesByUserRole(req, res){
                                 navigationStatus: navigation.navigationStatus
                             };
                             var newResourceScopes = [];
-                            if(navigation.resources && Array.isArray(navigation.resources)) {
+                            if(navigation.resources) {
                                 for (var j = 0; j < navigation.resources.length; j++) {
                                     var resource = navigation.resources[j];
                                     for (var k = 0; k < resource.scopes.length; k++) {
@@ -143,7 +143,7 @@ function GetConsole(req, res){
         }else{
             var newResult = {consoleName: console.consoleName, consoleNavigation:[]};
 
-            if(console && console.consoleNavigation && Array.isArray(console.consoleNavigation)) {
+            if(console && console.consoleNavigation) {
                 for (var i = 0; i < console.consoleNavigation.length; i++) {
                     var navigation = console.consoleNavigation[i];
                     var newNavigation = {
