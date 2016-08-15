@@ -233,18 +233,22 @@ function DeleteUser(req,res){
                     console.log(jsonString);
                 } else {
                     var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", user.user_meta.role);
-                    var userIndex = limitObj.currentAccess.indexOf(user.username);
-                    if(userIndex > -1){
-                        limitObj.currentAccess.splice(userIndex,1);
-                        Org.findOneAndUpdate({id: company, tenant: tenant},org, function(err, rOrg) {
-                            if (err) {
-                                jsonString = messageFormatter.FormatMessage(err, "Update Console Access Limit Failed", false, undefined);
-                                console.log(jsonString);
-                            } else {
-                                jsonString = messageFormatter.FormatMessage(err, "Update Console Access Limit Success", true, undefined);
-                                console.log(jsonString);
-                            }
-                        });
+                    if(limitObj) {
+                        var userIndex = limitObj.currentAccess.indexOf(user.username);
+                        if (userIndex > -1) {
+                            limitObj.currentAccess.splice(userIndex, 1);
+                            Org.findOneAndUpdate({id: company, tenant: tenant}, org, function (err, rOrg) {
+                                if (err) {
+                                    jsonString = messageFormatter.FormatMessage(err, "Update Console Access Limit Failed", false, undefined);
+                                    console.log(jsonString);
+                                } else {
+                                    jsonString = messageFormatter.FormatMessage(err, "Update Console Access Limit Success", true, undefined);
+                                    console.log(jsonString);
+                                }
+                            });
+                        }
+                    }else{
+                        console.log("Failed to update currentAccess, Cannot find Org accessType");
                     }
                 }
             });
@@ -2134,7 +2138,7 @@ module.exports.GetMyAppScopes = GetMyAppScopes;
 
 
 module.exports.GetMyAppScopesByConsole = GetMyAppScopesByConsole;
-module.exports.GetMyAppScopesByConsoles = GetMyAppScopesByConsoles
+module.exports.GetMyAppScopesByConsoles = GetMyAppScopesByConsoles;
 module.exports.GetMyARDSFriendlyContactObject = GetMyARDSFriendlyContactObject;
 module.exports.OwnerExsists = OwnerExsists;
 

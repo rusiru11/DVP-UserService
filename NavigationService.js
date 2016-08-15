@@ -225,7 +225,7 @@ function AddNavigationToConsole(req, res){
     gr.on('validateResource',function(resource){
         for(var i in req.body.resources){
             var bResource = req.body.resources[i];
-            if(bResource.resourceName == resource.resourceName){
+            if(bResource && bResource.resourceName == resource.resourceName){
                 navigation.resources.push(bResource);
                 break;
             }
