@@ -57,7 +57,7 @@ function GetAllConsoles(req, res){
         }else{
             var newConsoles =[];
             if(allConsole) {
-                for (var a = 0; i < allConsole.length; i++) {
+                for (var a = 0; a < allConsole.length; a++) {
 
                     var console1 = allConsole[a];
                     var newResult = {consoleName: console1.consoleName, consoleNavigation: []};
@@ -101,7 +101,7 @@ function GetAllConsolesByUserRole(req, res){
         }else{
             var newConsoles =[];
             if(allConsole) {
-                for (var a = 0; i < allConsole.length; i++) {
+                for (var a = 0; a < allConsole.length; a++) {
                     var console1 = allConsole[a];
                     var newResult = {consoleName: console1.consoleName, consoleNavigation: []};
                     if(console1.consoleNavigation) {
