@@ -1570,7 +1570,7 @@ function AddUserAppScopes(req, res){
                                                 if(consoleScope){
                                                     var menuItem = FilterObjFromArray(consoleScope.menus,"menuItem",req.body.menuItem);
                                                     if(menuItem){
-                                                        for(var j in menuItem.menuAction){
+                                                        for(var j=0; j<menuItem.menuAction.lenth; j++){
                                                             var menuAction = FilterObjFromArray(menuItem.menuAction, "scope", menuItem.menuAction[j].scope);
                                                             if(menuAction){
                                                                 menuAction.read = req.body.menuAction[j].read;
