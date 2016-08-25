@@ -1286,7 +1286,7 @@ function AssignConsoleToUser(req,res){
                                                         jsonString = messageFormatter.FormatMessage(undefined, "Assign Console successfull", true, undefined);
 
 
-                                                        var basicscopes = [{"scope": "myNavigation", "read": true}, {"scope": "myUserProfile", "read": true}, {"scope": "package", "read": true}];
+                                                        var basicscopes = [{"scope": "myNavigation", "read": true}, {"scope": "myUserProfile", "read": true}];
 
 
                                                         User.findOneAndUpdate({
