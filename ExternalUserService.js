@@ -10,9 +10,6 @@ var regex = require('regex');
 var util = require('util');
 
 
-
-
-
 function GetExternalUsers(req, res){
 
 
@@ -179,7 +176,7 @@ function UpdateExternalUser(req, res){
 
 }
 
-function GetExternalUserProfileByContact(req, res){
+function GetExternalUserProfileByInteraction(req, res){
 
 
     logger.debug("DVP-UserService.GetExternalUserProfileByContact Internal method ");
@@ -190,24 +187,60 @@ function GetExternalUserProfileByContact(req, res){
     var contact = req.params.contact;
     var jsonString;
 
+    //////////////////////////////////////////older version///////////////////////////////////////////////////////
+    /*
     var queryObject = {company: company, tenant: tenant};
     queryObject[category] = contact;
 
     var otherQuery = {company: company, tenant: tenant, "contacts.type":category ,"contacts.contact": contact};
 
     var orQuery = {$or:[queryObject, otherQuery]};
+ */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    /*
-     Person.findOne({_id: personId, 'things.id': 2}, {'things.$': 1},
-     function(err, person) { ...
 
-     User.find( { $or:[ {'_id':objId}, {'name':param}, {'nickname':param} ]},
-     function(err,docs){
-     if(!err) res.send(docs);
-     });
 
-     */
+    var orArray = [];
 
+    if(category == 'call' || category == 'sms' ){
+
+        var otherQuery = {company: company, tenant: tenant, "contacts.type": "phone", "contacts.contact": contact};
+        orArray.push(otherQuery);
+
+        var queryObject = {company: company, tenant: tenant};
+        queryObject["phone"] = contact;
+
+        orArray.push(queryObject);
+
+        queryObject = {company: company, tenant: tenant};
+        queryObject["landnumber"] = contact;
+
+        orArray.push(queryObject);
+    } else if(category == 'facebook-post' || category == 'facebook-chat'){
+
+
+        var otherQuery = {company: company, tenant: tenant, "contacts.type": "facebook", "contacts.contact": contact};
+        orArray.push(otherQuery);
+
+        var queryObject = {company: company, tenant: tenant};
+        queryObject["facebook"] = contact;
+
+        orArray.push(queryObject);
+    }else{
+
+        var otherQuery = {company: company, tenant: tenant, "contacts.type": category, "contacts.contact": contact};
+        orArray.push(otherQuery);
+
+        var queryObject = {company: company, tenant: tenant};
+        queryObject[category] = contact;
+
+        orArray.push(queryObject);
+    }
+
+
+    var orQuery = {$or: orArray};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     ExternalUser.find(orQuery, function(err, users) {
         if (err) {
@@ -220,6 +253,55 @@ function GetExternalUserProfileByContact(req, res){
             if(users) {
 
                     jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
+
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "No External User Found", false, undefined);
+
+            }
+
+        }
+
+        res.end(jsonString);
+    });
+
+
+}
+
+
+function GetExternalUserProfileByContact(req, res){
+
+
+    logger.debug("DVP-UserService.GetExternalUserProfileByContact Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var category = req.params.category;
+    var contact = req.params.contact;
+    var jsonString;
+
+    //////////////////////////////////////////older version///////////////////////////////////////////////////////
+
+     var queryObject = {company: company, tenant: tenant};
+     queryObject[category] = contact;
+
+     var otherQuery = {company: company, tenant: tenant, "contacts.type":category ,"contacts.contact": contact};
+
+     var orQuery = {$or:[queryObject, otherQuery]};
+
+
+
+    ExternalUser.find(orQuery, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
+
+        }else{
+
+            var userObjectArray = [];
+            if(users) {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
 
             }else{
 
@@ -578,6 +660,7 @@ module.exports.DeleteExternalUser = DeleteExternalUser;
 module.exports.CreateExternalUser = CreateExternalUser;
 module.exports.UpdateExternalUser = UpdateExternalUser;
 module.exports.GetExternalUserProfileByContact = GetExternalUserProfileByContact;
+module.exports.GetExternalUserProfileByInteraction = GetExternalUserProfileByInteraction;
 module.exports.GetExternalUserProfileByField = GetExternalUserProfileByField;
 module.exports.UpdateExternalUserProfileContact = UpdateExternalUserProfileContact;
 module.exports.UpdateExternalUserProfileEmail = UpdateExternalUserProfileEmail;
