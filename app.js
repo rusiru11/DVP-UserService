@@ -35,6 +35,9 @@ var util = require('util');
 var secret = require('dvp-common/Authentication/Secret.js');
 var authorization = require('dvp-common/Authentication/Authorization.js');
 
+// tenant operations
+var tenantService=require("./TenantService");
+
 
 var mongoip=config.Mongo.ip;
 var mongoport=config.Mongo.port;
@@ -245,6 +248,12 @@ app.put('/DVP/API/:version/UserGroup/:id',jwt({secret: secret.Secret}), authoriz
 app.put('/DVP/API/:version/UserGroup/:id/User/:user',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), userGroupService.UpdateUserGroupMembers);
 app.delete('/DVP/API/:version/UserGroup/:id/User/:user',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"delete"}), userGroupService.RemoveUserGroupMembers);
 app.get('/DVP/API/:version/UserGroup/User/:user',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"get"}), userGroupService.FindUserGroupsByMember);
+
+
+app.post('/DVP/API/:version/Tenant',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), tenantService.CreateTenant);
+app.get('/DVP/API/:version/Tenants',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetAllTenants);
+app.get('/DVP/API/:version/Tenant/:id',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetTenant);
+app.get('/DVP/API/:version/CompanyDomain/:companyname',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetCompanyDomain);
 
 
 
