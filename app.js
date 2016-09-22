@@ -118,7 +118,7 @@ app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({r
 
 //////////////////////////////Organisation API/////////////////////////////////////////////////////
 
-app.get('/DVP/API/:version/Myprofile',jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}),userService.GetMyrProfile);
+app.get('/DVP/API/:version/Myprofile',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"read"}),userService.GetMyrProfile);
 app.get('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfile);
 app.get('/DVP/API/:version/User/profilebycontact/:category/:contact', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfileByContact);
 app.get('/DVP/API/:version/User/profilebyresourceid/:resourceid', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfileByResourceId);
