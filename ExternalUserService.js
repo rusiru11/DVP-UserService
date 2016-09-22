@@ -653,6 +653,32 @@ function RemoveExternalUserProfileDynamicFields(req, res){
 
 }
 
+function UpdateFormSubmission(req, res) {
+
+    logger.debug("DVP-UserService.FormSubmission Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+
+    var jsonString;
+
+
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, {updated_at : Date.now(), form_submission:req.body.form_submission}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update External User Form Submission Failed", false, undefined);
+
+        } else {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update External User  Form Submission Successful", true, undefined);
+
+        }
+
+        res.end(jsonString);
+    });
+};
+
+
 
 module.exports.GetExternalUsers = GetExternalUsers;
 module.exports.GetExternalUser = GetExternalUser;
@@ -670,3 +696,4 @@ module.exports.GetExternalUserProfileBySSN = GetExternalUserProfileBySSN;
 module.exports.BulkCreate = BulkCreate;
 module.exports.SearchExternalUsers =SearchExternalUsers;
 module.exports.UpdateExternalUserProfileDynamicFields = UpdateExternalUserProfileDynamicFields;
+module.exports.UpdateFormSubmission = UpdateFormSubmission;

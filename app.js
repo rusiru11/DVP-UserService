@@ -234,6 +234,8 @@ app.get('/DVP/API/:version/ExternalUser/BySSN/:ssn',jwt({secret: secret.Secret})
 app.get('/DVP/API/:version/ExternalUser/Search/:text',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.SearchExternalUsers);
 app.put('/DVP/API/:version/ExternalUser/:id/DynamicFields',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfileDynamicFields);
 //app.delete('/DVP/API/:version/ExternalUser/:id/DynamicFields/:field',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfileDynamicFields);
+app.put('/DVP/API/:version/ExternalUser/:id/FormSubmission',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateFormSubmission);
+
 
 
 
