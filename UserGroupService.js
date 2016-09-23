@@ -264,7 +264,7 @@ function GetUserGroups(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    UserGroup.find({company: company, tenant: tenant}, function(err, usergroups) {
+    UserGroup.find({company: company, tenant: tenant}).populate('users','username').exec(function(err, usergroups) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Groups Failed", false, undefined);
@@ -297,7 +297,7 @@ function GetUserGroup(req, res){
     var jsonString;
 
 
-    UserGroup.findOne({_id: req.params.id,company: company, tenant: tenant},function(err, usergroup) {
+    UserGroup.findOne({_id: req.params.id,company: company, tenant: tenant}).populate('users','username').exec(function(err, usergroup) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Group Failed", false, undefined);
