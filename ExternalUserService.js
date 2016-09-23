@@ -49,7 +49,7 @@ function GetExternalUser(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.findOne({_id: req.params.id,company: company, tenant: tenant}, function(err, users) {
+    ExternalUser.findOne({_id: req.params.id,company: company, tenant: tenant}).populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
@@ -242,7 +242,7 @@ function GetExternalUserProfileByInteraction(req, res){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    ExternalUser.find(orQuery, function(err, users) {
+    ExternalUser.find(orQuery).populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
@@ -268,7 +268,6 @@ function GetExternalUserProfileByInteraction(req, res){
 
 }
 
-
 function GetExternalUserProfileByContact(req, res){
 
 
@@ -291,7 +290,7 @@ function GetExternalUserProfileByContact(req, res){
 
 
 
-    ExternalUser.find(orQuery, function(err, users) {
+    ExternalUser.find(orQuery).populate( {path: 'form_submission',populate : {path: 'form'}}).exec( function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
@@ -329,7 +328,7 @@ function GetExternalUserProfileBySSN(req, res){
 
     var queryObject = {ssn:ssn, company: company, tenant: tenant};
 
-    ExternalUser.find(queryObject, function(err, users) {
+    ExternalUser.find(queryObject).populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
@@ -371,7 +370,7 @@ function GetExternalUserProfileByField(req, res){
     var likeval = new RegExp('^'+value+'$', "i");
     queryObject[field] = likeval;
 
-    ExternalUser.find(queryObject, function(err, users) {
+    ExternalUser.find(queryObject).populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
