@@ -6,6 +6,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var ExternalUser = require('dvp-mongomodels/model/ExternalUser');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var regex = require('regex');
+var FormSubmission = require('dvp-mongomodels/model/FormMaster').FormSubmission;
 
 var util = require('util');
 
@@ -49,7 +50,8 @@ function GetExternalUser(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.findOne({_id: req.params.id,company: company, tenant: tenant}).populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
+    ExternalUser.findOne({_id: req.params.id,company: company, tenant: tenant}).
+    populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
