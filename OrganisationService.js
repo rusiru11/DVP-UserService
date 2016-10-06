@@ -635,39 +635,52 @@ function ExtractConsoles(consoles){
                         jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
                         console.log(jsonString);
                     }else{
-                        logger.debug("Result consoleName: "+ rConsole.consoleName);
-                        var consoleScope = {consoleName: rConsole.consoleName, menus: []};
-                        for(var j in rConsole.consoleNavigation){
-                            var navigation = rConsole.consoleNavigation[j];
-                            var menuScope = {menuItem: navigation.navigationName, menuAction: []};
-                            for(var k in navigation.resources){
-                                var navigationResource = navigation.resources[k];
-                                for(var l in navigationResource.scopes){
-                                    var navigationResourceScope = navigationResource.scopes[l];
-                                    var scope = {scope: navigationResourceScope.scopeName, feature: navigationResourceScope.feature};
-                                    for(var m in navigationResourceScope.actions){
-                                        var action = navigationResourceScope.actions[m];
-                                        if(action){
-                                            switch (action){
-                                                case 'read':
-                                                    scope.read = true;
-                                                    break;
-                                                case 'write':
-                                                    scope.write = true;
-                                                    break;
-                                                case 'delete':
-                                                    scope.delete = true;
-                                                    break;
+                        if(rConsole) {
+                            logger.debug("Result consoleName: " + rConsole.consoleName);
+                            var consoleScope = {consoleName: rConsole.consoleName, menus: []};
+                            for (var j in rConsole.consoleNavigation) {
+                                var navigation = rConsole.consoleNavigation[j];
+                                if (navigation && navigation.navigationName) {
+                                    var menuScope = {menuItem: navigation.navigationName, menuAction: []};
+                                    for (var k in navigation.resources) {
+                                        var navigationResource = navigation.resources[k];
+                                        if(navigationResource) {
+                                            for (var l in navigationResource.scopes) {
+                                                var navigationResourceScope = navigationResource.scopes[l];
+                                                if (navigationResourceScope) {
+                                                    var scope = {
+                                                        scope: navigationResourceScope.scopeName,
+                                                        feature: navigationResourceScope.feature
+                                                    };
+                                                    for (var m in navigationResourceScope.actions) {
+                                                        var action = navigationResourceScope.actions[m];
+                                                        if (action) {
+                                                            switch (action) {
+                                                                case 'read':
+                                                                    scope.read = true;
+                                                                    break;
+                                                                case 'write':
+                                                                    scope.write = true;
+                                                                    break;
+                                                                case 'delete':
+                                                                    scope.delete = true;
+                                                                    break;
+                                                            }
+                                                        }
+                                                    }
+                                                    if(scope) {
+                                                        menuScope.menuAction.push(scope);
+                                                    }
+                                                }
                                             }
                                         }
                                     }
-                                    menuScope.menuAction.push(scope);
+                                    consoleScope.menus.push(menuScope);
                                 }
                             }
-                            consoleScope.menus.push(menuScope);
+                            count++;
+                            consoleScopes.push(consoleScope);
                         }
-                        count++;
-                        consoleScopes.push(consoleScope);
                     }
 
                     if(count == consoles.length){
