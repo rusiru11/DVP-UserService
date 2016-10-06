@@ -562,7 +562,7 @@ function GetUserScopes(scopes){
                 var userScope = {};
                 var oScope = scopes[i];
                 userScope.scope = oScope.scopeName;
-                for(var j in oScope.actions){
+                for(var j =0; j < oScope.actions.length; j++){
                     var action = oScope.actions[j];
                     if(action){
                         switch (action){
@@ -638,21 +638,21 @@ function ExtractConsoles(consoles){
                         if(rConsole) {
                             logger.debug("Result consoleName: " + rConsole.consoleName);
                             var consoleScope = {consoleName: rConsole.consoleName, menus: []};
-                            for (var j in rConsole.consoleNavigation) {
+                            for (var j =0; j < rConsole.consoleNavigation.length; j++) {
                                 var navigation = rConsole.consoleNavigation[j];
                                 if (navigation && navigation.navigationName) {
                                     var menuScope = {menuItem: navigation.navigationName, menuAction: []};
-                                    for (var k in navigation.resources) {
+                                    for (var k =0; k < navigation.resources.length; k++) {
                                         var navigationResource = navigation.resources[k];
                                         if(navigationResource) {
-                                            for (var l in navigationResource.scopes) {
+                                            for (var l =0; l < navigationResource.scopes.length; l++) {
                                                 var navigationResourceScope = navigationResource.scopes[l];
                                                 if (navigationResourceScope) {
                                                     var scope = {
                                                         scope: navigationResourceScope.scopeName,
                                                         feature: navigationResourceScope.feature
                                                     };
-                                                    for (var m in navigationResourceScope.actions) {
+                                                    for (var m =0; m < navigationResourceScope.actions.length; m++) {
                                                         var action = navigationResourceScope.actions[m];
                                                         if (action) {
                                                             switch (action) {
@@ -721,7 +721,7 @@ function UpdateUser(ownerId, vPackage){
             er.on('endExtractResources', function(userScopes){
                 userScopes = userScopes.concat(fixUserScopes);
                 var uScopes = UniqueObjectArray(userScopes,"scope");
-                for(var i in uScopes){
+                for(var i =0; i < uScopes.length; i++){
                     var eUserScope = FilterObjFromArray(user.user_scopes, "scope", uScopes[i]);
                     if(eUserScope){
                         if(uScopes[i].read && (!eUserScope.read || eUserScope.read == false)){
@@ -739,17 +739,17 @@ function UpdateUser(ownerId, vPackage){
                 }
                 var ec = ExtractConsoles(vPackage.consoles);
                 ec.on('endExtractConsoles', function(clientScopes){
-                    for(var j in clientScopes){
+                    for(var j =0; j < clientScopes.length; j++){
                         user.client_scopes.push(clientScopes[j]);
                     }
 
                     user.client_scopes = UniqueObjectArray(user.client_scopes,"consoleName");
-                    for(var k in user.client_scopes){
+                    for(var k =0; k < user.client_scopes.length; k++){
                         var ucs = user.client_scopes[k];
                         ucs.menus = UniqueObjectArray(ucs.menus,"menuItem");
-                        for(var l in ucs.menus){
+                        for(var l =0; l < ucs.menus.length; l++){
                             var menu1 = ucs.menus[l];
-                            for(var m in menu1.menuAction){
+                            for(var m = 0; m < menu1.menuAction.length; m++){
                                 var menuAction = FilterObjFromArray(user.user_scopes, "scope", menu1.menuAction[m].scope);
                                 if(menuAction){
                                     if(menu1.menuAction[m].read){
