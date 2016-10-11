@@ -115,7 +115,7 @@ function GetOrganisationName(req, res){
     var tenant = parseInt(req.params.tenant);
     var company = parseInt(req.params.company);
     var jsonString;
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({tenant: tenant, id: company},{companyName: 1}, function(err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
         }else{
@@ -842,4 +842,4 @@ module.exports.AssignPackageToOrganisation = AssignPackageToOrganisation;
 module.exports.RemovePackageFromOrganisation = RemovePackageFromOrganisation;
 module.exports.CreateOwner = CreateOwner;
 module.exports.GetOrganisationPackages = GetOrganisationPackages;
-modules.exports.GetOrganisationName = GetOrganisationName;
+module.exports.GetOrganisationName = GetOrganisationName;
