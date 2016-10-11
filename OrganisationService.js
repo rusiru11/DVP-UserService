@@ -555,30 +555,36 @@ function RemovePackageFromOrganisation(req,res){
 function GetUserScopes(scopes){
     var e = new EventEmitter();
     process.nextTick(function () {
-        if (Array.isArray(scopes)) {
+        if (scopes && Array.isArray(scopes)) {
             var count = 0;
-            for (var i in scopes) {
+            for (var i =0; i < scopes.length; i++) {
                 count++;
                 var userScope = {};
                 var oScope = scopes[i];
-                userScope.scope = oScope.scopeName;
-                for(var j in oScope.actions){
-                    var action = oScope.actions[j];
-                    if(action){
-                        switch (action){
-                            case 'read':
-                                userScope.read = true;
-                                break;
-                            case 'write':
-                                userScope.write = true;
-                                break;
-                            case 'delete':
-                                userScope.delete = true;
-                                break;
+                if(oScope) {
+                    userScope.scope = oScope.scopeName;
+                    if(oScope.actions) {
+                        for (var j = 0; j < oScope.actions.length; j++) {
+                            var action = oScope.actions[j];
+                            if (action) {
+                                switch (action) {
+                                    case 'read':
+                                        userScope.read = true;
+                                        break;
+                                    case 'write':
+                                        userScope.write = true;
+                                        break;
+                                    case 'delete':
+                                        userScope.delete = true;
+                                        break;
+                                }
+                            }
                         }
                     }
+                    if(userScope) {
+                        e.emit('getUserScopes', userScope);
+                    }
                 }
-                e.emit('getUserScopes', userScope);
                 if(count == scopes.length){
                     e.emit('endGetUserScopes');
                 }
@@ -594,7 +600,7 @@ function GetUserScopes(scopes){
 function ExtractResources(resources){
     var e = new EventEmitter();
     process.nextTick(function () {
-        if (Array.isArray(resources)) {
+        if (resources && Array.isArray(resources)) {
             var count = 0;
             var userScopes = [];
             for (var i = 0; i< resources.length; i++) {
@@ -623,7 +629,7 @@ function ExtractResources(resources){
 function ExtractConsoles(consoles){
     var e = new EventEmitter();
     process.nextTick(function () {
-        if (Array.isArray(consoles)) {
+        if (consoles && Array.isArray(consoles)) {
             logger.debug("consoles Length: "+ consoles.length);
             var count = 0;
             var consoleScopes = [];
@@ -635,39 +641,56 @@ function ExtractConsoles(consoles){
                         jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
                         console.log(jsonString);
                     }else{
-                        logger.debug("Result consoleName: "+ rConsole.consoleName);
-                        var consoleScope = {consoleName: rConsole.consoleName, menus: []};
-                        for(var j in rConsole.consoleNavigation){
-                            var navigation = rConsole.consoleNavigation[j];
-                            var menuScope = {menuItem: navigation.navigationName, menuAction: []};
-                            for(var k in navigation.resources){
-                                var navigationResource = navigation.resources[k];
-                                for(var l in navigationResource.scopes){
-                                    var navigationResourceScope = navigationResource.scopes[l];
-                                    var scope = {scope: navigationResourceScope.scopeName, feature: navigationResourceScope.feature};
-                                    for(var m in navigationResourceScope.actions){
-                                        var action = navigationResourceScope.actions[m];
-                                        if(action){
-                                            switch (action){
-                                                case 'read':
-                                                    scope.read = true;
-                                                    break;
-                                                case 'write':
-                                                    scope.write = true;
-                                                    break;
-                                                case 'delete':
-                                                    scope.delete = true;
-                                                    break;
+                        if(rConsole) {
+                            logger.debug("Result consoleName: " + rConsole.consoleName);
+                            var consoleScope = {consoleName: rConsole.consoleName, menus: []};
+                            if(rConsole.consoleNavigation) {
+                                for (var j = 0; j < rConsole.consoleNavigation.length; j++) {
+                                    var navigation = rConsole.consoleNavigation[j];
+                                    if (navigation && navigation.navigationName && navigation.resources) {
+                                        var menuScope = {menuItem: navigation.navigationName, menuAction: []};
+                                        for (var k = 0; k < navigation.resources.length; k++) {
+                                            var navigationResource = navigation.resources[k];
+                                            if (navigationResource && navigationResource.scopes) {
+                                                for (var l = 0; l < navigationResource.scopes.length; l++) {
+                                                    var navigationResourceScope = navigationResource.scopes[l];
+                                                    if (navigationResourceScope) {
+                                                        var scope = {
+                                                            scope: navigationResourceScope.scopeName,
+                                                            feature: navigationResourceScope.feature
+                                                        };
+                                                        if(navigationResourceScope.actions) {
+                                                            for (var m = 0; m < navigationResourceScope.actions.length; m++) {
+                                                                var action = navigationResourceScope.actions[m];
+                                                                if (action) {
+                                                                    switch (action) {
+                                                                        case 'read':
+                                                                            scope.read = true;
+                                                                            break;
+                                                                        case 'write':
+                                                                            scope.write = true;
+                                                                            break;
+                                                                        case 'delete':
+                                                                            scope.delete = true;
+                                                                            break;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        if (scope) {
+                                                            menuScope.menuAction.push(scope);
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
+                                        consoleScope.menus.push(menuScope);
                                     }
-                                    menuScope.menuAction.push(scope);
                                 }
                             }
-                            consoleScope.menus.push(menuScope);
+                            count++;
+                            consoleScopes.push(consoleScope);
                         }
-                        count++;
-                        consoleScopes.push(consoleScope);
                     }
 
                     if(count == consoles.length){
@@ -708,58 +731,68 @@ function UpdateUser(ownerId, vPackage){
             er.on('endExtractResources', function(userScopes){
                 userScopes = userScopes.concat(fixUserScopes);
                 var uScopes = UniqueObjectArray(userScopes,"scope");
-                for(var i in uScopes){
-                    var eUserScope = FilterObjFromArray(user.user_scopes, "scope", uScopes[i]);
-                    if(eUserScope){
-                        if(uScopes[i].read && (!eUserScope.read || eUserScope.read == false)){
-                            eUserScope.read = uScopes[i].read;
+                if(uScopes) {
+                    for (var i = 0; i < uScopes.length; i++) {
+                        var eUserScope = FilterObjFromArray(user.user_scopes, "scope", uScopes[i]);
+                        if (eUserScope) {
+                            if (uScopes[i].read && (!eUserScope.read || eUserScope.read == false)) {
+                                eUserScope.read = uScopes[i].read;
+                            }
+                            if (uScopes[i].write && (!eUserScope.write || eUserScope.write == false)) {
+                                eUserScope.write = uScopes[i].write;
+                            }
+                            if (uScopes[i].delete && (!eUserScope.delete || eUserScope.delete == false)) {
+                                eUserScope.delete = uScopes[i].read;
+                            }
+                        } else {
+                            user.user_scopes.push(uScopes[i]);
                         }
-                        if(uScopes[i].write && (!eUserScope.write || eUserScope.write == false)){
-                            eUserScope.write = uScopes[i].write;
-                        }
-                        if(uScopes[i].delete && (!eUserScope.delete || eUserScope.delete == false)){
-                            eUserScope.delete = uScopes[i].read;
-                        }
-                    }else {
-                        user.user_scopes.push(uScopes[i]);
                     }
                 }
                 var ec = ExtractConsoles(vPackage.consoles);
                 ec.on('endExtractConsoles', function(clientScopes){
-                    for(var j in clientScopes){
-                        user.client_scopes.push(clientScopes[j]);
+                    if(clientScopes) {
+                        for (var j = 0; j < clientScopes.length; j++) {
+                            user.client_scopes.push(clientScopes[j]);
+                        }
                     }
 
                     user.client_scopes = UniqueObjectArray(user.client_scopes,"consoleName");
-                    for(var k in user.client_scopes){
-                        var ucs = user.client_scopes[k];
-                        ucs.menus = UniqueObjectArray(ucs.menus,"menuItem");
-                        for(var l in ucs.menus){
-                            var menu1 = ucs.menus[l];
-                            for(var m in menu1.menuAction){
-                                var menuAction = FilterObjFromArray(user.user_scopes, "scope", menu1.menuAction[m].scope);
-                                if(menuAction){
-                                    if(menu1.menuAction[m].read){
-                                        menuAction.read = menu1.menuAction[m].read;
+                    if(user.client_scopes) {
+                        for (var k = 0; k < user.client_scopes.length; k++) {
+                            var ucs = user.client_scopes[k];
+                            ucs.menus = UniqueObjectArray(ucs.menus, "menuItem");
+                            if(ucs.menus) {
+                                for (var l = 0; l < ucs.menus.length; l++) {
+                                    var menu1 = ucs.menus[l];
+                                    if(menu1) {
+                                        for (var m = 0; m < menu1.menuAction.length; m++) {
+                                            var menuAction = FilterObjFromArray(user.user_scopes, "scope", menu1.menuAction[m].scope);
+                                            if (menuAction) {
+                                                if (menu1.menuAction[m].read) {
+                                                    menuAction.read = menu1.menuAction[m].read;
+                                                }
+                                                if (menu1.menuAction[m].write) {
+                                                    menuAction.write = menu1.menuAction[m].write;
+                                                }
+                                                if (menu1.menuAction[m].delete) {
+                                                    menuAction.delete = menu1.menuAction[m].delete;
+                                                }
+                                            } else {
+                                                var mAction = {scope: menu1.menuAction[m].scope};
+                                                if (menu1.menuAction[m].read) {
+                                                    mAction.read = menu1.menuAction[m].read;
+                                                }
+                                                if (menu1.menuAction[m].write) {
+                                                    mAction.write = menu1.menuAction[m].write;
+                                                }
+                                                if (menu1.menuAction[m].delete) {
+                                                    mAction.delete = menu1.menuAction[m].delete;
+                                                }
+                                                user.user_scopes.push(mAction);
+                                            }
+                                        }
                                     }
-                                    if(menu1.menuAction[m].write){
-                                        menuAction.write = menu1.menuAction[m].write;
-                                    }
-                                    if(menu1.menuAction[m].delete){
-                                        menuAction.delete = menu1.menuAction[m].delete;
-                                    }
-                                }else{
-                                    var mAction = {scope:menu1.menuAction[m].scope};
-                                    if(menu1.menuAction[m].read){
-                                        mAction.read = menu1.menuAction[m].read;
-                                    }
-                                    if(menu1.menuAction[m].write){
-                                        mAction.write = menu1.menuAction[m].write;
-                                    }
-                                    if(menu1.menuAction[m].delete){
-                                        mAction.delete = menu1.menuAction[m].delete;
-                                    }
-                                    user.user_scopes.push(mAction);
                                 }
                             }
                         }
