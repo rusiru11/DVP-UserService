@@ -541,7 +541,6 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
     });
 }));
 
-
 exports.authorization = [
     login.ensureLoggedIn(),
     server.authorization(function(clientID, redirectURI, scope, done) {
@@ -575,7 +574,6 @@ exports.token = [
     server.token(),
     server.errorHandler()
 ]
-
 
 exports.revoketoken = function(req, res, next) {
     var id = req.params.jti;
