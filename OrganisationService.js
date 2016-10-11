@@ -109,6 +109,26 @@ function GetOrganisation(req, res){
     });
 }
 
+function GetOrganisationName(req, res){
+    logger.debug("DVP-UserService.GetOrganisation Internal method ");
+
+    var tenant = parseInt(req.params.tenant);
+    var company = parseInt(req.params.company);
+    var jsonString;
+    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+        }else{
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Successful", true, org);
+        }
+        res.end(jsonString);
+    });
+}
+
+
+
+
+
 function GetOrganisationPackages(req, res){
     logger.debug("DVP-UserService.GetOrganisationPackages Internal method ");
 
@@ -822,3 +842,4 @@ module.exports.AssignPackageToOrganisation = AssignPackageToOrganisation;
 module.exports.RemovePackageFromOrganisation = RemovePackageFromOrganisation;
 module.exports.CreateOwner = CreateOwner;
 module.exports.GetOrganisationPackages = GetOrganisationPackages;
+modules.exports.GetOrganisationName = GetOrganisationName;
