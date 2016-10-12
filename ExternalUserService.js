@@ -169,7 +169,7 @@ function UpdateExternalUser(req, res){
 
         }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Update External User Successful", true, undefined);
+            jsonString = messageFormatter.FormatMessage(err, "Update External User Successful", true, users);
 
         }
 
