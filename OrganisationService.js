@@ -257,6 +257,7 @@ function CreateOrganisation(req, res){
                                         tenant: 1,
                                         packages:[],
                                         consoleAccessLimits:[],
+                                        resourceAccessLimits:[],
                                         tenantRef:Tenants._id,
                                         created_at: Date.now(),
                                         updated_at: Date.now()
@@ -411,17 +412,44 @@ function AssignPackageToOrganisation(req,res){
                                 }
                             }
 
-                            Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rOrg) {
-                                if (err) {
-                                    jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
-                                } else {
-                                    UpdateUser(org.ownerId, vPackage);
-                                    AssignTaskToOrganisation(company,tenant,vPackage.veeryTask);
-                                    AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
-                                    jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
+
+                            var er = ExtractResources(vPackage.resources);
+                            er.on('endExtractResources', function(userScopes){
+                                if(userScopes) {
+                                    for (var i = 0; i < userScopes.length; i++) {
+                                        var scopes = userScopes[i];
+                                        var eUserScope = FilterObjFromArray(org.resourceAccessLimits, "scopeName", scopes.scope);
+                                        if (eUserScope) {
+                                            if(eUserScope.accessLimit < scopes.accessLimit){
+                                                eUserScope.accessLimit = scopes.accessLimit;
+                                            }
+                                        }else{
+                                            if(!org.resourceAccessLimits){
+                                                org.resourceAccessLimits = [];
+                                            }
+                                            var rLimit = {
+                                                "scopeName": scopes.scope,
+                                                "accessLimit": scopes.accessLimit
+                                            };
+                                            org.resourceAccessLimits.push(rLimit);
+                                        }
+                                    }
                                 }
-                                res.end(jsonString);
+
+
+                                Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rOrg) {
+                                    if (err) {
+                                        jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
+                                    } else {
+                                        UpdateUser(org.ownerId, vPackage);
+                                        AssignTaskToOrganisation(company,tenant,vPackage.veeryTask);
+                                        AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
+                                        jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
+                                    }
+                                    res.end(jsonString);
+                                });
                             });
+
                         }else{
                             jsonString = messageFormatter.FormatMessage(err, "Package Already Added", false, undefined);
                             res.end(jsonString);
@@ -584,6 +612,7 @@ function GetUserScopes(scopes){
                 var oScope = scopes[i];
                 if(oScope) {
                     userScope.scope = oScope.scopeName;
+                    userScope.accessLimit = oScope.limit;
                     if(oScope.actions) {
                         for (var j = 0; j < oScope.actions.length; j++) {
                             var action = oScope.actions[j];
@@ -903,23 +932,48 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                             }
 
-                                            Org.findOneAndUpdate({
-                                                tenant: tenant,
-                                                id: company
-                                            }, org, function (err, rOrg) {
 
-                                                if (err) {
-
-                                                    jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Failed", false, undefined);
-
-                                                } else {
-
-                                                    //UpdateUser(org.ownerId, vPackage);
-                                                    jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Successful", true, org);
-
+                                            var er = ExtractResources(packageUnit.resources);
+                                            er.on('endExtractResources', function(userScopes){
+                                                if(userScopes) {
+                                                    for (var i = 0; i < userScopes.length; i++) {
+                                                        var scopes = userScopes[i];
+                                                        var eUserScope = FilterObjFromArray(org.resourceAccessLimits, "scopeName", scopes.scope);
+                                                        if (eUserScope) {
+                                                            if(eUserScope.accessLimit < scopes.accessLimit){
+                                                                eUserScope.accessLimit = scopes.accessLimit;
+                                                            }
+                                                        }else{
+                                                            if(!org.resourceAccessLimits){
+                                                                org.resourceAccessLimits = [];
+                                                            }
+                                                            var rLimit = {
+                                                                "scopeName": scopes.scope,
+                                                                "accessLimit": scopes.accessLimit
+                                                            };
+                                                            org.resourceAccessLimits.push(rLimit);
+                                                        }
+                                                    }
                                                 }
 
-                                                res.end(jsonString);
+
+                                                Org.findOneAndUpdate({
+                                                    tenant: tenant,
+                                                    id: company
+                                                }, org, function (err, rOrg) {
+
+                                                    if (err) {
+
+                                                        jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Failed", false, undefined);
+
+                                                    } else {
+
+                                                        jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Successful", true, org);
+
+                                                    }
+
+                                                    res.end(jsonString);
+                                                });
                                             });
 
                                         } else {
