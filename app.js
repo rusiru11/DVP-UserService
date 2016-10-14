@@ -156,6 +156,8 @@ app.put('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secr
 app.delete('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.RemovePackageFromOrganisation);
 app.get('/DVP/API/:version/MyOrganization/mypackages', jwt({secret: secret.Secret}),authorization({resource:"package", action:"read"}), organisationService.GetOrganisationPackages);
 
+app.put('/DVP/API/:version/Organisation/Package/:packageName/Unit/:unitName/:topUpCount', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.AssignPackageUnitToOrganisation);
+
 app.get('/DVP/API/:version/Resources', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"read"}), resourceService.GetResources);
 app.get('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"read"}), resourceService.GetResource);
 app.delete('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"delete"}), resourceService.DeleteResource);

@@ -189,7 +189,7 @@ function CreatePackageUnit(req, res){
     var jsonString;
 
     var unit = PackageUnit({
-        unitName: req.body.packageName,
+        unitName: req.body.unitName,
         consoleAccessLimit: req.body.consoleAccessLimit,
         unitprice: req.body.unitPrice,
         created_at: Date.now(),

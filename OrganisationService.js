@@ -7,6 +7,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var Org = require('dvp-mongomodels/model/Organisation');
 var User = require('dvp-mongomodels/model/User');
 var VPackage = require('dvp-mongomodels/model/Package');
+var PackageUnit = require('dvp-mongomodels/model/PackageUnit');
 var Console = require('dvp-mongomodels/model/Console');
 var EventEmitter = require('events').EventEmitter;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
@@ -833,6 +834,135 @@ function UpdateUser(ownerId, vPackage){
 }
 
 
+
+
+
+function AssignPackageUnitToOrganisation(req,res){
+
+    logger.debug("DVP-UserService.AssignPackageUnitToOrganisation Internal method ");
+    logger.debug("Package:: "+req.params.packageName);
+    logger.debug("PackageUnit:: "+req.body.unitName);
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var topUpCount = 0;
+    if(req.params.topUpCount) {
+        topUpCount = parseInt(req.params.topUpCount);
+    }
+    var jsonString;
+
+    if(topUpCount > 0) {
+
+        VPackage.findOne({packageName: req.params.packageName}, function (err, vPackage) {
+
+            if (err) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
+                res.end(jsonString);
+
+            } else {
+
+                Org.findOne({tenant: tenant, id: company}, function (err, org) {
+
+                    if (err) {
+
+                        jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+                        res.end(jsonString);
+
+                    } else {
+
+                        if (org) {
+
+                            if (org.packages.indexOf(req.params.packageName) > -1) {
+
+                                PackageUnit.findOne({unitName: req.params.unitName}, function (err, packageUnit) {
+
+                                    if (err) {
+
+                                        jsonString = messageFormatter.FormatMessage(err, "Get Package Unit Failed", false, undefined);
+                                        res.end(jsonString);
+
+                                    } else {
+
+                                        if (packageUnit) {
+
+                                            org.updated_at = Date.now();
+
+                                            if (org.consoleAccessLimits.length > 0) {
+
+                                                for (var j = 0; j < org.consoleAccessLimits.length; j++) {
+
+                                                    var cal = org.consoleAccessLimits[j];
+
+                                                    if (cal.accessType == packageUnit.consoleAccessLimit.accessType) {
+                                                        org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
+                                                        break;
+
+                                                    }
+                                                }
+
+                                            }
+
+                                            Org.findOneAndUpdate({
+                                                tenant: tenant,
+                                                id: company
+                                            }, org, function (err, rOrg) {
+
+                                                if (err) {
+
+                                                    jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Failed", false, undefined);
+
+                                                } else {
+
+                                                    //UpdateUser(org.ownerId, vPackage);
+                                                    jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Successful", true, org);
+
+                                                }
+
+                                                res.end(jsonString);
+                                            });
+
+                                        } else {
+
+                                            jsonString = messageFormatter.FormatMessage(err, "No Package Unit Found", false, undefined);
+                                            res.end(jsonString);
+
+                                        }
+
+                                    }
+
+                                });
+                            } else {
+
+                                jsonString = messageFormatter.FormatMessage(err, "No Assigned Package Found", false, undefined);
+                                res.end(jsonString);
+
+                            }
+
+                        } else {
+
+                            jsonString = messageFormatter.FormatMessage(err, "No Organisation Found", false, undefined);
+                            res.end(jsonString);
+
+                        }
+
+                    }
+
+                });
+
+            }
+
+        });
+
+    }else{
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Top up count should be grater than zero", false, undefined);
+        res.end(jsonString);
+
+    }
+}
+
+
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
 module.exports.DeleteOrganisation = DeleteOrganisation;
@@ -843,3 +973,4 @@ module.exports.RemovePackageFromOrganisation = RemovePackageFromOrganisation;
 module.exports.CreateOwner = CreateOwner;
 module.exports.GetOrganisationPackages = GetOrganisationPackages;
 module.exports.GetOrganisationName = GetOrganisationName;
+module.exports.AssignPackageUnitToOrganisation = AssignPackageUnitToOrganisation;
