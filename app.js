@@ -168,6 +168,13 @@ app.delete('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}
 app.post('/DVP/API/:version/Package', jwt({secret: secret.Secret}),authorization({resource:"package", action:"write"}), packageService.CreatePackage);
 app.put('/DVP/API/:version/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"package", action:"write"}), packageService.UpdatePackage);
 
+app.get('/DVP/API/:version/PackageUnits', jwt({secret: secret.Secret}),authorization({resource:"package", action:"read"}), packageService.GetPackageUnits);
+app.get('/DVP/API/:version/PackageUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"package", action:"read"}), packageService.GetPackageUnit);
+app.delete('/DVP/API/:version/PackageUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"package", action:"delete"}), packageService.DeletePackageUnit);
+app.post('/DVP/API/:version/PackageUnit', jwt({secret: secret.Secret}),authorization({resource:"package", action:"write"}), packageService.CreatePackageUnit);
+app.put('/DVP/API/:version/PackageUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"package", action:"write"}), packageService.UpdatePackageUnit);
+
+
 
 app.get('/DVP/API/:version/Consoles', jwt({secret: secret.Secret}),authorization({resource:"console", action:"read"}), navigationService.GetAllConsoles);
 app.get('/DVP/API/:version/Consoles/:roleType', jwt({secret: secret.Secret}),authorization({resource:"console", action:"read"}), navigationService.GetAllConsolesByUserRole);
