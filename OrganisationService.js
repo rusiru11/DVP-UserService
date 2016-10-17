@@ -420,7 +420,7 @@ function AssignPackageToOrganisation(req,res){
                                         var scopes = userScopes[i];
                                         var eUserScope = FilterObjFromArray(org.resourceAccessLimits, "scopeName", scopes.scope);
                                         if (eUserScope) {
-                                            if(eUserScope.accessLimit < scopes.accessLimit){
+                                            if(eUserScope.accessLimit != -1 && eUserScope.accessLimit < scopes.accessLimit){
                                                 eUserScope.accessLimit = scopes.accessLimit;
                                             }
                                         }else{
@@ -940,8 +940,10 @@ function AssignPackageUnitToOrganisation(req,res){
                                                         var scopes = userScopes[i];
                                                         var eUserScope = FilterObjFromArray(org.resourceAccessLimits, "scopeName", scopes.scope);
                                                         if (eUserScope) {
-                                                            if(eUserScope.accessLimit < scopes.accessLimit){
-                                                                eUserScope.accessLimit = scopes.accessLimit;
+                                                            if(eUserScope.accessLimit != -1 && topUpCount > 0) {
+                                                                eUserScope.accessLimit = eUserScope.accessLimit + topUpCount;
+                                                            }else if(topUpCount === -1){
+                                                                eUserScope.accessLimit = topUpCount;
                                                             }
                                                         }else{
                                                             if(!org.resourceAccessLimits){
