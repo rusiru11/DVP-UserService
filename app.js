@@ -34,6 +34,7 @@ var jwt = require('restify-jwt');
 var util = require('util');
 var secret = require('dvp-common/Authentication/Secret.js');
 var authorization = require('dvp-common/Authentication/Authorization.js');
+var Login = require("./Login");
 
 // tenant operations
 var tenantService=require("./TenantService");
@@ -95,6 +96,13 @@ app.get('/dialog/authorize', oauth2.authorization);
 app.post('/dialog/authorize/decision', oauth2.decision);
 app.post('/oauth/token', oauth2.token);
 app.delete('/oauth/token/revoke/:jti', jwt({secret: secret.Secret}), oauth2.revoketoken);
+
+
+app.post('/auth/login', Login.Login);
+app.post('/auth/signup', Login.SignUP);
+app.post('/auth/google', Login.Google);
+app.post('/auth/github', Login.GitHub);
+app.post('/auth/facebook',Login.Facebook);
 
 
 
@@ -256,13 +264,6 @@ app.post('/DVP/API/:version/Tenant',jwt({secret: secret.Secret}), authorization(
 app.get('/DVP/API/:version/Tenants',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetAllTenants);
 app.get('/DVP/API/:version/Tenant/:id',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetTenant);
 app.get('/DVP/API/:version/CompanyDomain/:companyname',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetCompanyDomain);
-
-
-
-
-
-
-
 
 
 

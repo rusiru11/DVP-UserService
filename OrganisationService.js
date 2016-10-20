@@ -125,10 +125,6 @@ function GetOrganisationName(req, res){
     });
 }
 
-
-
-
-
 function GetOrganisationPackages(req, res){
     logger.debug("DVP-UserService.GetOrganisationPackages Internal method ");
 
@@ -516,7 +512,6 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
     });
 }
 
-
 function RemovePackageFromOrganisation(req,res){
     logger.debug("DVP-UserService.RemovePackageFromOrganisation Internal method ");
 
@@ -832,6 +827,74 @@ function UpdateUser(ownerId, vPackage){
     });
 }
 
+function CreateOrganisationStanAlone(user, callback) {
+    logger.debug("DVP-UserService.CreateOrganisationStanAlone Internal method ");
+
+    GetNewCompanyId(function (cid) {
+        if (cid != null && cid > 0) {
+
+
+            if (user.company == 0) {
+
+                Tenant.findOne({}, function (err, Tenants) {
+                    if (err) {
+
+                        callback(err, undefined);
+
+                    } else {
+
+                        if (Tenants) {
+
+
+                            var org = Org({
+                                ownerId: user.username,
+                                companyName: user.username,
+                                companyEnabled: true,
+                                id: cid,
+                                tenant: 1,
+                                packages: [],
+                                consoleAccessLimits: [],
+                                tenantRef: Tenants._id,
+                                created_at: Date.now(),
+                                updated_at: Date.now()
+                            });
+                            var usr = {};
+                            usr.company = cid;
+                            usr.updated_at = Date.now();
+                            org.save(function (err, org) {
+                                if (err) {
+                                    callback(err, undefined);
+                                } else {
+
+                                        User.findOneAndUpdate({username: user.username}, usr, function (err, rUser) {
+                                            if (err) {
+                                                org.remove(function (err) {
+                                                });
+                                                callback(err, undefined);
+                                            } else {
+                                                rUser.company = cid;
+                                                callback(undefined, rUser);
+                                            }
+                                        });
+                                }
+                            });
+
+                        } else {
+                            callback(new Error("No tenants found"), undefined);
+                        }
+                    }
+                });
+
+
+            }
+
+
+        } else {
+            callback(new Error("ID generation failed"), undefined);
+        }
+    });
+}
+
 
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
@@ -843,3 +906,4 @@ module.exports.RemovePackageFromOrganisation = RemovePackageFromOrganisation;
 module.exports.CreateOwner = CreateOwner;
 module.exports.GetOrganisationPackages = GetOrganisationPackages;
 module.exports.GetOrganisationName = GetOrganisationName;
+module.exports.CreateOrganisationStanAlone = CreateOrganisationStanAlone;

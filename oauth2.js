@@ -41,8 +41,6 @@ redisClient.auth(redispass, function (error) {
 });
 
 
-
-
 var generator = new FlakeIdGen;
 
 var server = oauth2orize.createServer();
@@ -611,13 +609,6 @@ exports.revoketoken = function(req, res, next) {
 
 
 }
-
-
-
-
-
-
-
 
 function GetScopes(user, claims){
 

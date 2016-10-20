@@ -77,11 +77,6 @@ function GetPackages(req, res){
 }
 
 
-
-
-
-
-
 function GetPackage(req, res){
     logger.debug("DVP-UserService.GetPackage Internal method ");
     var jsonString;

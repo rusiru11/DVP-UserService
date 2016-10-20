@@ -469,23 +469,26 @@ function GetMyrProfile(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.user.iss,company: company, tenant: tenant}).select("-password")
-        .exec(   function(err, users) {
-        if (err) {
 
+    try {
+        User.findOne({username: req.user.iss, company: company, tenant: tenant}).select("-password")
+            .exec(function (err, users) {
+                if (err) {
 
+                    jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
+                } else {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
-        }else{
+                }
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                res.end(jsonString);
+            });
+    }catch(ex){
 
-        }
-
-        res.end(jsonString);
-    });
+        console.log(ex);
+    }
 
 
 }
