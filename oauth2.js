@@ -282,7 +282,7 @@ server.exchange('urn:ietf:params:oauth:grant-type:jwt-bearer', jwtBearer(functio
 
                 } else {
 
-                    User.findOne({username: decoded.iss}, function(err, user) {
+                    User.findOne({username: decoded.iss}, '+password',function(err, user) {
 
                         var accessToken = null;
                         if (!err) {
@@ -333,7 +333,7 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
     //Validate the user
 
 
-    User.findOne({username: username}, function (err, user) {
+    User.findOne({username: username},'+password', function (err, user) {
         if (err) {
             return done(err);
         }
