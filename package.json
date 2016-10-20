@@ -4,6 +4,7 @@
   "description": "User, Profile and identity service for duo voice platform",
   "main": "ClientService.js",
   "dependencies": {
+    "bcryptjs": "^2.3.0",
     "biguint-format": "^1.0.0",
     "body-parser": "^1.15.1",
     "config": "^1.19.0",
