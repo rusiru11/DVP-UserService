@@ -7,6 +7,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var Org = require('dvp-mongomodels/model/Organisation');
 var User = require('dvp-mongomodels/model/User');
 var VPackage = require('dvp-mongomodels/model/Package');
+var PackageUnit = require('dvp-mongomodels/model/PackageUnit');
 var Console = require('dvp-mongomodels/model/Console');
 var EventEmitter = require('events').EventEmitter;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
@@ -252,6 +253,7 @@ function CreateOrganisation(req, res){
                                         tenant: 1,
                                         packages:[],
                                         consoleAccessLimits:[],
+                                        resourceAccessLimits:[],
                                         tenantRef:Tenants._id,
                                         created_at: Date.now(),
                                         updated_at: Date.now()
@@ -406,17 +408,44 @@ function AssignPackageToOrganisation(req,res){
                                 }
                             }
 
-                            Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rOrg) {
-                                if (err) {
-                                    jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
-                                } else {
-                                    UpdateUser(org.ownerId, vPackage);
-                                    AssignTaskToOrganisation(company,tenant,vPackage.veeryTask);
-                                    AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
-                                    jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
+
+                            var er = ExtractResources(vPackage.resources);
+                            er.on('endExtractResources', function(userScopes){
+                                if(userScopes) {
+                                    for (var i = 0; i < userScopes.length; i++) {
+                                        var scopes = userScopes[i];
+                                        var eUserScope = FilterObjFromArray(org.resourceAccessLimits, "scopeName", scopes.scope);
+                                        if (eUserScope) {
+                                            if(eUserScope.accessLimit != -1 && eUserScope.accessLimit < scopes.accessLimit){
+                                                eUserScope.accessLimit = scopes.accessLimit;
+                                            }
+                                        }else{
+                                            if(!org.resourceAccessLimits){
+                                                org.resourceAccessLimits = [];
+                                            }
+                                            var rLimit = {
+                                                "scopeName": scopes.scope,
+                                                "accessLimit": scopes.accessLimit
+                                            };
+                                            org.resourceAccessLimits.push(rLimit);
+                                        }
+                                    }
                                 }
-                                res.end(jsonString);
+
+
+                                Org.findOneAndUpdate({tenant: tenant, id: company}, org, function (err, rOrg) {
+                                    if (err) {
+                                        jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
+                                    } else {
+                                        UpdateUser(org.ownerId, vPackage);
+                                        AssignTaskToOrganisation(company,tenant,vPackage.veeryTask);
+                                        AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
+                                        jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
+                                    }
+                                    res.end(jsonString);
+                                });
                             });
+
                         }else{
                             jsonString = messageFormatter.FormatMessage(err, "Package Already Added", false, undefined);
                             res.end(jsonString);
@@ -578,6 +607,7 @@ function GetUserScopes(scopes){
                 var oScope = scopes[i];
                 if(oScope) {
                     userScope.scope = oScope.scopeName;
+                    userScope.accessLimit = oScope.limit;
                     if(oScope.actions) {
                         for (var j = 0; j < oScope.actions.length; j++) {
                             var action = oScope.actions[j];
@@ -896,6 +926,162 @@ function CreateOrganisationStanAlone(user, callback) {
 }
 
 
+
+
+
+function AssignPackageUnitToOrganisation(req,res){
+
+    logger.debug("DVP-UserService.AssignPackageUnitToOrganisation Internal method ");
+    logger.debug("Package:: "+req.params.packageName);
+    logger.debug("PackageUnit:: "+req.body.unitName);
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var topUpCount = 0;
+    if(req.params.topUpCount) {
+        topUpCount = parseInt(req.params.topUpCount);
+    }
+    var jsonString;
+
+    if(topUpCount > 0) {
+
+        VPackage.findOne({packageName: req.params.packageName}, function (err, vPackage) {
+
+            if (err) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
+                res.end(jsonString);
+
+            } else {
+
+                Org.findOne({tenant: tenant, id: company}, function (err, org) {
+
+                    if (err) {
+
+                        jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+                        res.end(jsonString);
+
+                    } else {
+
+                        if (org) {
+
+                            if (org.packages.indexOf(req.params.packageName) > -1) {
+
+                                PackageUnit.findOne({unitName: req.params.unitName}, function (err, packageUnit) {
+
+                                    if (err) {
+
+                                        jsonString = messageFormatter.FormatMessage(err, "Get Package Unit Failed", false, undefined);
+                                        res.end(jsonString);
+
+                                    } else {
+
+                                        if (packageUnit) {
+
+                                            org.updated_at = Date.now();
+
+                                            if (org.consoleAccessLimits.length > 0) {
+
+                                                for (var j = 0; j < org.consoleAccessLimits.length; j++) {
+
+                                                    var cal = org.consoleAccessLimits[j];
+
+                                                    if (cal.accessType == packageUnit.consoleAccessLimit.accessType) {
+                                                        org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
+                                                        break;
+
+                                                    }
+                                                }
+
+                                            }
+
+
+                                            var er = ExtractResources(packageUnit.resources);
+                                            er.on('endExtractResources', function(userScopes){
+                                                if(userScopes) {
+                                                    for (var i = 0; i < userScopes.length; i++) {
+                                                        var scopes = userScopes[i];
+                                                        var eUserScope = FilterObjFromArray(org.resourceAccessLimits, "scopeName", scopes.scope);
+                                                        if (eUserScope) {
+                                                            if(eUserScope.accessLimit != -1 && topUpCount > 0) {
+                                                                eUserScope.accessLimit = eUserScope.accessLimit + topUpCount;
+                                                            }else if(topUpCount === -1){
+                                                                eUserScope.accessLimit = topUpCount;
+                                                            }
+                                                        }else{
+                                                            if(!org.resourceAccessLimits){
+                                                                org.resourceAccessLimits = [];
+                                                            }
+                                                            var rLimit = {
+                                                                "scopeName": scopes.scope,
+                                                                "accessLimit": scopes.accessLimit
+                                                            };
+                                                            org.resourceAccessLimits.push(rLimit);
+                                                        }
+                                                    }
+                                                }
+
+
+                                                Org.findOneAndUpdate({
+                                                    tenant: tenant,
+                                                    id: company
+                                                }, org, function (err, rOrg) {
+
+                                                    if (err) {
+
+                                                        jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Failed", false, undefined);
+
+                                                    } else {
+
+                                                        jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Successful", true, org);
+
+                                                    }
+
+                                                    res.end(jsonString);
+                                                });
+                                            });
+
+                                        } else {
+
+                                            jsonString = messageFormatter.FormatMessage(err, "No Package Unit Found", false, undefined);
+                                            res.end(jsonString);
+
+                                        }
+
+                                    }
+
+                                });
+                            } else {
+
+                                jsonString = messageFormatter.FormatMessage(err, "No Assigned Package Found", false, undefined);
+                                res.end(jsonString);
+
+                            }
+
+                        } else {
+
+                            jsonString = messageFormatter.FormatMessage(err, "No Organisation Found", false, undefined);
+                            res.end(jsonString);
+
+                        }
+
+                    }
+
+                });
+
+            }
+
+        });
+
+    }else{
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Top up count should be grater than zero", false, undefined);
+        res.end(jsonString);
+
+    }
+}
+
+
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
 module.exports.DeleteOrganisation = DeleteOrganisation;
@@ -906,4 +1092,5 @@ module.exports.RemovePackageFromOrganisation = RemovePackageFromOrganisation;
 module.exports.CreateOwner = CreateOwner;
 module.exports.GetOrganisationPackages = GetOrganisationPackages;
 module.exports.GetOrganisationName = GetOrganisationName;
+module.exports.AssignPackageUnitToOrganisation = AssignPackageUnitToOrganisation;
 module.exports.CreateOrganisationStanAlone = CreateOrganisationStanAlone;
