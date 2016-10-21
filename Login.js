@@ -16,8 +16,9 @@ var Org = require('dvp-mongomodels/model/Organisation');
 var orgService = require('./OrganisationService');
 var bcrypt = require('bcryptjs');
 var qs = require('querystring');
-
+var PublishToQueue = require('./Worker').PublishToQueue;
 var util = require('util');
+var crypto = require('crypto');
 
 var redisip = config.Redis.ip;
 var redisport = config.Redis.port;
@@ -375,6 +376,20 @@ module.exports.SignUP = function(req, res) {
                         var token = GetJWT(result, ["all_all"]);
                         res.send({state: "new", token: token});
 
+
+                        var sendObj = {
+                            "company": 0,
+                            "tenant": 1
+                        };
+
+                        sendObj.to =  req.body.mail;
+                        sendObj.from = "no-reply",
+                        sendObj.template = "By-User Registration Confirmation";
+                        sendObj.Parameters = user
+
+                        PublishToQueue("EMAILOUT", sendObj)
+
+
                     } else {
 
                         res.status(404).send({message: 'Organization save failed'});
@@ -522,6 +537,19 @@ module.exports.Google = function(req, res){
 
                                                 var token = GetJWT(rUser,claims_arr);
                                                 res.send({state: "new", token: token});
+
+
+                                                var sendObj = {
+                                                    "company": 0,
+                                                    "tenant": 1
+                                                };
+
+                                                sendObj.to =  profile.email;
+                                                sendObj.from = "no-reply",
+                                                    sendObj.template = "By-User Registration Success";
+                                                sendObj.Parameters = user
+
+                                                PublishToQueue("EMAILOUT", sendObj)
 
                                             }else{
 
@@ -704,6 +732,18 @@ module.exports.GitHub = function(req, res) {
 
                                             var token = GetJWT(rUser,claims_arr);
                                             res.send({state: "new", token: token});
+
+                                            var sendObj = {
+                                                "company": 0,
+                                                "tenant": 1
+                                            };
+
+                                            sendObj.to =  profile.email;
+                                            sendObj.from = "no-reply",
+                                                sendObj.template = "By-User Registration Success";
+                                            sendObj.Parameters = user
+
+                                            PublishToQueue("EMAILOUT", sendObj)
 
                                         }else{
 
@@ -897,6 +937,18 @@ module.exports.Facebook = function(req, res) {
                                             var token = GetJWT(rUser,["all_all"]);
                                             res.send({state: "new", token: token});
 
+                                            var sendObj = {
+                                                "company": 0,
+                                                "tenant": 1
+                                            };
+
+                                            sendObj.to =  profile.email;
+                                            sendObj.from = "no-reply",
+                                                sendObj.template = "By-User Registration Success";
+                                            sendObj.Parameters = user
+
+                                            PublishToQueue("EMAILOUT", sendObj)
+
                                         }else{
 
                                             res.status(404).send({message: 'Organization save failed'});
@@ -945,3 +997,159 @@ module.exports.Facebook = function(req, res) {
     });
 };
 
+module.exports.ForgetPassword = function(req, res){
+
+
+    var jsonString;
+
+    if(req.body.email) {
+        User.findOne({"email.contact": req.body.email}, function (err, existingUser) {
+            if (!existingUser || err) {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "User not exists", false, undefined);
+                res.end(jsonString);
+
+
+            } else {
+
+                crypto.randomBytes(20, function (err, buf) {
+                    var token = buf.toString('hex');
+
+                    var url = 'http://localhost:3000/#/reset/' + token;
+
+
+
+                    redisClient.set("reset"+":"+token,existingUser._id ,function (err, val) {
+                        if (err) {
+
+                            jsonString = messageFormatter.FormatMessage(undefined, "Error in process", false, undefined);
+                            res.end(jsonString);
+
+                        }else{
+
+
+                            redisClient.expireat("reset"+":"+token,  parseInt((+new Date)/1000) + 86400);
+                            var sendObj = {
+                                "company": 0,
+                                "tenant": 1
+                            };
+
+                            //existingUser.url = url;
+
+                            sendObj.to =  req.body.email;
+                            sendObj.from = "no-reply";
+                            sendObj.template = "By-User Reset Password";
+                            sendObj.Parameters = {username: existingUser.username,
+                                url: url};
+
+                            PublishToQueue("EMAILOUT", sendObj);
+
+                            jsonString = messageFormatter.FormatMessage(undefined, "Reset email send", true, undefined);
+                            res.end(jsonString);
+                        }
+                    });
+
+                });
+            }
+        });
+    }else{
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Email is not valid", false, undefined);
+        res.end(jsonString);
+    }
+
+
+
+};
+
+module.exports.ResetPassword = function(req, res){
+
+
+    var jsonString;
+
+    redisClient.get("reset"+":"+req.params.token,function (err, val) {
+        if (err ) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Error in process", false, undefined);
+            res.end(jsonString);
+
+        }else{
+
+            if(val && req.body.password) {
+
+                var newpwd;
+                bcrypt.genSalt(10, function(err, salt) {
+                    bcrypt.hash(req.body.password, salt, function(err, hash) {
+
+                        if(!err) {
+                            newpwd = hash;
+                            User.findOneAndUpdate({"_id": val}, {password: newpwd}, function (err, existingUser) {
+                                if (!existingUser || err) {
+
+                                    jsonString = messageFormatter.FormatMessage(undefined, "User not exists", false, undefined);
+                                    res.end(jsonString);
+
+
+                                } else {
+                                    var sendObj = {
+                                        "company": 0,
+                                        "tenant": 1
+                                    };
+
+                                    //existingUser.url = url;
+
+                                    sendObj.to = existingUser.email.contact;
+                                    sendObj.from = "no-reply";
+                                    sendObj.template = "By-User Reset Password Success";
+                                    sendObj.Parameters = {
+                                        username: existingUser.username
+                                    };
+
+                                    PublishToQueue("EMAILOUT", sendObj);
+
+                                    redisClient.del("reset" + ":" + req.params.token, redis.print);
+
+                                    jsonString = messageFormatter.FormatMessage(undefined, "Reset email send", true, undefined);
+                                    res.end(jsonString);
+
+                                }
+                            });
+                        }else{
+
+                            jsonString = messageFormatter.FormatMessage(undefined, "Error in process", false, undefined);
+                            res.end(jsonString);
+                        }
+
+                    });
+                });
+
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Error in process", false, undefined);
+                res.end(jsonString);
+            }
+        }
+    });
+
+};
+
+module.exports.CheckToken = function(req, res) {
+
+
+    var jsonString;
+
+    redisClient.get("reset" + ":" + req.params.token, function (err, val) {
+        if (err || !val) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Error in process", false, undefined);
+            res.end(jsonString);
+
+        } else {
+            jsonString = messageFormatter.FormatMessage(undefined, "Token Found", true, undefined);
+            res.end(jsonString);
+
+
+        }
+    });
+
+};

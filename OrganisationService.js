@@ -17,6 +17,7 @@ var config = require('config');
 var validator = require('validator');
 var Tenant = require('dvp-mongomodels/model/Tenant').Tenant;
 
+
 client = redis.createClient(config.Redis.port, config.Redis.ip);
 client.auth(config.Redis.password);
 client.on("error", function (err) {
