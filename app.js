@@ -103,8 +103,7 @@ app.post('/auth/signup', Login.SignUP);
 app.post('/auth/forget', Login.ForgetPassword);
 app.post('/auth/reset/:token', Login.ResetPassword);
 app.get('/auth/token/:token/exists', Login.CheckToken);
-
-
+app.get('/auth/activate/:token', Login.ActivateAccount);
 
 
 

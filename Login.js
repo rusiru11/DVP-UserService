@@ -307,26 +307,68 @@ module.exports.Login =  function(req, res) {
             return res.status(401).send({message: 'Invalid email and/or password'});
         }
 
-        /*bcrypt.compare(req.body.password, user.password, function(err, isMatch) {
-            if (!isMatch) {
-                return res.status(401).send({message: 'Invalid email and/or password'});
-            }
-            res.send({token: GetJWT(user, ["all_all"])});
-        });*/
+        if (!user.verified) {
 
-        user.comparePassword(req.body.password, function (err, isMatch) {
-            if (!isMatch) {
-                return res.status(401).send({message: 'Invalid email and/or password'});
-            }
+            crypto.randomBytes(20, function (err, buf) {
+                var token = buf.toString('hex');
 
-            var claims_arr = ["all_all"];
-            if(req.body.scope && util.isArray(req.body.scope) && req.body.scope.length >0){
+                var url = 'http://localhost:3000/#/activate/' + token;
 
-                claims_arr = req.body.scope;
-            }
+                redisClient.set("activate"+":"+token,user._id ,function (err, val) {
+                    if (err) {
 
-            res.send({token: GetJWT(user, claims_arr)});
-        });
+                        res.status(404).send({message: 'Create activation token failed'});
+
+                    }else{
+
+
+                        redisClient.expireat("activate"+":"+token,  parseInt((+new Date)/1000) + 86400);
+
+                        var sendObj = {
+                            "company": 0,
+                            "tenant": 1
+                        };
+
+                        sendObj.to =  user.email.contact;
+                        sendObj.from = "no-reply";
+                        sendObj.template = "By-User Registration Confirmation";
+                        sendObj.Parameters = {username: user.username,
+                            created_at: new Date(),
+                            url:url}
+
+                        PublishToQueue("EMAILOUT", sendObj)
+
+                        return res.status(449 ).send({message: 'Activate your account before login'});
+                    }
+                });
+
+            });
+        }else {
+
+
+
+
+            /*bcrypt.compare(req.body.password, user.password, function(err, isMatch) {
+             if (!isMatch) {
+             return res.status(401).send({message: 'Invalid email and/or password'});
+             }
+             res.send({token: GetJWT(user, ["all_all"])});
+             });*/
+
+            user.comparePassword(req.body.password, function (err, isMatch) {
+                if (!isMatch) {
+                    return res.status(401).send({message: 'Invalid email and/or password'});
+                }
+
+                var claims_arr = ["all_all"];
+                if (req.body.scope && util.isArray(req.body.scope) && req.body.scope.length > 0) {
+
+                    claims_arr = req.body.scope;
+                }
+
+                res.send({token: GetJWT(user, claims_arr)});
+            });
+        }
 
     });
 };
@@ -373,21 +415,44 @@ module.exports.SignUP = function(req, res) {
 
                     if (!err && result) {
 
-                        var token = GetJWT(result, ["all_all"]);
-                        res.send({state: "new", token: token});
 
 
-                        var sendObj = {
-                            "company": 0,
-                            "tenant": 1
-                        };
+                        crypto.randomBytes(20, function (err, buf) {
+                            var token = buf.toString('hex');
 
-                        sendObj.to =  req.body.mail;
-                        sendObj.from = "no-reply",
-                        sendObj.template = "By-User Registration Confirmation";
-                        sendObj.Parameters = user
+                            var url = 'http://localhost:3000/#/activate/' + token;
 
-                        PublishToQueue("EMAILOUT", sendObj)
+                            redisClient.set("activate"+":"+token,result._id ,function (err, val) {
+                                if (err) {
+
+                                    res.status(404).send({message: 'Create activation token failed'});
+
+                                }else{
+
+
+                                    redisClient.expireat("activate"+":"+token,  parseInt((+new Date)/1000) + 86400);
+                                    //var token = GetJWT(result, ["all_all"]);
+                                    //res.send({state: "new", token: token});
+
+                                    res.send({state: "new", message: "check mail"});
+
+                                    var sendObj = {
+                                        "company": 0,
+                                        "tenant": 1
+                                    };
+
+                                    sendObj.to =  req.body.mail;
+                                    sendObj.from = "no-reply";
+                                    sendObj.template = "By-User Registration Confirmation";
+                                    sendObj.Parameters = {username: user.username,
+                                        created_at: new Date(),
+                                    url:url}
+
+                                    PublishToQueue("EMAILOUT", sendObj)
+                                }
+                            });
+
+                        });
 
 
                     } else {
@@ -1122,6 +1187,65 @@ module.exports.ResetPassword = function(req, res){
 
                     });
                 });
+
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Error in process", false, undefined);
+                res.end(jsonString);
+            }
+        }
+    });
+
+};
+
+module.exports.ActivateAccount= function(req, res){
+
+
+    var jsonString;
+
+    redisClient.get("activate"+":"+req.params.token,function (err, val) {
+        if (err ) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Error in process", false, undefined);
+            res.end(jsonString);
+
+        }else{
+
+            if(val ) {
+
+
+                User.findOneAndUpdate({"_id": val}, {"verified": true, "email.verified": true}, function (err, existingUser) {
+                    if (!existingUser || err) {
+
+                        jsonString = messageFormatter.FormatMessage(undefined, "User not exists", false, undefined);
+                        res.end(jsonString);
+
+
+                    } else {
+                        var sendObj = {
+                            "company": 0,
+                            "tenant": 1
+                        };
+
+                        //existingUser.url = url;
+
+                        sendObj.to = existingUser.email.contact;
+                        sendObj.from = "no-reply";
+                        sendObj.template = "By-User Account Activated";
+                        sendObj.Parameters = {
+                            username: existingUser.username
+                        };
+
+                        PublishToQueue("EMAILOUT", sendObj);
+
+                        redisClient.del("activate" + ":" + req.params.token, redis.print);
+
+                        jsonString = messageFormatter.FormatMessage(undefined, "Reset email send", true, undefined);
+                        res.end(jsonString);
+
+                    }
+                });
+
 
             }else{
 
