@@ -100,6 +100,13 @@ app.delete('/oauth/token/revoke/:jti', jwt({secret: secret.Secret}), oauth2.revo
 
 app.post('/auth/login', Login.Login);
 app.post('/auth/signup', Login.SignUP);
+app.post('/auth/forget', Login.ForgetPassword);
+app.post('/auth/reset/:token', Login.ResetPassword);
+app.get('/auth/token/:token/exists', Login.CheckToken);
+app.get('/auth/activate/:token', Login.ActivateAccount);
+
+
+
 app.post('/auth/google', Login.Google);
 app.post('/auth/github', Login.GitHub);
 app.post('/auth/facebook',Login.Facebook);
