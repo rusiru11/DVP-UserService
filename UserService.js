@@ -5,9 +5,28 @@ var Org = require('dvp-mongomodels/model/Organisation');
 var VPackage = require('dvp-mongomodels/model/Package');
 var Console = require('dvp-mongomodels/model/Console');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
-
-
+var PublishToQueue = require('./Worker').PublishToQueue;
 var util = require('util');
+var crypto = require('crypto');
+var config = require('config');
+var redis = require('redis');
+
+var redisip = config.Redis.ip;
+var redisport = config.Redis.port;
+var redisuser = config.Redis.user;
+var redispass = config.Redis.password;
+
+//[redis:]//[user][:password@][host][:port][/db-number][?db=db-number[&password=bar[&option=value]]]
+//redis://user:secret@localhost:6379
+var redisClient = redis.createClient(redisport, redisip);
+redisClient.on('error', function (err) {
+    console.log('Error '.red, err);
+});
+
+redisClient.auth(redispass, function (error) {
+    console.log("Error Redis : " + error);
+});
+
 
 function GetUsers(req, res){
 
@@ -275,7 +294,7 @@ function CreateUser(req, res){
             res.end(jsonString);
         }else{
             if(org){
-                if(req.body.role){
+                if(req.body.role && req.body.mail){
                     var userRole = req.body.role.toLowerCase();
                     var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
                     if(limitObj){
@@ -308,7 +327,7 @@ function CreateUser(req, res){
 
 
                                 },
-                                username: req.body.username,
+                                username: req.body.mail,
                                 password: req.body.password,
                                 phoneNumber: {contact:req.body.phone, type: "phone", verified: false},
                                 email:{contact:req.body.mail, type: "phone", verified: false},
@@ -319,7 +338,14 @@ function CreateUser(req, res){
                                 updated_at: Date.now()
                             });
 
+                            if(config.auth.login_verification){
 
+                                user.verified = false;
+
+                            }else{
+
+                                user.verified = true;
+                            }
 
 
 
@@ -344,9 +370,48 @@ function CreateUser(req, res){
                                             user.remove(function (err) {});
                                             jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
                                         }else{
-                                            jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
+
+                                            if(config.auth.login_verification){
+
+                                                crypto.randomBytes(20, function (err, buf) {
+                                                    var token = buf.toString('hex');
+
+                                                    var url = config.auth.ui_host + '#/activate/' + token;
+
+                                                    redisClient.set("activate"+":"+token,user._id ,function (err, val) {
+                                                        if (err) {
+
+                                                            jsonString = messageFormatter.FormatMessage(err, "Create activation token failed", false, user);
+                                                            res.end(jsonString);
+
+                                                        }else{
+
+
+                                                            redisClient.expireat("activate"+":"+token,  parseInt((+new Date)/1000) + 86400);
+
+                                                            var sendObj = {
+                                                                "company": 0,
+                                                                "tenant": 1
+                                                            };
+
+                                                            sendObj.to =  req.body.mail;
+                                                            sendObj.from = "no-reply";
+                                                            sendObj.template = "By-User Registration Confirmation";
+                                                            sendObj.Parameters = {username: user.username,
+                                                                created_at: new Date(),
+                                                                url:url}
+
+                                                            PublishToQueue("EMAILOUT", sendObj)
+
+                                                            jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                            res.end(jsonString);
+                                                        }
+                                                    });
+
+                                                });
+                                            }
                                         }
-                                        res.end(jsonString);
+
                                     });
                                 }
                             });
@@ -2062,7 +2127,6 @@ function GetMyAppScopesByConsoles(req, res){
     });
 
 }
-
 
 function GetMyAppScopes(req, res){
 
