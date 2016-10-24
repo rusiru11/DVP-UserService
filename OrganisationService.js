@@ -381,34 +381,36 @@ function AssignPackageToOrganisation(req,res){
                             org.updated_at = Date.now();
                             org.packages.push(req.params.packageName);
                             org.packages = UniqueArray(org.packages);
-                            for (var i in vPackage.consoleAccessLimit) {
-                                var vCal = vPackage.consoleAccessLimit[i];
-                                var tempCal = {
-                                    accessType: vCal.accessType,
-                                    accessLimit: vCal.accessLimit,
-                                    currentAccess: []
-                                };
-                                if(vCal.accessType == "admin") {
-                                    tempCal.currentAccess.push(org.ownerId);
-                                }
-                                var count = 0;
-                                if (org.consoleAccessLimits.length > 0) {
-                                    for (var j in org.consoleAccessLimits) {
-                                        count++;
-                                        var cal = org.consoleAccessLimits[j];
-                                        if (cal.accessType == vCal.accessType) {
-                                            org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + tempCal.accessLimit;
-                                            break;
-                                        }
-                                        if (count == org.consoleAccessLimits.length) {
-                                            org.consoleAccessLimits.push(tempCal);
-                                        }
+
+                            if(vPackage.consoleAccessLimit && vPackage.consoleAccessLimit.length > 0) {
+                                for (var i = 0; i < vPackage.consoleAccessLimit.length; i++) {
+                                    var vCal = vPackage.consoleAccessLimit[i];
+                                    var tempCal = {
+                                        accessType: vCal.accessType,
+                                        accessLimit: vCal.accessLimit,
+                                        currentAccess: []
+                                    };
+                                    if (vCal.accessType == "admin") {
+                                        tempCal.currentAccess.push(org.ownerId);
                                     }
-                                } else {
-                                    org.consoleAccessLimits.push(tempCal);
+                                    var count = 0;
+                                    if (org.consoleAccessLimits.length > 0) {
+                                        for (var j = 0; j < org.consoleAccessLimits.length; j++) {
+                                            count++;
+                                            var cal = org.consoleAccessLimits[j];
+                                            if (cal.accessType == vCal.accessType) {
+                                                org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + tempCal.accessLimit;
+                                                break;
+                                            }
+                                            if (count == org.consoleAccessLimits.length) {
+                                                org.consoleAccessLimits.push(tempCal);
+                                            }
+                                        }
+                                    } else {
+                                        org.consoleAccessLimits.push(tempCal);
+                                    }
                                 }
                             }
-
 
                             var er = ExtractResources(vPackage.resources);
                             er.on('endExtractResources', function(userScopes){
