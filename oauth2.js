@@ -129,6 +129,7 @@ server.grant(oauth2orize.grant.token(function (client, user, ares,reqObj, done) 
     var accesstoken = accessToken({
 
         jti: jti,
+        type: 'token',
         userId: user.id,
         clientId: client.id,
         scope: reqObj.scope,
@@ -207,6 +208,7 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
                 var accesstoken = accessToken({
 
                     jti: jti,
+                    type: 'code',
                     userId: authCode.userId,
                     clientId: authCode.clientId,
                     scope: authCode.scope,
@@ -387,6 +389,7 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
         var accesstoken = accessToken({
 
             userId: user.id,
+            type: 'password',
             clientId: client.id,
             jti: jti,
             scope: scopeArray,
@@ -439,6 +442,7 @@ server.exchange(oauth2orize.exchange.clientCredentials(function (client, scope, 
 
         userId: -1,
         clientId: client.id,
+        type: 'client-credentials',
         scope: scope,
         expirationDate: Date.now()
     });
@@ -519,6 +523,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function (client, refreshToken
 
 
                 userId: refToken.userId,
+                type: 'refresh-token',
                 clientId: client.id,
                 jti: jti,
                 scope: scopeArray,
@@ -579,8 +584,8 @@ exports.revoketoken = function(req, res, next) {
     var iss = req.user.iss;
 
     jsonString = messageFormatter.FormatMessage(undefined, "Revoke token failed", false, undefined);
-    if(iss) {
-        accessToken.remove({jti: id}, function (err) {
+    if (iss) {
+        accessToken.findOneAndUpdate({jti: id},{logged_out_at:Date.now()}, function (err) {
 
             if (err) {
                 jsonString = messageFormatter.FormatMessage(err, "Revoke token failed", false, undefined);
@@ -599,13 +604,10 @@ exports.revoketoken = function(req, res, next) {
         });
 
 
-
-    } else{
+    } else {
 
         res.end(jsonString);
     }
-
-
 
 
 }
