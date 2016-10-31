@@ -373,8 +373,6 @@ module.exports.Login =  function(req, res) {
         }else {
 
 
-
-
             /*bcrypt.compare(req.body.password, user.password, function(err, isMatch) {
              if (!isMatch) {
              return res.status(401).send({message: 'Invalid email and/or password'});
@@ -1487,3 +1485,30 @@ module.exports.CheckToken = function(req, res) {
     });
 
 };
+
+module.exports.Attachments = function(req,res){
+
+    var sendObj = {
+        "company": 0,
+        "tenant": 1
+    };
+
+    sendObj.to =  "pawan@duosoftware.com";
+    sendObj.from = "no-reply";
+    sendObj.template = "By-User Registration Confirmation";
+    sendObj.Parameters = {username: "pawan",
+        created_at: new Date(),
+        url:"aaaa"}
+
+    sendObj.attachments = [];
+    var item = {
+        "url": "http://fileservice.app.veery.cloud/DVP/API/1.0.0.0/InternalFileService/File/DownloadLatest/1/103/CDR_1_103_1476642600_1476728999.csv",
+        "name": "cdr.csv"
+    }
+
+    sendObj.attachments.push(item);
+    PublishToQueue("EMAILOUT", sendObj)
+
+    res.end();
+
+}
