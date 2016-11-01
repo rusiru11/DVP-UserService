@@ -117,9 +117,6 @@ function GetScopes(user, claims){
         }
 
 
-
-
-
         var profileClaimsFound = claims.filter(function (item, index) {
 
             return item.startsWith('profile_');
