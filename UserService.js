@@ -506,23 +506,32 @@ function UpdateUser(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, req.body, function(err, users) {
-        if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
+    if(req.params.name) {
 
-        }else{
+        User.findOneAndUpdate({
+            username: req.params.name,
+            company: company,
+            tenant: tenant
+        }, req.body, function (err, users) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
 
-        }
+            } else {
 
+                jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
+
+            }
+
+            res.end(jsonString);
+        });
+    }else{
+
+        jsonString = messageFormatter.FormatMessage(err, "Update User Failed Username empty", false, undefined);
         res.end(jsonString);
-    });
 
-
-
-
+    }
 
 }
 
@@ -1238,21 +1247,32 @@ function SetUserProfileResourceId(req, res){
 
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { resourceid : req.params.resourceid}, function (err, users) {
-        if (err) {
+    if(req.params.name) {
+        User.findOneAndUpdate({
+            username: req.params.name,
+            company: company,
+            tenant: tenant
+        }, {resourceid: req.params.resourceid}, function (err, users) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Update User resource id Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Update User resource id Failed", false, undefined);
 
-        } else {
-            if(users) {
-                jsonString = messageFormatter.FormatMessage(err, "Update User resource id Successful", true, undefined);
-            }else{
-                jsonString = messageFormatter.FormatMessage(err, "No User Found", false, undefined);
+            } else {
+                if (users) {
+                    jsonString = messageFormatter.FormatMessage(err, "Update User resource id Successful", true, undefined);
+                } else {
+                    jsonString = messageFormatter.FormatMessage(err, "No User Found", false, undefined);
+                }
             }
-        }
 
+            res.end(jsonString);
+        });
+    }else{
+
+        jsonString = messageFormatter.FormatMessage(err, "Update User resource id Failed Username empty", false, undefined);
         res.end(jsonString);
-    });
+
+    }
 
 }
 
