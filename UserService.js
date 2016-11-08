@@ -409,7 +409,12 @@ function CreateUser(req, res){
                                                     });
 
                                                 });
+                                            }else{
+
+                                                jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                res.end(jsonString);
                                             }
+
                                         }
 
                                     });
