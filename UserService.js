@@ -276,10 +276,6 @@ function DeleteUser(req,res){
         res.end(jsonString);
     });
 
-
-
-
-
 }
 
 function CreateUser(req, res){

@@ -407,118 +407,217 @@ module.exports.Login =  function(req, res) {
 
 module.exports.SignUP = function(req, res) {
 
+    if(config.auth.signup_verification ) {
 
-
-
-    if(!req.body || req.body['g-recaptcha-response'] === undefined || req.body['g-recaptcha-response'] === '' || req.body['g-recaptcha-response'] === null) {
-        return res.status(409).send({message: 'Please select captcha'});
-    }
-
-    var secretKey = "6LezaAsUAAAAAFbtiyMzOlMmqEwzMwmMYszmO_Ve";
-    var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + req.body['g-recaptcha-response'] + "&remoteip=" + req.connection.remoteAddress;
-
-    request(verificationUrl,function(error,response,body) {
-        body = JSON.parse(body);
-        if(body.success !== undefined && !body.success) {
-
-            return res.status(409).send({message: 'Failed captcha verification'});
+        if(!req.body || req.body['g-recaptcha-response'] === undefined || req.body['g-recaptcha-response'] === '' || req.body['g-recaptcha-response'] === null) {
+            return res.status(409).send({message: 'Please select captcha'});
         }
-        User.findOne({"username": req.body.mail}, function (err, existingUser) {
-            if (existingUser) {
-                return res.status(409).send({message: 'Email is already taken'});
+
+        var secretKey = "6LezaAsUAAAAAFbtiyMzOlMmqEwzMwmMYszmO_Ve";
+        var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + req.body['g-recaptcha-response'] + "&remoteip=" + req.connection.remoteAddress;
+
+        request(verificationUrl, function (error, response, body) {
+            body = JSON.parse(body);
+            if (body.success !== undefined && !body.success) {
+
+                return res.status(409).send({message: 'Failed captcha verification'});
             }
-            var user = new User({
-                displayName: req.body.displayName,
-                email: {
-                    contact: req.body.mail,
-                    type: "email",
-                    display: req.body.mail,
-                    verified: false
-                },
-                username: req.body.mail,
-                password: req.body.password,
-                user_meta: {role: "admin"},
-                systemuser: true,
-                user_scopes: [
-                    {scope: "organisation", read: true, write: true},
-                    {scope: "resource", read: true},
-                    {scope: "package", read: true},
-                    {scope: "console", read: true},
-                    {"scope": "myNavigation", "read": true},
-                    {"scope": "myUserProfile", "read": true}
-                ],
+            User.findOne({"username": req.body.mail}, function (err, existingUser) {
+                if (existingUser) {
+                    return res.status(409).send({message: 'Email is already taken'});
+                }
+                var user = new User({
+                    displayName: req.body.displayName,
+                    email: {
+                        contact: req.body.mail,
+                        type: "email",
+                        display: req.body.mail,
+                        verified: false
+                    },
+                    username: req.body.mail,
+                    password: req.body.password,
+                    user_meta: {role: "admin"},
+                    systemuser: true,
+                    user_scopes: [
+                        {scope: "organisation", read: true, write: true},
+                        {scope: "resource", read: true},
+                        {scope: "package", read: true},
+                        {scope: "console", read: true},
+                        {"scope": "myNavigation", "read": true},
+                        {"scope": "myUserProfile", "read": true}
+                    ],
 
-                company: 0,
-                tenant: 1,
-                created_at: Date.now(),
-                updated_at: Date.now()
+                    company: 0,
+                    tenant: 1,
+                    created_at: Date.now(),
+                    updated_at: Date.now()
 
-            });
-            user.save(function (err, result) {
-                if (!err && result) {
-
-
-                    orgService.CreateOrganisationStanAlone(user, function (err, result) {
-
-                        if (!err && result) {
-
+                });
+                user.save(function (err, result) {
+                    if (!err && result) {
 
 
-                            crypto.randomBytes(20, function (err, buf) {
-                                var token = buf.toString('hex');
+                        orgService.CreateOrganisationStanAlone(user, function (err, result) {
 
-                                var url = config.auth.ui_host + '#/activate/' + token;
-
-                                redisClient.set("activate"+":"+token,result._id ,function (err, val) {
-                                    if (err) {
-
-                                        res.status(404).send({message: 'Create activation token failed'});
-
-                                    }else{
+                            if (!err && result) {
 
 
-                                        redisClient.expireat("activate"+":"+token,  parseInt((+new Date)/1000) + 86400);
-                                        //var token = GetJWT(result, ["all_all"]);
-                                        //res.send({state: "new", token: token});
+                                crypto.randomBytes(20, function (err, buf) {
+                                    var token = buf.toString('hex');
 
-                                        res.send({state: "new", message: "check mail"});
+                                    var url = config.auth.ui_host + '#/activate/' + token;
 
-                                        var sendObj = {
-                                            "company": 0,
-                                            "tenant": 1
-                                        };
+                                    redisClient.set("activate" + ":" + token, result._id, function (err, val) {
+                                        if (err) {
 
-                                        sendObj.to =  req.body.mail;
-                                        sendObj.from = "no-reply";
-                                        sendObj.template = "By-User Registration Confirmation";
-                                        sendObj.Parameters = {username: user.username,
-                                            created_at: new Date(),
-                                            url:url}
+                                            res.status(404).send({message: 'Create activation token failed'});
 
-                                        PublishToQueue("EMAILOUT", sendObj)
-                                    }
+                                        } else {
+
+
+                                            redisClient.expireat("activate" + ":" + token, parseInt((+new Date) / 1000) + 86400);
+                                            //var token = GetJWT(result, ["all_all"]);
+                                            //res.send({state: "new", token: token});
+
+                                            res.send({state: "new", message: "check mail"});
+
+                                            var sendObj = {
+                                                "company": 0,
+                                                "tenant": 1
+                                            };
+
+                                            sendObj.to = req.body.mail;
+                                            sendObj.from = "no-reply";
+                                            sendObj.template = "By-User Registration Confirmation";
+                                            sendObj.Parameters = {
+                                                username: user.username,
+                                                created_at: new Date(),
+                                                url: url
+                                            }
+
+                                            PublishToQueue("EMAILOUT", sendObj)
+                                        }
+                                    });
+
                                 });
 
-                            });
+
+                            } else {
+
+                                res.status(404).send({message: 'Organization save failed'});
+                            }
+                        })
 
 
-                        } else {
+                    } else {
+                        res.status(404).send({message: 'User save failed'});
 
-                            res.status(404).send({message: 'Organization save failed'});
-                        }
-                    })
-
-
-                } else {
-                    res.status(404).send({message: 'User save failed'});
-
-                }
+                    }
+                });
             });
         });
-    });
+    }else{
 
 
+        if(req.body.mail) {
+            User.findOne({"username": req.body.mail}, function (err, existingUser) {
+                if (existingUser) {
+                    return res.status(409).send({message: 'Email is already taken'});
+                }
+                var user = new User({
+                    displayName: req.body.displayName,
+                    email: {
+                        contact: req.body.mail,
+                        type: "email",
+                        display: req.body.mail,
+                        verified: false
+                    },
+                    username: req.body.mail,
+                    password: req.body.password,
+                    user_meta: {role: "admin"},
+                    systemuser: true,
+                    user_scopes: [
+                        {scope: "organisation", read: true, write: true},
+                        {scope: "resource", read: true},
+                        {scope: "package", read: true},
+                        {scope: "console", read: true},
+                        {"scope": "myNavigation", "read": true},
+                        {"scope": "myUserProfile", "read": true}
+                    ],
 
+                    company: 0,
+                    tenant: 1,
+                    created_at: Date.now(),
+                    updated_at: Date.now()
+
+                });
+                user.save(function (err, result) {
+                    if (!err && result) {
+
+
+                        orgService.CreateOrganisationStanAlone(user, function (err, result) {
+
+                            if (!err && result) {
+
+
+                                crypto.randomBytes(20, function (err, buf) {
+                                    var token = buf.toString('hex');
+
+                                    var url = config.auth.ui_host + '#/activate/' + token;
+
+                                    redisClient.set("activate" + ":" + token, result._id, function (err, val) {
+                                        if (err) {
+
+                                            res.status(404).send({message: 'Create activation token failed'});
+
+                                        } else {
+
+
+                                            redisClient.expireat("activate" + ":" + token, parseInt((+new Date) / 1000) + 86400);
+                                            //var token = GetJWT(result, ["all_all"]);
+                                            //res.send({state: "new", token: token});
+
+                                            res.send({state: "new", message: "check mail"});
+
+                                            var sendObj = {
+                                                "company": 0,
+                                                "tenant": 1
+                                            };
+
+                                            sendObj.to = req.body.mail;
+                                            sendObj.from = "no-reply";
+                                            sendObj.template = "By-User Registration Confirmation";
+                                            sendObj.Parameters = {
+                                                username: user.username,
+                                                created_at: new Date(),
+                                                url: url
+                                            }
+
+                                            PublishToQueue("EMAILOUT", sendObj)
+                                        }
+                                    });
+
+                                });
+
+
+                            } else {
+
+                                res.status(404).send({message: 'Organization save failed'});
+                            }
+                        })
+
+
+                    } else {
+                        res.status(404).send({message: 'User save failed'});
+
+                    }
+                });
+            });
+        }else{
+
+            return res.status(409).send({message: 'No mail address found'});
+        }
+    }
 
 };
 

@@ -58,6 +58,7 @@ module.exports = {
         TWITTER_SECRET: 'TWITTER_CLIENT_SECRET',
 
         login_verification: 'LOGIN_VERIFICATION_REQUIRE',
+        signup_verification: 'SIGNUP_VERIFICATION_REQUIRE',
 
         ui_host: 'SYS_APP_UI_HOST'
 

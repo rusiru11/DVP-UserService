@@ -44,6 +44,7 @@ module.exports = {
     TWITTER_SECRET: 'cUIobhRgRlXsFyObUMg3tBq56EgGSwabmcavQP4fncABvotRMA',
 
     login_verification: true,
+    signup_verification: false,
 
     ui_host: 'http://localhost:3000/'
 
