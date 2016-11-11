@@ -413,7 +413,10 @@ module.exports.SignUP = function(req, res) {
             return res.status(409).send({message: 'Please select captcha'});
         }
 
-        var secretKey = "6LezaAsUAAAAAFbtiyMzOlMmqEwzMwmMYszmO_Ve";
+
+
+        var secretKey = config.auth.recaptcha_key;
+            //"6LezaAsUAAAAAFbtiyMzOlMmqEwzMwmMYszmO_Ve";
         var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + req.body['g-recaptcha-response'] + "&remoteip=" + req.connection.remoteAddress;
 
         request(verificationUrl, function (error, response, body) {
