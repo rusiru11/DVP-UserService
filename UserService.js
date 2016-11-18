@@ -242,38 +242,59 @@ function DeleteUser(req,res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOneAndRemove({username: req.params.name,company: company, tenant: tenant}, function(err, user) {
+
+    Org.findOne({tenant: tenant, id: company}, function(err, org) {
         if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
-        }else{
-            Org.findOne({tenant: tenant, id: company}, function(err, org) {
-                if (err) {
-                    jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
-                    console.log(jsonString);
-                } else {
-                    var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", user.user_meta.role);
-                    if(limitObj) {
-                        var userIndex = limitObj.currentAccess.indexOf(user.username);
-                        if (userIndex > -1) {
-                            limitObj.currentAccess.splice(userIndex, 1);
-                            Org.findOneAndUpdate({id: company, tenant: tenant}, org, function (err, rOrg) {
-                                if (err) {
-                                    jsonString = messageFormatter.FormatMessage(err, "Update Console Access Limit Failed", false, undefined);
-                                    console.log(jsonString);
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+            console.log(jsonString);
+        } else {
+
+            if(org.ownerId == req.params.name){
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Delete organization owner failed", false, undefined);
+                console.log(jsonString);
+
+            }else {
+
+                User.findOneAndRemove({
+                    username: req.params.name,
+                    company: company,
+                    tenant: tenant
+                }, function (err, user) {
+                    if (err) {
+                        jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                    } else {
+                        Org.findOne({tenant: tenant, id: company}, function (err, org) {
+                            if (err) {
+                                jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+                                console.log(jsonString);
+                            } else {
+                                var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", user.user_meta.role);
+                                if (limitObj) {
+                                    var userIndex = limitObj.currentAccess.indexOf(user.username);
+                                    if (userIndex > -1) {
+                                        limitObj.currentAccess.splice(userIndex, 1);
+                                        Org.findOneAndUpdate({id: company, tenant: tenant}, org, function (err, rOrg) {
+                                            if (err) {
+                                                jsonString = messageFormatter.FormatMessage(err, "Update Console Access Limit Failed", false, undefined);
+                                                console.log(jsonString);
+                                            } else {
+                                                jsonString = messageFormatter.FormatMessage(err, "Update Console Access Limit Success", true, undefined);
+                                                console.log(jsonString);
+                                            }
+                                        });
+                                    }
                                 } else {
-                                    jsonString = messageFormatter.FormatMessage(err, "Update Console Access Limit Success", true, undefined);
-                                    console.log(jsonString);
+                                    console.log("Failed to update currentAccess, Cannot find Org accessType");
                                 }
-                            });
-                        }
-                    }else{
-                        console.log("Failed to update currentAccess, Cannot find Org accessType");
+                            }
+                        });
+                        jsonString = messageFormatter.FormatMessage(undefined, "Delete User Success", true, undefined);
                     }
-                }
-            });
-            jsonString = messageFormatter.FormatMessage(undefined, "Delete User Success", true, undefined);
+                    res.end(jsonString);
+                });
+            }
         }
-        res.end(jsonString);
     });
 
 }
