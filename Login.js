@@ -389,16 +389,74 @@ module.exports.Login =  function(req, res) {
                 }
 
 
-                GetJWT(user,claims_arr,'111','password',req, function(err, isSuccess, token){
+                Org.findOne({tenant: user.tenant, id: user.company}, function(err, org) {
+                    if (err) {
 
-                    if(token){
-                        return res.send({state:'login',token: token});
+                        return res.status(449 ).send({message: 'Activate your organization before login'});
+
                     }else{
-                        return res.status(401).send({message: 'Invalid email and/or password'});
+
+                        if(org && org.companyEnabled) {
+                            GetJWT(user, claims_arr, '111', 'password', req, function (err, isSuccess, token) {
+
+                                if (token) {
+                                    return res.send({state: 'login', token: token});
+                                } else {
+                                    return res.status(401).send({message: 'Invalid email and/or password'});
+                                }
+                            });
+                        }else{
+
+                            return res.status(449 ).send({message: 'Activate your organization before login'});
+
+                        }
                     }
-                })
+
+                });
+            });
+        }
+
+    });
+};
+
+module.exports.Validation =  function(req, res) {
+    //email.contact
+    User.findOne({"username": req.body.userName}, '+password', function (err, user) {
+        if (!user) {
+            return res.status(401).send({message: 'Invalid email and/or password'});
+        }
+
+        if (config.auth.login_verification && !user.verified) {
+
+            return res.status(449).send({message: 'Activate your account before login'});
+
+        }else {
+
+            user.comparePassword(req.body.password, function (err, isMatch) {
+                if (!isMatch) {
+                    return res.status(401).send({message: 'Invalid email and/or password'});
+                }
 
 
+                Org.findOne({tenant: user.tenant, id: user.company}, function (err, org) {
+                    if (err) {
+
+                        return res.status(449).send({message: 'Activate your organization before login'});
+
+                    } else {
+
+                        if (org && org.companyEnabled) {
+
+                            return res.send({state: 'login', token: {}});
+
+                        } else {
+
+                            return res.status(449).send({message: 'Activate your organization before login'});
+
+                        }
+                    }
+
+                });
             });
         }
 

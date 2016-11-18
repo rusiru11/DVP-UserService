@@ -95,6 +95,29 @@ function GetOrganisations(req, res){
     });
 }
 
+function GetOrganisationsWithPaging(req, res){
+    logger.debug("DVP-UserService.GetOrganisations Internal method ");
+
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+    var page = parseInt(req.params.page),
+        size = parseInt(req.params.size),
+        skip = page > 0 ? ((page - 1) * size) : 0;
+
+
+    Org.find({tenant: tenant}).skip(skip)
+        .limit(size).sort({created_at: -1}).exec(function(err, orgs) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisations Failed", false, undefined);
+        }else{
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisations Successful", true, orgs);
+        }
+        res.end(jsonString);
+    });
+}
+
 function GetOrganisation(req, res){
     logger.debug("DVP-UserService.GetOrganisation Internal method ");
 
@@ -344,6 +367,26 @@ function UpdateOrganisation(req, res){
             jsonString = messageFormatter.FormatMessage(err, "Update Organisation Failed", false, undefined);
         }else{
             jsonString = messageFormatter.FormatMessage(err, "Update Organisation Successful", true, org);
+        }
+        res.end(jsonString);
+    });
+}
+
+function ActivateOrganisation(req, res){
+    logger.debug("DVP-UserService.ActivateOrganisation Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    var state = req.params.state;
+
+    var updated_at = Date.now();
+    Org.findOneAndUpdate({tenant: tenant, id: company}, {companyEnabled : state, updated_at : updated_at}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Activate Organisation Failed", false, undefined);
+        }else{
+            jsonString = messageFormatter.FormatMessage(err, "Activate Organisation Successful", true, org);
         }
         res.end(jsonString);
     });
@@ -928,10 +971,6 @@ function CreateOrganisationStanAlone(user, callback) {
     });
 }
 
-
-
-
-
 function AssignPackageUnitToOrganisation(req,res){
 
     logger.debug("DVP-UserService.AssignPackageUnitToOrganisation Internal method ");
@@ -1097,3 +1136,5 @@ module.exports.GetOrganisationPackages = GetOrganisationPackages;
 module.exports.GetOrganisationName = GetOrganisationName;
 module.exports.AssignPackageUnitToOrganisation = AssignPackageUnitToOrganisation;
 module.exports.CreateOrganisationStanAlone = CreateOrganisationStanAlone;
+module.exports.ActivateOrganisation = ActivateOrganisation;
+module.exports.GetOrganisationsWithPaging = GetOrganisationsWithPaging;

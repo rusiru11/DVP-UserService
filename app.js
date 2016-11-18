@@ -99,6 +99,7 @@ app.delete('/oauth/token/revoke/:jti', jwt({secret: secret.Secret}), oauth2.revo
 
 
 app.post('/auth/login', Login.Login);
+app.post('/auth/verify', Login.Validation);
 app.post('/auth/signup', Login.SignUP);
 app.post('/auth/forget', Login.ForgetPassword);
 app.post('/auth/reset/:token', Login.ResetPassword);
@@ -160,10 +161,15 @@ app.delete('/DVP/API/:version/Myprofile/contact/:contact', jwt({secret: secret.S
 app.get('/DVP/API/:version/Organisation/Name/:tenant/:company', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"read"}), organisationService.GetOrganisationName);
 
 app.get('/DVP/API/:version/Organisations', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetOrganisations);
+
+app.get('/DVP/API/:version/Organisations/:page/:size', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetOrganisationsWithPaging);
+
 app.get('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetOrganisation);
 app.delete('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"delete"}), organisationService.DeleteOrganisation);
-app.post('/DVP/API/:version/Organisation', passport.authenticate('local', { session: false }), organisationService.CreateOrganisation);
+app.put('/DVP/API/:version/Organisation/Activate/:state', jwt({secret: secret.Secret}),authorization({resource:"organisationManage", action:"write"}), organisationService.ActivateOrganisation);
 
+
+app.post('/DVP/API/:version/Organisation', passport.authenticate('local', { session: false }), organisationService.CreateOrganisation);
 
 
 app.post('/DVP/API/:version/Organisation/Owner', organisationService.CreateOwner);
@@ -234,11 +240,9 @@ app.delete('/DVP/API/:version/Client/:clientid', jwt({secret: secret.Secret}),au
 app.post('/DVP/API/:version/Client', jwt({secret: secret.Secret}),authorization({resource:"client", action:"write"}), clientService.CreateClient);
 
 
-
 app.get('/DVP/API/:version/Client/:id/claims',jwt({secret: secret.Secret}), authorization({resource:"clientScope", action:"read"}), clientService.GetClientClaims);
 app.put('/DVP/API/:version/Client/:id/claim', jwt({secret: secret.Secret}),authorization({resource:"clientScope", action:"write"}), clientService.AddClientClaim);
 app.delete('/DVP/API/:version/Client/:id/claim/:claim', jwt({secret: secret.Secret}),authorization({resource:"clientScope", action:"delete"}), clientService.RemoveClientClaim);
-
 
 
 //
@@ -260,9 +264,6 @@ app.get('/DVP/API/:version/ExternalUser/Search/:text',jwt({secret: secret.Secret
 app.put('/DVP/API/:version/ExternalUser/:id/DynamicFields',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfileDynamicFields);
 //app.delete('/DVP/API/:version/ExternalUser/:id/DynamicFields/:field',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserProfileDynamicFields);
 app.put('/DVP/API/:version/ExternalUser/:id/FormSubmission',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateFormSubmission);
-
-
-
 
 
 app.post('/DVP/API/:version/UserGroup',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), userGroupService.CreateUserGroup);
