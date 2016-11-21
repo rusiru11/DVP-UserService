@@ -408,7 +408,6 @@ module.exports.Login =  function(req, res) {
                         }else{
 
                             return res.status(449 ).send({message: 'Activate your organization before login'});
-
                         }
                     }
 
