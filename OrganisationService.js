@@ -1284,7 +1284,7 @@ function GetBillingDetails(req, res){
                                                 name: nInfo.DidNumber,
                                                 type: "PHONE_NUMBER",
                                                 category: "DID",
-                                                unitPrice: nInfo.DidMonthlyPrice100,
+                                                unitPrice: nInfo.DidMonthlyPrice100/100,
                                                 units: nInfo.CapacityEnabled,
                                                 description: nInfo.DidNumber,
                                                 date: nInfo.createdAt,
