@@ -1269,7 +1269,7 @@ function GetBillingDetails(req, res){
                 }
 
                 try{
-                    dbConn.VoxboneDIDRequest.find({where: [{Company: company, Tenant: tenant}]})
+                    dbConn.VoxboneDIDRequest.findAll({where: [{Company: company}, {Tenant: tenant}]})
                         .then(function (didRequest)
                         {
 
