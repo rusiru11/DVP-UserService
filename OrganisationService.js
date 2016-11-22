@@ -16,6 +16,7 @@ var restClientHandler = require('./RestClient.js');
 var config = require('config');
 var validator = require('validator');
 var Tenant = require('dvp-mongomodels/model/Tenant').Tenant;
+var dbConn = require('dvp-dbmodels');
 
 
 client = redis.createClient(config.Redis.port, config.Redis.ip);
@@ -29,9 +30,24 @@ function FilterObjFromArray(itemArray, field, value){
     if(itemArray) {
         for (var i = 0; i < itemArray.length; i++) {
             var item = itemArray[i];
-            if (item[field] == value) {
-                resultObj = item;
-                break;
+            var qParams = field.split('.');
+            if(qParams && qParams.length >1){
+                var qData = item[qParams[0]];
+                for(var j=1;j<qParams.length;j++){
+                    if(qData) {
+                        qData = qData[qParams[j]];
+                    }
+                }
+
+                if (qData == value) {
+                    resultObj = item;
+                    break;
+                }
+            }else {
+                if (item[field] == value) {
+                    resultObj = item;
+                    break;
+                }
             }
         }
         return resultObj;
@@ -161,22 +177,26 @@ function GetOrganisationPackages(req, res){
     var company = parseInt(req.user.company);
     var owner = req.user.iss;
     var jsonString;
-    Org.findOne({ownerId:owner, tenant: tenant, id: company}, function(err, org) {
-        if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
-        }else{
-
-            if(org) {
-                jsonString = messageFormatter.FormatMessage(undefined, "Get Organisation packages Successful", true, org.packages);
-            }
-            else{
-
+    try {
+        Org.findOne({ownerId: owner, tenant: tenant, id: company}, function (err, org) {
+            if (err) {
                 jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
-            }
+            } else {
 
-        }
-        res.end(jsonString);
-    });
+                if (org) {
+                    jsonString = messageFormatter.FormatMessage(undefined, "Get Organisation packages Successful", true, org.packages);
+                }
+                else {
+
+                    jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+                }
+
+            }
+            res.end(jsonString);
+        });
+    }catch(ex){
+        console.log(ex);
+    }
 }
 
 function GetOrganisationPackagesWithDetails(req, res){
@@ -464,14 +484,16 @@ var SetPackageToOrganisation = function(company, tenant, domainData, res, vPacka
             for (var i = 0; i < userScopes.length; i++) {
                 var scopes = userScopes[i];
                 var eUserScope = FilterObjFromArray(org.resourceAccessLimits, "scopeName", scopes.scope);
+
+                if (!org.resourceAccessLimits) {
+                    org.resourceAccessLimits = [];
+                }
+
                 if (eUserScope) {
                     if (eUserScope.accessLimit != -1 && eUserScope.accessLimit < scopes.accessLimit) {
                         eUserScope.accessLimit = scopes.accessLimit;
                     }
                 } else {
-                    if (!org.resourceAccessLimits) {
-                        org.resourceAccessLimits = [];
-                    }
                     var rLimit = {
                         "scopeName": scopes.scope,
                         "accessLimit": scopes.accessLimit
@@ -509,7 +531,7 @@ function AssignPackageToOrganisation(req,res){
             jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
             res.end(jsonString);
         }else{
-            Org.findOne({tenant: tenant, id: company}).populate('tenantRef').populate({path: 'packageDetails',populate : {path: 'Package'}}).exec( function(err, org) {
+            Org.findOne({tenant: tenant, id: company}).populate('tenantRef').populate({path: 'packageDetails.veeryPackage',populate : {path: 'Package'}}).exec( function(err, org) {
 
 
                 if (err) {
@@ -527,7 +549,7 @@ function AssignPackageToOrganisation(req,res){
                                 var typeExist = FilterObjFromArray(org.packageDetails, 'veeryPackage.packageType', vPackage.packageType);
                                 if (typeExist) {
 
-                                    if(typeExist.veeryPackage.price > vPackage.price){
+                                    if(typeExist.veeryPackage.price < vPackage.price){
                                         try {
                                             org.packages.splice(org.packages.indexOf(typeExist.veeryPackage.packageName), 1);
                                         }catch(ex){
@@ -556,9 +578,12 @@ function AssignPackageToOrganisation(req,res){
                             }
 
                         } else {
-                            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+                            jsonString = messageFormatter.FormatMessage(err, "No Tenant Data Found", false, undefined);
                             res.end(jsonString);
                         }
+                    }else {
+                        jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+                        res.end(jsonString);
                     }
                 }
             });
@@ -1123,7 +1148,7 @@ function AssignPackageUnitToOrganisation(req,res){
                                                         }
                                                     }
 
-                                                    org.unitDetails.push({veeryUnit:packageUnit._id, buyDate: Date.now()});
+                                                    org.unitDetails.push({veeryUnit:packageUnit._id, units: topUpCount, buyDate: Date.now()});
 
                                                     Org.findOneAndUpdate({
                                                         tenant: tenant,
@@ -1190,24 +1215,122 @@ function AssignPackageUnitToOrganisation(req,res){
 function GetBillingDetails(req, res){
     logger.debug("DVP-UserService.GetPackageUnits Internal method ");
 
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var billingDetails = [];
     var jsonString;
 
-    var billingObj = [
-        {name: "CONTACT CENTER SILVER",type: "CALLCENTER",category: "veeryPackage",unitPrice: 100,units: 1, description: "",date: "2016-01-20",valid: true, isTrial: false},
-        {name: "AGENT",type: "CALLCENTER",category: "veeryUnit",unitPrice: 10,units: 1, description: "",date: "2016-01-20",valid: true, isTrial: false},
-        {name: "112456325",type: "CALLCENTER",category: "DID",unitPrice: 1,units: 1, description: "",date: "2016-01-20",valid: true, isTrial: false}
-    ];
 
-    jsonString = messageFormatter.FormatMessage(undefined, "Set Billing Details Success", true, billingObj);
-    res.end(jsonString);
-    //PackageUnit.find({}, function(err, packageUnits) {
-    //    if (err) {
-    //        jsonString = messageFormatter.FormatMessage(err, "Get Packages Units Failed", false, undefined);
-    //    }else{
-    //        jsonString = messageFormatter.FormatMessage(err, "Get Packages Units Successful", true, packageUnits);
-    //    }
-    //    res.end(jsonString);
-    //});
+
+    Org.findOne({tenant: tenant, id: company}).populate('tenantRef').populate({path: 'packageDetails.veeryPackage',populate : {path: 'Package'}}).populate({path: 'unitDetails.veeryUnit',populate : {path: 'PackageUnit'}}).exec( function(err, org) {
+
+
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Error in Get Organisation", false, billingDetails);
+            res.end(jsonString);
+        } else {
+            if (org) {
+                if(org.packageDetails && org.packageDetails.length > 0){
+                    for(var i=0; i<org.packageDetails.length;i++){
+                        var pInfo = org.packageDetails[i];
+                        if(pInfo) {
+                            billingDetails.push({
+                                name: pInfo.veeryPackage.packageName,
+                                type: pInfo.veeryPackage.packageType,
+                                category: "Veery Package",
+                                unitPrice: pInfo.veeryPackage.price,
+                                units: 1,
+                                description: pInfo.veeryPackage.description,
+                                date: pInfo.buyDate,
+                                valid: true,
+                                isTrial: false
+                            });
+                        }
+                    }
+                }
+
+                if(org.unitDetails && org.unitDetails.length > 0){
+                    for(var j=0; j<org.unitDetails.length;j++){
+                        var uInfo = org.unitDetails[j];
+                        if(uInfo) {
+                            billingDetails.push({
+                                name: uInfo.veeryUnit.unitName,
+                                type: uInfo.veeryUnit.unitType,
+                                category: "Veery Unit",
+                                unitPrice: uInfo.veeryUnit.unitprice,
+                                units: uInfo.units,
+                                description: uInfo.veeryUnit.description,
+                                date: uInfo.buyDate,
+                                valid: true,
+                                isTrial: false
+                            });
+                        }
+                    }
+                }
+
+                try{
+                    dbConn.VoxboneDIDRequest.find({where: [{Company: company, Tenant: tenant}]})
+                        .then(function (didRequest)
+                        {
+
+                            if(didRequest)
+                            {
+
+                                if(didRequest.length > 0){
+                                    for(var k=0; k<didRequest.length;k++){
+                                        var nInfo = didRequest[k];
+                                        if(nInfo) {
+                                            billingDetails.push({
+                                                name: nInfo.DidNumber,
+                                                type: "PHONE_NUMBER",
+                                                category: "DID",
+                                                unitPrice: nInfo.DidMonthlyPrice100,
+                                                units: nInfo.CapacityEnabled,
+                                                description: nInfo.DidNumber,
+                                                date: nInfo.createdAt,
+                                                valid: nInfo.DidEnabled,
+                                                isTrial: false
+                                            });
+                                        }
+                                    }
+                                }
+
+
+                            }
+
+                            jsonString = messageFormatter.FormatMessage(undefined, "Set Billing Details Success", true, billingDetails);
+                            res.end(jsonString);
+                        }).catch(function(err)
+                        {
+                            console.log('[DVP-VoxboneAPI.GetAllDidRequest] - PGSQL query failed', err);
+                            jsonString = messageFormatter.FormatMessage(undefined, "Set Billing Details Failed, Retrieving number details unsuccessful", false, billingDetails);
+                            res.end(jsonString);
+                        });
+                }catch(ex){
+                    console.log('[DVP-VoxboneAPI.GetAllDidRequest] - PGSQL query failed', err);
+                    jsonString = messageFormatter.FormatMessage(undefined, "Set Billing Details Failed, Retrieving number details unsuccessful", false, billingDetails);
+                    res.end(jsonString);
+                }
+
+
+            }else {
+                jsonString = messageFormatter.FormatMessage(undefined, "Find Organisation Failed", false, billingDetails);
+                res.end(jsonString);
+            }
+        }
+    });
+
+
+
+
+    //var billingObj = [
+    //    {name: "CONTACT CENTER SILVER",type: "CALLCENTER",category: "veeryPackage",unitPrice: 100,units: 1, description: "",date: "2016-01-20",valid: true, isTrial: false},
+    //    {name: "AGENT",type: "CALLCENTER",category: "veeryUnit",unitPrice: 10,units: 1, description: "",date: "2016-01-20",valid: true, isTrial: false},
+    //    {name: "112456325",type: "CALLCENTER",category: "DID",unitPrice: 1,units: 1, description: "",date: "2016-01-20",valid: true, isTrial: false}
+    //];
+    //
+    //jsonString = messageFormatter.FormatMessage(undefined, "Set Billing Details Success", true, billingObj);
+    //res.end(jsonString);
 }
 
 module.exports.GetOrganisation = GetOrganisation;
