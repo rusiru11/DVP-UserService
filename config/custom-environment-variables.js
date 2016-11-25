@@ -90,7 +90,10 @@ module.exports = {
         "sipuserendpointserviceVersion": "SYS_SIPUSERENDPOINTSERVICE_VERSION",
         "clusterconfigserviceHost": "SYS_CLUSTERCONFIG_HOST",
         "clusterconfigservicePort": "SYS_CLUSTERCONFIG_PORT",
-        "clusterconfigserviceVersion": "SYS_CLUSTERCONFIG_VERSION"
+        "clusterconfigserviceVersion": "SYS_CLUSTERCONFIG_VERSION",
+        "billingserviceHost": "SYS_BILLING_HOST",
+        "billingservicePort": "SYS_BILLING_PORT",
+        "billingserviceVersion": "SYS_BILLING_VERSION"
     }
 };
 

@@ -18,13 +18,17 @@ var DoPost = function (companyInfo, serviceurl, postData, callback) {
         },
         body: jsonStr
     };
-    request.post(options, function optionalCallback(err, httpResponse, body) {
-        if (err) {
-            console.log('upload failed:', err);
-        }
-        console.log('Server returned: %j', body);
-        callback(err, httpResponse, body);
-    });
+    try {
+        request.post(options, function optionalCallback(err, httpResponse, body) {
+            if (err) {
+                console.log('upload failed:', err);
+            }
+            console.log('Server returned: %j', body);
+            callback(err, httpResponse, body);
+        });
+    }catch(ex){
+        callback(ex, undefined, undefined);
+    }
 };
 
 var DoGet = function (companyInfo, serviceurl, postData, callback) {

@@ -124,7 +124,10 @@ module.exports = {
       "sipuserendpointserviceVersion": "1.0.0.0",
       "clusterconfigserviceHost": "clusterconfig.app.veery.cloud",
       "clusterconfigservicePort": "8831",
-      "clusterconfigserviceVersion": "1.0.0.0"
+      "clusterconfigserviceVersion": "1.0.0.0",
+      "billingserviceHost": "192.168.5.188",
+      "billingservicePort": "4444",
+      "billingserviceVersion": "1.0.0.0"
     }
 
 
