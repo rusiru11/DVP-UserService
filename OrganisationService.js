@@ -549,7 +549,7 @@ function AssignPackageToOrganisation(req,res){
                                 var typeExist = FilterObjFromArray(org.packageDetails, 'veeryPackage.packageType', vPackage.packageType);
                                 if (typeExist) {
 
-                                    if(typeExist.veeryPackage.price < vPackage.price){
+                                    if(typeExist.veeryPackage.price <= vPackage.price){
                                         try {
                                             org.packages.splice(org.packages.indexOf(typeExist.veeryPackage.packageName), 1);
                                         }catch(ex){
