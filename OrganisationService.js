@@ -307,7 +307,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, call
             jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
             callback(jsonString);
         }else{
-            Org.findOne({tenant: tenant, id: company}).populate('tenantRef').populate({path: 'packageDetails.veeryPackage',populate : {path: 'Package'}}).exec( function(err, org) {
+            Org.findOne({tenant: tenant, id: company}).populate('tenantRef').populate({path: 'packageDetails.veeryPackage',populate : {path: 'Package'}}).populate('ownerRef' , '-password').exec( function(err, org) {
 
 
                 if (err) {
@@ -323,6 +323,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, call
 
                             if (org.packages.indexOf(packageName) == -1) {
                                 var billingObj = {
+                                    companyInfo: org,
                                     name: vPackage.packageName,
                                     type: vPackage.packageType,
                                     category: "Veery Package",
@@ -463,6 +464,7 @@ function CreateOrganisation(req, res){
                                         consoleAccessLimits:[],
                                         resourceAccessLimits:[],
                                         tenantRef:Tenants._id,
+                                        ownerRef: user._id,
                                         created_at: Date.now(),
                                         updated_at: Date.now()
                                     });
@@ -1089,6 +1091,7 @@ function CreateOrganisationStanAlone(user, callback) {
                                 packages: [],
                                 consoleAccessLimits: [],
                                 tenantRef: Tenants._id,
+                                ownerRef: user._id,
                                 created_at: Date.now(),
                                 updated_at: Date.now()
                             });
@@ -1157,7 +1160,7 @@ function AssignPackageUnitToOrganisation(req,res){
 
             } else {
                 if(vPackage) {
-                    Org.findOne({tenant: tenant, id: company}, function (err, org) {
+                    Org.findOne({tenant: tenant, id: company}).populate('ownerRef' , '-password').exec( function (err, org) {
 
                         if (err) {
 
@@ -1181,6 +1184,7 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                             if (packageUnit) {
                                                 var billingObj = {
+                                                    companyInfo: org,
                                                     name: packageUnit.unitName,
                                                     type: packageUnit.unitType,
                                                     category: "Veery Unit",
