@@ -1454,7 +1454,11 @@ function RequestToBill(company, tenant, billInfo, callback){
             if(err){
                 callback(err, undefined);
             }else{
-                callback(undefined, JSON.parse(result));
+                if(res1.statusCode === 200) {
+                    callback(undefined, JSON.parse(result));
+                }else{
+                    callback(new Error(result), undefined);
+                }
             }
         });
     }catch(ex){
