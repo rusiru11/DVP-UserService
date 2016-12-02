@@ -706,11 +706,13 @@ function AssignTaskToOrganisation(company, tenant, taskList){
 
 function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
     var contextUrl = util.format("http://%s/DVP/API/%s/SipUser/Context",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointserviceVersion);
+    var transferCodesUrl = util.format("http://%s/DVP/API/%s/SipUser/TransferCode",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointserviceVersion);
     var cloudEndUserUrl = util.format("http://%s/DVP/API/%s/CloudConfiguration/CloudEndUser",config.Services.clusterconfigserviceHost, config.Services.clusterconfigserviceVersion);
     if(validator.isIP(config.Services.resourceServiceHost))
     {
         cloudEndUserUrl = util.format("http://%s:%s/DVP/API/%s/CloudConfiguration/CloudEndUser", config.Services.clusterconfigserviceHost, config.Services.sipuserendpointservicePort, config.Services.clusterconfigserviceVersion);
         contextUrl = util.format("http://%s:%s/DVP/API/%s/SipUser/Context", config.Services.sipuserendpointserviceHost, config.Services.clusterconfigservicePort, config.Services.sipuserendpointserviceVersion);
+        transferCodesUrl = util.format("http://%s:%s/DVP/API/%s/SipUser/TransferCode",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointservicePort, config.Services.sipuserendpointserviceVersion);
     }
     var companyInfo = util.format("%d:%d", tenant, company);
     var contextReqBody = {
@@ -741,6 +743,22 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
                 }
                 else {
                     console.log("Assign cloudEndUser Success: ", result);
+                }
+            });
+
+            var transferCodesBody = {
+                InternalTransfer: 3,
+                ExternalTransfer: 6,
+                GroupTransfer: 4,
+                ConferenceTransfer: 5
+            };
+
+            restClientHandler.DoPost(companyInfo, transferCodesUrl, transferCodesBody, function (err, res1, result) {
+                if (err) {
+                    console.log(err);
+                }
+                else {
+                    console.log("Assign transfer codes Success: ", result);
                 }
             });
         }
