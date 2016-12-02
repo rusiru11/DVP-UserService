@@ -125,7 +125,7 @@ module.exports = {
       "clusterconfigserviceHost": "clusterconfig.app.veery.cloud",
       "clusterconfigservicePort": "8831",
       "clusterconfigserviceVersion": "1.0.0.0",
-      "billingserviceHost": "192.168.5.188",
+      "billingserviceHost": "billingservice.app.veery.cloud",
       "billingservicePort": "4444",
       "billingserviceVersion": "1.0.0.0"
     }
