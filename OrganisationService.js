@@ -154,6 +154,23 @@ function GetOrganisation(req, res){
     });
 }
 
+
+function IsOrganizationExists(req, res){
+    logger.debug("DVP-UserService.IsOrganizationExists Internal method ");
+
+
+    var jsonString;
+    Org.findOne({companyName: req.params.company}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+        }else{
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Successful", true, org);
+        }
+        res.end(jsonString);
+    });
+}
+
+
 function GetOrganisationName(req, res){
     logger.debug("DVP-UserService.GetOrganisation Internal method ");
 
@@ -1006,10 +1023,14 @@ function CreateOrganisationStanAlone(user, callback) {
 
                         if (Tenants) {
 
+                            var company =user.username;
+
+                            if(user.companyname)
+                                company = user.companyname;
 
                             var org = Org({
                                 ownerId: user.username,
-                                companyName: user.username,
+                                companyName: company,
                                 companyEnabled: true,
                                 id: cid,
                                 tenant: 1,
@@ -1349,3 +1370,4 @@ module.exports.CreateOrganisationStanAlone = CreateOrganisationStanAlone;
 module.exports.ActivateOrganisation = ActivateOrganisation;
 module.exports.GetOrganisationsWithPaging = GetOrganisationsWithPaging;
 module.exports.GetBillingDetails = GetBillingDetails;
+module.exports.IsOrganizationExists = IsOrganizationExists;
