@@ -172,6 +172,9 @@ app.put('/DVP/API/:version/Organisation/Activate/:state', jwt({secret: secret.Se
 app.post('/DVP/API/:version/Organisation', passport.authenticate('local', { session: false }), organisationService.CreateOrganisation);
 
 
+
+app.get('/DVP/API/:version/Organization/:company/exists', organisationService.IsOrganizationExists);
+
 app.post('/DVP/API/:version/Organisation/Owner', organisationService.CreateOwner);
 app.put('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.UpdateOrganisation);
 app.put('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.AssignPackageToOrganisation);

@@ -117,11 +117,9 @@ function CreateExternalUser(req, res) {
                 street: req.body.address.street,
                 city: req.body.address.city,
                 province: req.body.address.province,
-                country: req.body.address.country,
-
+                country: req.body.address.country
 
             },
-
 
             phone: req.body.phone,
             email: req.body.email,

@@ -498,6 +498,7 @@ module.exports.SignUP = function(req, res) {
                     password: req.body.password,
                     user_meta: {role: "admin"},
                     systemuser: true,
+                    companyname: req.body.companyname,
                     user_scopes: [
                         {scope: "organisation", read: true, write: true},
                         {scope: "resource", read: true},
