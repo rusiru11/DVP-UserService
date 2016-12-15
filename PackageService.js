@@ -128,6 +128,7 @@ function CreatePackage(req, res){
     var vPackage = VPackage({
         packageName: req.body.packageName,
         packageType: req.body.packageType,
+        navigationType: req.body.navigationType,
         description: req.body.description,
         consoleAccessLimit: req.body.consoleAccessLimit,
         veeryTask: req.body.veeryTask,
