@@ -94,6 +94,10 @@ module.exports = {
         "billingserviceHost": "SYS_BILLINGSERVICE_HOST",
         "billingservicePort": "SYS_BILLINGSERVICE_PORT",
         "billingserviceVersion": "SYS_BILLINGSERVICE_VERSION"
+    },
+
+    "Tenant": {
+        "activeTenant": "ACTIVE_TENANT"
     }
 };
 

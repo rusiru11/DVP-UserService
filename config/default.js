@@ -128,7 +128,11 @@ module.exports = {
       "billingserviceHost": "billingservice.app.veery.cloud",
       "billingservicePort": "4444",
       "billingserviceVersion": "1.0.0.0"
-    }
+    },
+
+  "Tenant": {
+      "activeTenant": 1
+  }
 
 
 

@@ -287,32 +287,49 @@ function DeleteOrganisation(req,res){
 }
 
 function CreateOwner(req, res){
-    var user = User({
-        name: req.body.username,
-        firstname: req.body.firstname,
-        lastname: req.body.lastname,
-        username: req.body.username,
-        password: req.body.password,
-        phoneNumber: {contact: req.body.phone, type: "phone", verified: false},
-        email: {contact: req.body.mail, type: "phone", verified: false},
-        user_meta: {role: "admin"},
-        systemuser: true,
-        user_scopes: [{
-            "scope" : "package",
-            "read" : true}],
-        company: 0,
-        tenant: 1,
-        created_at: Date.now(),
-        updated_at: Date.now()
-
-    });
-    user.save(function (err, rUser) {
+    var jsonString;
+    Tenant.findOne({id: config.Tenant.activeTenant}, function (err, Tenants) {
         if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Create Owner failed", false, undefined);
+
+            jsonString = messageFormatter.FormatMessage(err, "Find tenant failed", false, undefined);
             res.end(jsonString);
+
         } else {
-            jsonString = messageFormatter.FormatMessage(undefined, "Create Owner successfully", true, rUser);
-            res.end(jsonString);
+
+            if (Tenants) {
+                var user = User({
+                    name: req.body.username,
+                    firstname: req.body.firstname,
+                    lastname: req.body.lastname,
+                    username: req.body.username,
+                    password: req.body.password,
+                    phoneNumber: {contact: req.body.phone, type: "phone", verified: false},
+                    email: {contact: req.body.mail, type: "phone", verified: false},
+                    user_meta: {role: "admin"},
+                    systemuser: true,
+                    user_scopes: [{
+                        "scope": "package",
+                        "read": true
+                    }],
+                    company: 0,
+                    tenant: Tenants.id,
+                    created_at: Date.now(),
+                    updated_at: Date.now()
+
+                });
+                user.save(function (err, rUser) {
+                    if (err) {
+                        jsonString = messageFormatter.FormatMessage(err, "Create Owner failed", false, undefined);
+                        res.end(jsonString);
+                    } else {
+                        jsonString = messageFormatter.FormatMessage(undefined, "Create Owner successfully", true, rUser);
+                        res.end(jsonString);
+                    }
+                });
+            } else {
+                jsonString = messageFormatter.FormatMessage(undefined, "No tenants found", false, undefined);
+                res.end(jsonString);
+            }
         }
     });
 }
@@ -454,7 +471,7 @@ function CreateOrganisation(req, res){
     logger.debug("DVP-UserService.CreateOrganisation Internal method ");
     var jsonString;
     GetNewCompanyId(function(cid){
-        if(cid != null && cid > 0) {
+        if(cid && cid > 0) {
 
             User.findOne({username: req.user.username}, function(err, user) {
                 if (err) {
@@ -463,7 +480,7 @@ function CreateOrganisation(req, res){
                 }else{
                     if(user.company == 0){
 
-                        Tenant.findOne({},function(err, Tenants) {
+                        Tenant.findOne({id: config.Tenant.activeTenant},function(err, Tenants) {
                             if (err) {
 
                                 jsonString = messageFormatter.FormatMessage(err, "Get Tenant Failed", false, undefined);
@@ -478,7 +495,7 @@ function CreateOrganisation(req, res){
                                         companyName: req.body.organisationName,
                                         companyEnabled: true,
                                         id: cid,
-                                        tenant: 1,
+                                        tenant: Tenants.id,
                                         packages:[],
                                         packageDetails: [],
                                         unitDetails: [],
@@ -510,7 +527,7 @@ function CreateOrganisation(req, res){
                                                     org.remove(function (err) {
                                                     });
 
-                                                    AssignPackageToOrganisationLib(cid, 1, "BASIC",function(jsonString){
+                                                    AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC",function(jsonString){
                                                         console.log(jsonString);
                                                     });
 
@@ -1106,12 +1123,12 @@ function CreateOrganisationStanAlone(user, companyname, callback) {
     logger.debug("DVP-UserService.CreateOrganisationStanAlone Internal method ");
 
     GetNewCompanyId(function (cid) {
-        if (cid != null && cid > 0) {
+        if (cid && cid > 0) {
 
 
             if (user.company == 0) {
-
-                Tenant.findOne({}, function (err, Tenants) {
+                logger.info("DVP-UserService.CreateOrganisationStanAlone Active Tenant: "+ config.Tenant.activeTenant);
+                Tenant.findOne({id: config.Tenant.activeTenant}, function (err, Tenants) {
                     if (err) {
 
                         callback(err, undefined);
@@ -1130,7 +1147,7 @@ function CreateOrganisationStanAlone(user, companyname, callback) {
                                 companyName: company,
                                 companyEnabled: true,
                                 id: cid,
-                                tenant: 1,
+                                tenant: Tenants.id,
                                 packages: [],
                                 consoleAccessLimits: [],
                                 tenantRef: Tenants._id,
@@ -1152,7 +1169,7 @@ function CreateOrganisationStanAlone(user, companyname, callback) {
                                                 });
                                                 callback(err, undefined);
                                             } else {
-                                                AssignPackageToOrganisationLib(cid, 1, "BASIC",function(jsonString){
+                                                AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC",function(jsonString){
                                                     console.log(jsonString);
                                                 });
                                                 rUser.company = cid;
