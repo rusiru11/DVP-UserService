@@ -518,7 +518,7 @@ module.exports.SignUP = function(req, res) {
                     if (!err && result) {
 
 
-                        orgService.CreateOrganisationStanAlone(user, function (err, result) {
+                        orgService.CreateOrganisationStanAlone(user,req.body.companyname, function (err, result) {
 
                             if (!err && result) {
 
@@ -595,6 +595,7 @@ module.exports.SignUP = function(req, res) {
                     },
                     username: req.body.mail,
                     password: req.body.password,
+                    companyname: req.body.companyname,
                     user_meta: {role: "admin"},
                     systemuser: true,
                     user_scopes: [
@@ -616,7 +617,7 @@ module.exports.SignUP = function(req, res) {
                     if (!err && result) {
 
 
-                        orgService.CreateOrganisationStanAlone(user, function (err, result) {
+                        orgService.CreateOrganisationStanAlone(user,req.body.companyname, function (err, result) {
 
                             if (!err && result) {
 
@@ -829,7 +830,7 @@ module.exports.Google = function(req, res) {
                                     user.save(function (err) {
 
                                         if (!err) {
-                                            orgService.CreateOrganisationStanAlone(user, function (err, rUser) {
+                                            orgService.CreateOrganisationStanAlone(user,profile.email, function (err, rUser) {
                                                 if (!err && rUser) {
 
                                                     //var token = GetJWT(rUser,claims_arr);
@@ -1085,7 +1086,7 @@ module.exports.GitHub = function(req, res) {
                                     if (!err) {
 
 
-                                        orgService.CreateOrganisationStanAlone(user, function (err, rUser) {
+                                        orgService.CreateOrganisationStanAlone(user,profile.email, function (err, rUser) {
 
                                             if (!err && rUser) {
 
@@ -1336,7 +1337,7 @@ module.exports.Facebook = function(req, res) {
                                 if(!err) {
 
 
-                                    orgService.CreateOrganisationStanAlone(user,function(err, rUser){
+                                    orgService.CreateOrganisationStanAlone(user,profile.email,function(err, rUser){
 
                                         if(!err && rUser ){
 

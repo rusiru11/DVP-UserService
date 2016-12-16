@@ -164,10 +164,10 @@ function GetUsersByIDs(req, res){
 
 }
 
-function UserExsists(req, res){
+function UserExists(req, res){
 
 
-    logger.debug("DVP-UserService.UserExsists Internal method ");
+    logger.debug("DVP-UserService.UserExists Internal method ");
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -179,31 +179,25 @@ function UserExsists(req, res){
 
         }else{
 
-            var userObj = false;
+
            if(users)
            {
-               userObj = true;
+               jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
+
+           }else{
+
+               jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
            }
-
-
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, userObj);
 
         }
 
         res.end(jsonString);
     });
 
-
-
-
-
-
-
-
 }
 
-function OwnerExsists(req, res){
+function OwnerExists(req, res){
 
 
     logger.debug("DVP-UserService.OwnerExsists Internal method ");
@@ -217,15 +211,18 @@ function OwnerExsists(req, res){
 
         }else{
 
-            var userObj = false;
+            //var userObj = false;
             if(users)
             {
-                userObj = true;
+                jsonString = messageFormatter.FormatMessage(err, "Get Owner Successful", true, undefined);
 
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Owner Failed", false, undefined);
             }
 
 
-            jsonString = messageFormatter.FormatMessage(err, "Get Owner Successful", true, userObj);
+
 
         }
 
@@ -2241,7 +2238,7 @@ module.exports.GetExternalUsers = GetExternalUsers;
 module.exports.SetUserProfileResourceId = SetUserProfileResourceId;
 module.exports.GetUserProfileByResourceId = GetUserProfileByResourceId;
 module.exports.GetARDSFriendlyContactObject = GetARDSFriendlyContactObject;
-module.exports.UserExsists = UserExsists;
+module.exports.UserExists = UserExists;
 module.exports.AssignConsoleToUser = AssignConsoleToUser;
 module.exports.RemoveConsoleFromUser = RemoveConsoleFromUser;
 module.exports.CreateExternalUser =CreateExternalUser;
@@ -2251,5 +2248,5 @@ module.exports.GetMyAppScopes = GetMyAppScopes;
 module.exports.GetMyAppScopesByConsole = GetMyAppScopesByConsole;
 module.exports.GetMyAppScopesByConsoles = GetMyAppScopesByConsoles;
 module.exports.GetMyARDSFriendlyContactObject = GetMyARDSFriendlyContactObject;
-module.exports.OwnerExsists = OwnerExsists;
+module.exports.OwnerExists = OwnerExists;
 

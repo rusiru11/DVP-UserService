@@ -164,7 +164,11 @@ function IsOrganizationExists(req, res){
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
         }else{
-            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Successful", true, org);
+            if(org) {
+                jsonString = messageFormatter.FormatMessage(err, "Get Organisation Successful", true, org);
+            }else{
+                jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+            }
         }
         res.end(jsonString);
     });
@@ -1098,7 +1102,7 @@ function UpdateUser(ownerId, vPackage){
     });
 }
 
-function CreateOrganisationStanAlone(user, callback) {
+function CreateOrganisationStanAlone(user, companyname, callback) {
     logger.debug("DVP-UserService.CreateOrganisationStanAlone Internal method ");
 
     GetNewCompanyId(function (cid) {
@@ -1118,8 +1122,8 @@ function CreateOrganisationStanAlone(user, callback) {
 
                             var company =user.username;
 
-                            if(user.companyname)
-                                company = user.companyname;
+                            if(companyname)
+                                company = companyname;
 
                             var org = Org({
                                 ownerId: user.username,
