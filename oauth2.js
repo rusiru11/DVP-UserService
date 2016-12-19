@@ -40,7 +40,6 @@ redisClient.auth(redispass, function (error) {
     console.log("Error Redis : " + error);
 });
 
-
 var generator = new FlakeIdGen;
 
 var server = oauth2orize.createServer();
