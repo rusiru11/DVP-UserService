@@ -739,9 +739,9 @@ function UpdateUserProfile(req, res) {
     var jsonString;
 
 
-    if (req.body.name) {
+    if (req.body.username) {
 
-        delete req.body.name;
+        delete req.body.username;
     }
 
     if (req.body.password) {
@@ -755,7 +755,11 @@ function UpdateUserProfile(req, res) {
         delete req.body.company;
 
     }
+    if (req.body.tenant) {
 
+        delete req.body.tenant;
+
+    }
 
     if (req.body.contacts) {
 
