@@ -11,6 +11,7 @@ var crypto = require('crypto');
 var config = require('config');
 var redis = require('redis');
 
+
 var redisip = config.Redis.ip;
 var redisport = config.Redis.port;
 var redisuser = config.Redis.user;
@@ -19,6 +20,7 @@ var redispass = config.Redis.password;
 //[redis:]//[user][:password@][host][:port][/db-number][?db=db-number[&password=bar[&option=value]]]
 //redis://user:secret@localhost:6379
 var redisClient = redis.createClient(redisport, redisip);
+
 redisClient.on('error', function (err) {
     console.log('Error '.red, err);
 });
@@ -2201,7 +2203,117 @@ function GetMyAppScopes(req, res){
 
 }
 
+function SetLocation(req, res){
 
+    logger.debug("DVP-UserService.GetUsers Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.params.name;
+    var jsonString;
+    User.findOne({username: user,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+            res.end(jsonString);
+
+        }else{
+
+            if(users) {
+
+                var id = util.format('location:%d:%d', tenant,company);
+
+                try {
+
+                    /*
+
+                     geo.addLocation(id, {
+                     latitude: req.body.latitude,
+                     longitude: req.body.longitude
+                     },
+                     */
+
+                    redisClient.geoadd(id,req.body.latitude, req.body.longitude,user, function (err, reply) {
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "Set user location Failed", false, undefined);
+                        }
+                        else {
+                            jsonString = messageFormatter.FormatMessage(undefined, "Set user location successful", true, reply);
+
+                        }
+                        res.end(jsonString);
+                    });
+                }catch(exx){
+
+                    jsonString = messageFormatter.FormatMessage(exx, "Set user location Failed", false, undefined);
+                    res.end(jsonString);
+                }
+
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
+                res.end(jsonString);
+            }
+        }
+
+    });
+}
+
+function SetMyLocation(req, res){
+
+    logger.debug("DVP-UserService.GetUsers Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.user.iss;
+    var jsonString;
+    User.findOne({username: user,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+            res.end(jsonString);
+
+        }else{
+
+            if(users) {
+
+                var id = util.format('location:%d:%d', tenant,company);
+
+                try {
+
+                    /*
+
+                     geo.addLocation(id, {
+                     latitude: req.body.latitude,
+                     longitude: req.body.longitude
+                     },
+                     */
+
+                    redisClient.geoadd(id,req.body.latitude, req.body.longitude,user, function (err, reply) {
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "Set user location Failed", false, undefined);
+                        }
+                        else {
+                            jsonString = messageFormatter.FormatMessage(undefined, "Set user location successful", true, reply);
+
+                        }
+                        res.end(jsonString);
+                    });
+                }catch(exx){
+
+                    jsonString = messageFormatter.FormatMessage(exx, "Set user location Failed", false, undefined);
+                    res.end(jsonString);
+                }
+
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
+                res.end(jsonString);
+            }
+        }
+
+    });
+}
 
 
 
@@ -2253,4 +2365,7 @@ module.exports.GetMyAppScopesByConsole = GetMyAppScopesByConsole;
 module.exports.GetMyAppScopesByConsoles = GetMyAppScopesByConsoles;
 module.exports.GetMyARDSFriendlyContactObject = GetMyARDSFriendlyContactObject;
 module.exports.OwnerExists = OwnerExists;
+
+module.exports.SetLocation = SetLocation;
+module.exports.SetMyLocation = SetMyLocation;
 
