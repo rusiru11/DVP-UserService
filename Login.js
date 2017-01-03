@@ -330,7 +330,7 @@ module.exports.Login =  function(req, res) {
             return res.status(401).send({message: 'Invalid email and/or password'});
         }
 
-        if (config.auth.login_verification && !user.verified) {
+        if (config.auth.login_verification == true && !user.verified) {
 
             crypto.randomBytes(20, function (err, buf) {
                 var token = buf.toString('hex');
