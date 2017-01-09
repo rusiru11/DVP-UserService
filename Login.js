@@ -425,7 +425,7 @@ module.exports.Validation =  function(req, res) {
             return res.status(401).send({message: 'Invalid email and/or password'});
         }
 
-        if (config.auth.login_verification && !user.verified) {
+        if (config.auth.login_verification == true && !user.verified) {
 
             return res.status(449).send({message: 'Activate your account before login'});
 
@@ -663,6 +663,9 @@ module.exports.SignUP = function(req, res) {
 
 
                             } else {
+                                if(err){
+                                    logger.error('SignUp error !', err);
+                                }
 
                                 res.status(404).send({message: 'Organization save failed'});
                             }
