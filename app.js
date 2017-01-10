@@ -29,6 +29,7 @@ var packageService = require("./PackageService");
 var navigationService = require('./NavigationService');
 var externalUserService = require("./ExternalUserService");
 var userGroupService = require("./UserGroupService");
+var phoneConfig = require("./PhoneConfig");
 var config = require('config');
 var jwt = require('restify-jwt');
 var util = require('util');
@@ -123,7 +124,7 @@ app.get('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorizati
 app.get('/DVP/API/:version/UsersByIds', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsersByIDs);
 
 
-app.get('/DVP/API/:version/User/:name/exsists', userService.UserExists);
+app.get('/DVP/API/:version/User/:name/exsists', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserExists);
 
 app.delete('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), userService.DeleteUser);
 app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateUser);
@@ -136,6 +137,11 @@ app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({r
 //////////////////////////////Organisation API/////////////////////////////////////////////////////
 
 app.get('/DVP/API/:version/Myprofile',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"read"}),userService.GetMyrProfile);
+app.get('/DVP/API/:version/Mylocation',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),userService.SetMyLocation);
+
+
+
+app.put('/DVP/API/:version/User/:name/location',jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}),userService.SetLocation);
 app.get('/DVP/API/:version/User/:name/profile', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfile);
 app.get('/DVP/API/:version/User/profilebycontact/:category/:contact', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfileByContact);
 app.get('/DVP/API/:version/User/profilebyresourceid/:resourceid', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"read"}), userService.GetUserProfileByResourceId);
@@ -287,6 +293,10 @@ app.get('/DVP/API/:version/Tenants',jwt({secret: secret.Secret}), authorization(
 app.get('/DVP/API/:version/Tenant/:id',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetTenant);
 app.get('/DVP/API/:version/CompanyDomain/:companyname',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetCompanyDomain);
 
+app.post('/DVP/API/:version/Phone/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"write"}), phoneConfig.AddPhoneConfig);
+app.get('/DVP/API/:version/Phone/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"read"}), phoneConfig.GetPhoneConfig);
+app.put('/DVP/API/:version/Phone/:id/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"read"}), phoneConfig.UpdatePhoneConfig);
+app.del('/DVP/API/:version/Phone/:id/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"write"}), phoneConfig.DeletePhoneConfig);
 app.post('/DVP/API/:version/CustomerTag',jwt({secret: secret.Secret}), authorization({resource:"customerTags", action:"write"}), tenantService.CreateTenant);
 
 
