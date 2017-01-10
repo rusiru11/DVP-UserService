@@ -126,7 +126,8 @@ function CreateExternalUser(req, res) {
             company: parseInt(req.user.company),
             tenant: parseInt(req.user.tenant),
             created_at: Date.now(),
-            updated_at: Date.now()
+            updated_at: Date.now(),
+            tags:req.body.tags
         });
 
 

@@ -287,6 +287,7 @@ app.get('/DVP/API/:version/Tenants',jwt({secret: secret.Secret}), authorization(
 app.get('/DVP/API/:version/Tenant/:id',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetTenant);
 app.get('/DVP/API/:version/CompanyDomain/:companyname',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetCompanyDomain);
 
+app.post('/DVP/API/:version/CustomerTag',jwt({secret: secret.Secret}), authorization({resource:"customerTags", action:"write"}), tenantService.CreateTenant);
 
 
 app.listen(port, function () {
