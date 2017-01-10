@@ -297,7 +297,12 @@ app.post('/DVP/API/:version/Phone/Config',jwt({secret: secret.Secret}), authoriz
 app.get('/DVP/API/:version/Phone/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"read"}), phoneConfig.GetPhoneConfig);
 app.put('/DVP/API/:version/Phone/:id/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"read"}), phoneConfig.UpdatePhoneConfig);
 app.del('/DVP/API/:version/Phone/:id/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"write"}), phoneConfig.DeletePhoneConfig);
-app.post('/DVP/API/:version/CustomerTag',jwt({secret: secret.Secret}), authorization({resource:"customerTags", action:"write"}), tenantService.CreateTenant);
+
+
+app.post('/DVP/API/:version/CustomerTag',jwt({secret: secret.Secret}), authorization({resource:"tag", action:"write"}), userService.CreateUserTag);
+app.get('/DVP/API/:version/CustomerTags',jwt({secret: secret.Secret}), authorization({resource:"tag", action:"read"}), userService.GetUserTags);
+app.get('/DVP/API/:version/CustomerTag/:tag',jwt({secret: secret.Secret}), authorization({resource:"tag", action:"write"}), userService.GetUserTag);
+app.del('/DVP/API/:version/CustomerTag/:tag',jwt({secret: secret.Secret}), authorization({resource:"tag", action:"write"}), userService.RemoveUserTag);
 
 
 app.listen(port, function () {

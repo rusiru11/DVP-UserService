@@ -4,6 +4,7 @@ var User = require('dvp-mongomodels/model/User');
 var Org = require('dvp-mongomodels/model/Organisation');
 var VPackage = require('dvp-mongomodels/model/Package');
 var Console = require('dvp-mongomodels/model/Console');
+var UserTag = require('dvp-mongomodels/model/Tag').SimpleTag;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var PublishToQueue = require('./Worker').PublishToQueue;
 var util = require('util');
@@ -2316,6 +2317,115 @@ function SetMyLocation(req, res){
 }
 
 
+function CreateUserTag(req, res){
+
+    logger.debug("DVP-UserService.CreateUserTag Internal method ");
+    var jsonString;
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+
+
+    var userTag= UserTag({
+        company: parseInt(req.user.company),
+        tenant: parseInt(req.user.tenant),
+        name:req.body.name
+    })
+
+    userTag.save(function(errTag, resTag) {
+        if (errTag) {
+            jsonString = messageFormatter.FormatMessage(errTag, "UserTag save failed", false, undefined);
+            res.end(jsonString);
+        }else{
+            jsonString = messageFormatter.FormatMessage(undefined, "UserTag save succeeded", true, resTag);
+            res.end(jsonString);
+        }
+    });
+
+
+}
+
+function GetUserTag(req, res){
+
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+
+    UserTag.findOne({company: company, tenant: tenant,name:req.params.tag}).exec( function(errTag, userTags) {
+            if (errTag) {
+
+                jsonString = messageFormatter.FormatMessage(errTag, "Get UserTag Failed", false, undefined);
+                res.end(jsonString);
+
+            }
+            else
+            {
+
+                    jsonString = messageFormatter.FormatMessage(undefined, "Get UserTag Successful", true, userTags);
+                res.end(jsonString);
+
+            }
+
+
+        });
+
+}
+function GetUserTags(req, res){
+
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+
+    UserTag.find({company: company, tenant: tenant}).exec( function(errTags, userTags) {
+        if (errTags) {
+
+            jsonString = messageFormatter.FormatMessage(errTags, "Get UserTags Failed", false, undefined);
+
+        }
+        else
+        {
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Get UserTags Successful", true, userTags);
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+function RemoveUserTag(req,res){
+
+
+    logger.debug("DVP-UserService.RemoveUserTag Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    UserTag.findOneAndRemove({
+        name: req.params.tag,
+        company: company,
+        tenant: tenant
+    }, function (errRem, resRem) {
+        if (errRem) {
+            jsonString = messageFormatter.FormatMessage(errRem, "Remove User Tag Failed", false, undefined);
+            res.end(jsonString);
+        } else {
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Remove User Success", true, resRem);
+            res.end(jsonString);
+        }
+
+    });
+
+}
+
 
 module.exports.GetUser = GetUser;
 module.exports.GetUsers = GetUsers;
@@ -2368,4 +2478,10 @@ module.exports.OwnerExists = OwnerExists;
 
 module.exports.SetLocation = SetLocation;
 module.exports.SetMyLocation = SetMyLocation;
+
+
+module.exports.CreateUserTag = CreateUserTag;
+module.exports.GetUserTags = GetUserTags;
+module.exports.RemoveUserTag = RemoveUserTag;
+module.exports.GetUserTag = GetUserTag;
 
