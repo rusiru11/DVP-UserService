@@ -360,7 +360,7 @@ module.exports.Login =  function(req, res) {
                             created_at: new Date(),
                             url:url}
 
-                        PublishToQueue("EMAILOUT", sendObj)
+                        //PublishToQueue("EMAILOUT", sendObj)
 
                         return res.status(449 ).send({message: 'Activate your account before login'});
                     }
