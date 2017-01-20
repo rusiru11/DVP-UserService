@@ -20,6 +20,7 @@ var PublishToQueue = require('./Worker').PublishToQueue;
 var util = require('util');
 var crypto = require('crypto');
 var accessToken = require ('dvp-mongomodels/model/AccessToken');
+var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 
 var redisip = config.Redis.ip;
 var redisport = config.Redis.port;
