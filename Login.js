@@ -332,7 +332,7 @@ module.exports.Login =  function(req, res) {
             return res.status(401).send({message: 'Invalid email and/or password'});
         }
 
-        logger.info("config.auth.login_verification --> " + config.auth.login_verification+ " user.verified --->"+ user.verified + " result -->" + ((config.auth.login_verification == true) && (user.verified == false)));
+        logger.info("config.auth.login_verification --> " + config.auth.login_verification + (config.auth.login_verification === true) + " user.verified --->"+ user.verified + (user.verified === false)+ " result -->" + ((config.auth.login_verification == true) && (user.verified == false)));
 
         if ((config.auth.login_verification === true) && (user.verified === false)) {
 
