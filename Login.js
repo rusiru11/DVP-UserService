@@ -334,7 +334,7 @@ module.exports.Login =  function(req, res) {
 
         logger.info("config.auth.login_verification --> " + config.auth.login_verification+ " user.verified --->"+ user.verified + " result -->" + ((config.auth.login_verification == true) && (user.verified == false)));
 
-        if ((config.auth.login_verification == true) && (user.verified == false)) {
+        if ((config.auth.login_verification === true) && (user.verified === false)) {
 
 
             return res.status(449 ).send({message: 'Activate your account before login'});
