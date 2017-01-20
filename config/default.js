@@ -43,8 +43,8 @@ module.exports = {
     TWITTER_KEY: 'vdrg4sqxyTPSRdJHKu4UVVdeD',
     TWITTER_SECRET: 'cUIobhRgRlXsFyObUMg3tBq56EgGSwabmcavQP4fncABvotRMA',
 
-    login_verification: false,
-    signup_verification: false,
+    login_verification: true,
+    signup_verification: true,
     recaptcha_key: "6LezaAsUAAAAAFbtiyMzOlMmqEwzMwmMYszmO_Ve",
 
     ui_host: 'http://localhost:3000/'
