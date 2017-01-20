@@ -22,6 +22,7 @@ var crypto = require('crypto');
 var accessToken = require ('dvp-mongomodels/model/AccessToken');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 
+
 var redisip = config.Redis.ip;
 var redisport = config.Redis.port;
 var redisuser = config.Redis.user;
@@ -331,9 +332,9 @@ module.exports.Login =  function(req, res) {
             return res.status(401).send({message: 'Invalid email and/or password'});
         }
 
-        logger.info("config.auth.login_verification --> " + config.auth.login_verification+ " user.verified --->"+ user.verified);
+        logger.info("config.auth.login_verification --> " + config.auth.login_verification+ " user.verified --->"+ user.verified + " result -->" + (config.auth.login_verification == true) && (user.verified == false));
 
-        if (config.auth.login_verification == true && user.verified != true) {
+        if ((config.auth.login_verification == true) && (user.verified == false)) {
 
 
             return res.status(449 ).send({message: 'Activate your account before login'});
