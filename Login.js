@@ -332,6 +332,9 @@ module.exports.Login =  function(req, res) {
 
         if (config.auth.login_verification == true && !user.verified) {
 
+
+            return res.status(449 ).send({message: 'Activate your account before login'});
+
             crypto.randomBytes(20, function (err, buf) {
                 var token = buf.toString('hex');
 
