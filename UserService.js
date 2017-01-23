@@ -825,9 +825,9 @@ function UpdateMyUserProfile(req, res) {
     var jsonString;
 
 
-    if (req.body.name) {
+    if (req.body.userName) {
 
-        delete req.body.name;
+        delete req.body.userName;
     }
 
     if (req.body.password) {
