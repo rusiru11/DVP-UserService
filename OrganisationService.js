@@ -1266,7 +1266,7 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                                         if (packageUnit) {
                                                             var billingObj = {
-                                                                userInfo: requestedUser,
+                                                                userInfo: rUser,
                                                                 companyInfo: org,
                                                                 name: packageUnit.unitName,
                                                                 type: packageUnit.unitType,
