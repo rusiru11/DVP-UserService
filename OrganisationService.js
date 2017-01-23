@@ -474,7 +474,7 @@ function CreateOrganisation(req, res){
     GetNewCompanyId(function(cid){
         if(cid && cid > 0) {
 
-            User.findOne({username: req.user.username}, function(err, user) {
+            User.findOne({username: req.user.username}).select("-password").exec(function(err, user) {
                 if (err) {
                     jsonString = messageFormatter.FormatMessage(err, "Invalid User", false, undefined);
                     res.end(jsonString);
@@ -702,7 +702,7 @@ function AssignPackageToOrganisation(req,res){
 
     var jsonString;
 
-    User.findOne({tenant: tenant, company: company, username: req.user.iss}, function (err, rUser) {
+    User.findOne({tenant: tenant, company: company, username: req.user.iss}).select("-password").exec(function (err, rUser) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Error in User Search", false, undefined);
             res.end(jsonString);
@@ -1227,7 +1227,7 @@ function AssignPackageUnitToOrganisation(req,res){
     var jsonString;
 
     if(topUpCount > 0) {
-        User.findOne({tenant: tenant, company: company, username: req.user.iss}, function (err, rUser) {
+        User.findOne({tenant: tenant, company: company, username: req.user.iss}).select("-password").exec(function (err, rUser) {
             if (err) {
                 jsonString = messageFormatter.FormatMessage(err, "Error in User Search", false, undefined);
                 res.end(jsonString);
