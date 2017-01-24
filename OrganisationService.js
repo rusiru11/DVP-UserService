@@ -160,7 +160,7 @@ function IsOrganizationExists(req, res){
 
 
     var jsonString;
-    Org.findOne({companyName: req.params.company}, function(err, org) {
+    Org.findOne({companyName: new RegExp(req.params.company,'i')}, function(err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
         }else{
