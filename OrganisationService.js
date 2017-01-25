@@ -367,7 +367,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                     name: vPackage.packageName,
                                     type: vPackage.packageType,
                                     category: "Veery Package",
-                                    setupFee: vPackage.setupFee?vPackage.setupFee:20,
+                                    setupFee: vPackage.setupFee?vPackage.setupFee:0,
                                     unitPrice: vPackage.price,
                                     units: 1,
                                     description: vPackage.description,
