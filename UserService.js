@@ -4,12 +4,14 @@ var User = require('dvp-mongomodels/model/User');
 var Org = require('dvp-mongomodels/model/Organisation');
 var VPackage = require('dvp-mongomodels/model/Package');
 var Console = require('dvp-mongomodels/model/Console');
+var UserTag = require('dvp-mongomodels/model/Tag').SimpleTag;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var PublishToQueue = require('./Worker').PublishToQueue;
 var util = require('util');
 var crypto = require('crypto');
 var config = require('config');
 var redis = require('redis');
+var bcrypt = require('bcryptjs');
 
 
 var redisip = config.Redis.ip;
@@ -556,6 +558,81 @@ function UpdateUser(req, res){
 
 }
 
+function UpdateMyPassword(req, res){
+
+    logger.debug("DVP-UserService.UpdateUserPassword Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.user.iss;
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+
+    if(user && req.body.oldpassword && req.body.newpassword) {
+
+        User.findOne({
+            username: user,
+            company: company,
+            tenant: tenant
+
+        }, '+password', function (err, myprofile) {
+
+            //{password: req.body.newpassword},
+            //password: req.body.oldpassword
+
+            if (err) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Update User Password Failed", false, undefined);
+                res.end(jsonString);
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(err, "Update User Password Successful", true, undefined);
+
+                if(myprofile){
+
+                    myprofile.comparePassword(req.body.oldpassword, function (err, isMatch) {
+                        if (!isMatch) {
+
+                            jsonString = messageFormatter.FormatMessage(err, "Update User Password Failed No User Found", false, undefined);
+                            res.end(jsonString);
+
+                        }else{
+
+                            bcrypt.genSalt(10, function(err, salt) {
+                                bcrypt.hash(req.body.newpassword, salt, function(err, hash) {
+                                    User.findOneAndUpdate({
+                                        _id: myprofile._id
+                                    }, {password:hash}, function (err, users) {
+                                        if (err) {
+                                            jsonString = messageFormatter.FormatMessage(err, "Update User Password Failed", false, undefined);
+                                        } else {
+                                            jsonString = messageFormatter.FormatMessage(err, "Update User Password Successful", true, undefined);
+                                        }
+                                        res.end(jsonString);
+                                    });
+                                });
+                            });
+                        }
+                    });
+
+                }else{
+
+                    jsonString = messageFormatter.FormatMessage(err, "Update User Password Failed No User Found", false, undefined);
+                    res.end(jsonString);
+                }
+            }
+        });
+    }else{
+
+        jsonString = messageFormatter.FormatMessage(err, "Update User Failed Username empty", false, undefined);
+        res.end(jsonString);
+
+    }
+
+}
+
 function GetMyrProfile(req, res){
 
 
@@ -824,9 +901,9 @@ function UpdateMyUserProfile(req, res) {
     var jsonString;
 
 
-    if (req.body.name) {
+    if (req.body.userName) {
 
-        delete req.body.name;
+        delete req.body.userName;
     }
 
     if (req.body.password) {
@@ -2315,6 +2392,218 @@ function SetMyLocation(req, res){
     });
 }
 
+function UpdateMyAppMetadata(req, res){
+
+
+
+    logger.debug("DVP-UserService.UpdateMyAppMetadata Internal method ");
+
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.user.iss;
+    var jsonString;
+    User.findOne({username: user,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User app meta Failed", false, undefined);
+            res.end(jsonString);
+
+        }else{
+
+            if(users) {
+
+
+                if(users.app_meta){
+
+                    Object.keys(req.body).forEach(function(key) {
+                        var val = req.body[key];
+                        users.app_meta[key] = val;
+                    });
+
+                    User.findOneAndUpdate({username: user,company: company, tenant: tenant},{app_meta: users.app_meta},function (err, user) {
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+
+                        } else {
+                            jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, users.app_meta);
+                        }
+                        res.end(jsonString);
+                    });
+
+                }else{
+
+                    users.app_meta = req.body;
+
+                    User.findOneAndUpdate({username: user,company: company, tenant: tenant},{app_meta: req.body},function (err, user) {
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+
+                        } else {
+                            jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, users.app_meta);
+                        }
+                        res.end(jsonString);
+                    });
+                }
+
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User app Meta Failed", false, undefined);
+                res.end(jsonString);
+            }
+
+        }
+
+
+    });
+
+}
+
+function GetMyAppMetadata(req, res){
+
+
+
+    logger.debug("DVP-UserService.GetMyAppMetadata Internal method ");
+
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.user.iss;
+    var jsonString;
+    User.findOne({username: user,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+        }else{
+
+            if(users){
+
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.app_meta);
+            }
+            else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
+            }
+
+
+        }
+
+        res.end(jsonString);
+    });
+
+
+}
+
+function CreateUserTag(req, res){
+
+    logger.debug("DVP-UserService.CreateUserTag Internal method ");
+    var jsonString;
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+
+
+    var userTag= UserTag({
+        company: parseInt(req.user.company),
+        tenant: parseInt(req.user.tenant),
+        name:req.body.name
+    })
+
+    userTag.save(function(errTag, resTag) {
+        if (errTag) {
+            jsonString = messageFormatter.FormatMessage(errTag, "UserTag save failed", false, undefined);
+            res.end(jsonString);
+        }else{
+            jsonString = messageFormatter.FormatMessage(undefined, "UserTag save succeeded", true, resTag);
+            res.end(jsonString);
+        }
+    });
+
+
+}
+
+function GetUserTag(req, res){
+
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+
+    UserTag.findOne({company: company, tenant: tenant,name:req.params.tag}).exec( function(errTag, userTags) {
+            if (errTag) {
+
+                jsonString = messageFormatter.FormatMessage(errTag, "Get UserTag Failed", false, undefined);
+                res.end(jsonString);
+
+            }
+            else
+            {
+
+                    jsonString = messageFormatter.FormatMessage(undefined, "Get UserTag Successful", true, userTags);
+                res.end(jsonString);
+
+            }
+
+
+        });
+
+}
+
+function GetUserTags(req, res){
+
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+
+    UserTag.find({company: company, tenant: tenant}).exec( function(errTags, userTags) {
+        if (errTags) {
+
+            jsonString = messageFormatter.FormatMessage(errTags, "Get UserTags Failed", false, undefined);
+
+        }
+        else
+        {
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Get UserTags Successful", true, userTags);
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+function RemoveUserTag(req,res){
+
+
+    logger.debug("DVP-UserService.RemoveUserTag Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    UserTag.findOneAndRemove({
+        name: req.params.tag,
+        company: company,
+        tenant: tenant
+    }, function (errRem, resRem) {
+        if (errRem) {
+            jsonString = messageFormatter.FormatMessage(errRem, "Remove User Tag Failed", false, undefined);
+            res.end(jsonString);
+        } else {
+
+            jsonString = messageFormatter.FormatMessage(undefined, "Remove User Success", true, resRem);
+            res.end(jsonString);
+        }
+
+    });
+
+}
 
 
 module.exports.GetUser = GetUser;
@@ -2346,6 +2635,7 @@ module.exports.RemoveUserProfileContact = RemoveUserProfileContact;
 
 module.exports.GetMyrProfile = GetMyrProfile;
 module.exports.UpdateMyUser = UpdateMyUser;
+module.exports.UpdateMyPassword = UpdateMyPassword;
 module.exports.UpdateMyUserProfile = UpdateMyUserProfile;
 module.exports.UpdateMyUserProfileContact = UpdateMyUserProfileContact;
 module.exports.RemoveMyUserProfileContact =RemoveMyUserProfileContact;
@@ -2368,4 +2658,13 @@ module.exports.OwnerExists = OwnerExists;
 
 module.exports.SetLocation = SetLocation;
 module.exports.SetMyLocation = SetMyLocation;
+
+
+module.exports.CreateUserTag = CreateUserTag;
+module.exports.GetUserTags = GetUserTags;
+module.exports.RemoveUserTag = RemoveUserTag;
+module.exports.GetUserTag = GetUserTag;
+
+module.exports.UpdateMyAppMetadata = UpdateMyAppMetadata;
+module.exports.GetMyAppMetadata = GetMyAppMetadata;
 
