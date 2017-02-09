@@ -160,6 +160,7 @@ function IsOrganizationExists(req, res){
 
 
     var jsonString;
+   // Org.findOne({companyName: new RegExp(req.params.company,'i')}, function(err, org) {
     Org.findOne({companyName: req.params.company}, function(err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
@@ -334,7 +335,7 @@ function CreateOwner(req, res){
     });
 }
 
-var AssignPackageToOrganisationLib = function(company, tenant, packageName, callback){
+var AssignPackageToOrganisationLib = function(company, tenant, packageName, requestedUser, callback){
     logger.debug("DVP-UserService.AssignPackageToOrganisation Internal method ");
     logger.debug(packageName);
 
@@ -361,11 +362,12 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, call
 
                             if (org.packages.indexOf(packageName) == -1) {
                                 var billingObj = {
+                                    userInfo: requestedUser,
                                     companyInfo: org,
                                     name: vPackage.packageName,
                                     type: vPackage.packageType,
                                     category: "Veery Package",
-                                    setupFee: vPackage.setupFee?vPackage.setupFee:20,
+                                    setupFee: vPackage.setupFee?vPackage.setupFee:0,
                                     unitPrice: vPackage.price,
                                     units: 1,
                                     description: vPackage.description,
@@ -473,7 +475,7 @@ function CreateOrganisation(req, res){
     GetNewCompanyId(function(cid){
         if(cid && cid > 0) {
 
-            User.findOne({username: req.user.username}, function(err, user) {
+            User.findOne({username: req.user.username}).select("-password").exec(function(err, user) {
                 if (err) {
                     jsonString = messageFormatter.FormatMessage(err, "Invalid User", false, undefined);
                     res.end(jsonString);
@@ -526,8 +528,8 @@ function CreateOrganisation(req, res){
                                                 if (err) {
                                                     org.remove(function (err) {
                                                     });
-
-                                                    AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC",function(jsonString){
+                                                    rUser.company = cid;
+                                                    AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", rUser, function(jsonString){
                                                         console.log(jsonString);
                                                     });
 
@@ -699,9 +701,25 @@ function AssignPackageToOrganisation(req,res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
 
-    AssignPackageToOrganisationLib(company, tenant, req.params.packageName,function(jsonString){
-        res.end(jsonString);
+    var jsonString;
+
+    User.findOne({tenant: tenant, company: company, username: req.user.iss}).select("-password").exec(function (err, rUser) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Error in User Search", false, undefined);
+            res.end(jsonString);
+        } else {
+            if(rUser) {
+                AssignPackageToOrganisationLib(company, tenant, req.params.packageName, rUser, function (jsonString) {
+                    res.end(jsonString);
+                });
+            }else{
+                jsonString = messageFormatter.FormatMessage(undefined, "No User Found.", false, undefined);
+                res.end(jsonString);
+            }
+        }
     });
+
+
 }
 
 function AssignTaskToOrganisation(company, tenant, taskList){
@@ -1169,10 +1187,10 @@ function CreateOrganisationStanAlone(user, companyname, callback) {
                                                 });
                                                 callback(err, undefined);
                                             } else {
-                                                AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC",function(jsonString){
+                                                rUser.company = cid;
+                                                AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", rUser,function(jsonString){
                                                     console.log(jsonString);
                                                 });
-                                                rUser.company = cid;
                                                 callback(undefined, rUser);
                                             }
                                         });
@@ -1210,167 +1228,180 @@ function AssignPackageUnitToOrganisation(req,res){
     var jsonString;
 
     if(topUpCount > 0) {
-
-        VPackage.findOne({packageName: req.params.packageName}, function (err, vPackage) {
-
+        User.findOne({tenant: tenant, company: company, username: req.user.iss}).select("-password").exec(function (err, rUser) {
             if (err) {
-
-                jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Error in User Search", false, undefined);
                 res.end(jsonString);
-
             } else {
-                if(vPackage) {
-                    Org.findOne({tenant: tenant, id: company}).populate('ownerRef' , '-password').exec( function (err, org) {
+                if(rUser) {
+                    VPackage.findOne({packageName: req.params.packageName}, function (err, vPackage) {
 
                         if (err) {
 
-                            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+                            jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
                             res.end(jsonString);
 
                         } else {
+                            if(vPackage) {
+                                Org.findOne({tenant: tenant, id: company}).populate('ownerRef' , '-password').exec( function (err, org) {
 
-                            if (org) {
+                                    if (err) {
 
-                                if (org.packages.indexOf(req.params.packageName) > -1) {
+                                        jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+                                        res.end(jsonString);
 
-                                    PackageUnit.findOne({unitName: req.params.unitName}, function (err, packageUnit) {
+                                    } else {
 
-                                        if (err) {
+                                        if (org) {
 
-                                            jsonString = messageFormatter.FormatMessage(err, "Get Package Unit Failed", false, undefined);
-                                            res.end(jsonString);
+                                            if (org.packages.indexOf(req.params.packageName) > -1) {
 
-                                        } else {
+                                                PackageUnit.findOne({unitName: req.params.unitName}, function (err, packageUnit) {
 
-                                            if (packageUnit) {
-                                                var billingObj = {
-                                                    companyInfo: org,
-                                                    name: packageUnit.unitName,
-                                                    type: packageUnit.unitType,
-                                                    category: "Veery Unit",
-                                                    setupFee: 0,
-                                                    unitPrice: packageUnit.unitprice,
-                                                    units: topUpCount,
-                                                    description: packageUnit.description,
-                                                    date: Date.now(),
-                                                    valid: true,
-                                                    isTrial: false
-                                                };
+                                                    if (err) {
 
-                                                RequestToBill(org.id, org.tenant, billingObj, function(err, response){
-                                                    if(err){
-                                                        jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
+                                                        jsonString = messageFormatter.FormatMessage(err, "Get Package Unit Failed", false, undefined);
                                                         res.end(jsonString);
-                                                    }else{
-                                                        if(response) {
-                                                            if(response.IsSuccess) {
-                                                                org.updated_at = Date.now();
 
-                                                                if (org.consoleAccessLimits.length > 0) {
+                                                    } else {
 
-                                                                    for (var j = 0; j < org.consoleAccessLimits.length; j++) {
+                                                        if (packageUnit) {
+                                                            var billingObj = {
+                                                                userInfo: rUser,
+                                                                companyInfo: org,
+                                                                name: packageUnit.unitName,
+                                                                type: packageUnit.unitType,
+                                                                category: "Veery Unit",
+                                                                setupFee: 0,
+                                                                unitPrice: packageUnit.unitprice,
+                                                                units: topUpCount,
+                                                                description: packageUnit.description,
+                                                                date: Date.now(),
+                                                                valid: true,
+                                                                isTrial: false
+                                                            };
 
-                                                                        var cal = org.consoleAccessLimits[j];
+                                                            RequestToBill(org.id, org.tenant, billingObj, function(err, response){
+                                                                if(err){
+                                                                    jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
+                                                                    res.end(jsonString);
+                                                                }else{
+                                                                    if(response) {
+                                                                        if(response.IsSuccess) {
+                                                                            org.updated_at = Date.now();
 
-                                                                        if (cal.accessType == packageUnit.consoleAccessLimit.accessType) {
-                                                                            org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
-                                                                            break;
+                                                                            if (org.consoleAccessLimits.length > 0) {
 
-                                                                        }
-                                                                    }
+                                                                                for (var j = 0; j < org.consoleAccessLimits.length; j++) {
 
-                                                                }
+                                                                                    var cal = org.consoleAccessLimits[j];
 
+                                                                                    if (cal.accessType == packageUnit.consoleAccessLimit.accessType) {
+                                                                                        org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
+                                                                                        break;
 
-                                                                var er = ExtractResources(packageUnit.resources);
-                                                                er.on('endExtractResources', function (userScopes) {
-                                                                    if (userScopes) {
-                                                                        for (var i = 0; i < userScopes.length; i++) {
-                                                                            var scopes = userScopes[i];
-                                                                            var eUserScope = FilterObjFromArray(org.resourceAccessLimits, "scopeName", scopes.scope);
-                                                                            if (eUserScope) {
-                                                                                if (eUserScope.accessLimit != -1 && topUpCount > 0) {
-                                                                                    eUserScope.accessLimit = eUserScope.accessLimit + topUpCount;
-                                                                                } else if (topUpCount === -1) {
-                                                                                    eUserScope.accessLimit = topUpCount;
+                                                                                    }
                                                                                 }
-                                                                            } else {
-                                                                                if (!org.resourceAccessLimits) {
-                                                                                    org.resourceAccessLimits = [];
-                                                                                }
-                                                                                var rLimit = {
-                                                                                    "scopeName": scopes.scope,
-                                                                                    "accessLimit": scopes.accessLimit
-                                                                                };
-                                                                                org.resourceAccessLimits.push(rLimit);
+
                                                                             }
+
+
+                                                                            var er = ExtractResources(packageUnit.resources);
+                                                                            er.on('endExtractResources', function (userScopes) {
+                                                                                if (userScopes) {
+                                                                                    for (var i = 0; i < userScopes.length; i++) {
+                                                                                        var scopes = userScopes[i];
+                                                                                        var eUserScope = FilterObjFromArray(org.resourceAccessLimits, "scopeName", scopes.scope);
+                                                                                        if (eUserScope) {
+                                                                                            if (eUserScope.accessLimit != -1 && topUpCount > 0) {
+                                                                                                eUserScope.accessLimit = eUserScope.accessLimit + topUpCount;
+                                                                                            } else if (topUpCount === -1) {
+                                                                                                eUserScope.accessLimit = topUpCount;
+                                                                                            }
+                                                                                        } else {
+                                                                                            if (!org.resourceAccessLimits) {
+                                                                                                org.resourceAccessLimits = [];
+                                                                                            }
+                                                                                            var rLimit = {
+                                                                                                "scopeName": scopes.scope,
+                                                                                                "accessLimit": scopes.accessLimit
+                                                                                            };
+                                                                                            org.resourceAccessLimits.push(rLimit);
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                org.unitDetails.push({veeryUnit:packageUnit._id, units: topUpCount, buyDate: Date.now()});
+
+                                                                                Org.findOneAndUpdate({
+                                                                                    tenant: tenant,
+                                                                                    id: company
+                                                                                }, org, function (err, rOrg) {
+
+                                                                                    if (err) {
+
+                                                                                        jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Failed", false, undefined);
+
+                                                                                    } else {
+
+                                                                                        jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Successful", true, org);
+
+                                                                                    }
+
+                                                                                    res.end(jsonString);
+                                                                                });
+                                                                            });
+                                                                        }else{
+                                                                            jsonString = messageFormatter.FormatMessage(undefined, response.CustomMessage, false, undefined);
+                                                                            res.end(jsonString);
                                                                         }
-                                                                    }
-
-                                                                    org.unitDetails.push({veeryUnit:packageUnit._id, units: topUpCount, buyDate: Date.now()});
-
-                                                                    Org.findOneAndUpdate({
-                                                                        tenant: tenant,
-                                                                        id: company
-                                                                    }, org, function (err, rOrg) {
-
-                                                                        if (err) {
-
-                                                                            jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Failed", false, undefined);
-
-                                                                        } else {
-
-                                                                            jsonString = messageFormatter.FormatMessage(err, "Assign Package Unit to Organisation Successful", true, org);
-
-                                                                        }
-
+                                                                    }else{
+                                                                        jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
                                                                         res.end(jsonString);
-                                                                    });
-                                                                });
-                                                            }else{
-                                                                jsonString = messageFormatter.FormatMessage(undefined, response.CustomMessage, false, undefined);
-                                                                res.end(jsonString);
-                                                            }
-                                                        }else{
-                                                            jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
-                                                            res.end(jsonString);
-                                                        }
-                                                    }
-                                                });
+                                                                    }
+                                                                }
+                                                            });
 
+                                                        } else {
+
+                                                            jsonString = messageFormatter.FormatMessage(err, "No Package Unit Found", false, undefined);
+                                                            res.end(jsonString);
+
+                                                        }
+
+                                                    }
+
+                                                });
                                             } else {
 
-                                                jsonString = messageFormatter.FormatMessage(err, "No Package Unit Found", false, undefined);
+                                                jsonString = messageFormatter.FormatMessage(err, "No Assigned Package Found", false, undefined);
                                                 res.end(jsonString);
 
                                             }
 
+                                        } else {
+
+                                            jsonString = messageFormatter.FormatMessage(err, "No Organisation Found", false, undefined);
+                                            res.end(jsonString);
+
                                         }
 
-                                    });
-                                } else {
+                                    }
 
-                                    jsonString = messageFormatter.FormatMessage(err, "No Assigned Package Found", false, undefined);
-                                    res.end(jsonString);
-
-                                }
-
-                            } else {
-
-                                jsonString = messageFormatter.FormatMessage(err, "No Organisation Found", false, undefined);
+                                });
+                            }else{
+                                jsonString = messageFormatter.FormatMessage(undefined, "No Package Found", false, undefined);
                                 res.end(jsonString);
-
                             }
-
                         }
 
                     });
+
                 }else{
-                    jsonString = messageFormatter.FormatMessage(undefined, "No Package Found", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(undefined, "No User Found.", false, undefined);
                     res.end(jsonString);
                 }
             }
-
         });
 
     }else{

@@ -20,6 +20,8 @@ var PublishToQueue = require('./Worker').PublishToQueue;
 var util = require('util');
 var crypto = require('crypto');
 var accessToken = require ('dvp-mongomodels/model/AccessToken');
+var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+
 
 var redisip = config.Redis.ip;
 var redisport = config.Redis.port;
@@ -330,7 +332,12 @@ module.exports.Login =  function(req, res) {
             return res.status(401).send({message: 'Invalid email and/or password'});
         }
 
-        if (config.auth.login_verification == true && !user.verified) {
+        logger.info("config.auth.login_verification --> " + config.auth.login_verification + (config.auth.login_verification === true) + " user.verified --->"+ user.verified + (user.verified === false)+ " result -->" + ((config.auth.login_verification == true) && (user.verified == false)));
+
+        if ((config.auth.login_verification === true || config.auth.login_verification === 'true') && (user.verified === false)) {
+
+
+            return res.status(449 ).send({message: 'Activate your account before login'});
 
             crypto.randomBytes(20, function (err, buf) {
                 var token = buf.toString('hex');
@@ -360,7 +367,7 @@ module.exports.Login =  function(req, res) {
                             created_at: new Date(),
                             url:url}
 
-                        PublishToQueue("EMAILOUT", sendObj)
+                        //PublishToQueue("EMAILOUT", sendObj)
 
                         return res.status(449 ).send({message: 'Activate your account before login'});
                     }
@@ -464,6 +471,7 @@ module.exports.Validation =  function(req, res) {
 
 module.exports.SignUP = function(req, res) {
 
+    logger.info("config.auth.signup_verification  -------->" +  config.auth.signup_verification);
     if(config.auth.signup_verification ) {
 
         if(!req.body || req.body['g-recaptcha-response'] === undefined || req.body['g-recaptcha-response'] === '' || req.body['g-recaptcha-response'] === null) {
@@ -507,7 +515,7 @@ module.exports.SignUP = function(req, res) {
                         {"scope": "myNavigation", "read": true},
                         {"scope": "myUserProfile", "read": true}
                     ],
-
+                    verified: false,
                     company: 0,
                     tenant: 1,
                     created_at: Date.now(),
