@@ -711,7 +711,39 @@ function UpdateFormSubmission(req, res) {
 
         res.end(jsonString);
     });
-};
+}
+
+function GetExternalUsersByTags(req, res){
+
+
+    logger.debug("DVP-UserService.GetExternalUsersByTags Internal method ");
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var tags = req.query.tags;
+    var jsonString;
+    ExternalUser.find({company: company, tenant: tenant, tags:{ $all: tags }}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get External Users By Tags Failed", false, undefined);
+
+        }else {
+
+            if (users) {
+
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users By Tags Successful", true, users);
+
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "No External Users Found", false, undefined);
+
+            }
+        }
+
+        res.end(jsonString);
+    });
+
+}
 
 
 
@@ -733,3 +765,4 @@ module.exports.SearchExternalUsers =SearchExternalUsers;
 module.exports.UpdateExternalUserProfileDynamicFields = UpdateExternalUserProfileDynamicFields;
 module.exports.UpdateFormSubmission = UpdateFormSubmission;
 module.exports.GetExternalUserAttribute = GetExternalUserAttribute;
+module.exports.GetExternalUsersByTags = GetExternalUsersByTags;
