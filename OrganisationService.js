@@ -304,6 +304,7 @@ function CreateOwner(req, res){
                     lastname: req.body.lastname,
                     username: req.body.username,
                     password: req.body.password,
+                    Active: true,
                     phoneNumber: {contact: req.body.phone, type: "phone", verified: false},
                     email: {contact: req.body.mail, type: "phone", verified: false},
                     user_meta: {role: "admin"},

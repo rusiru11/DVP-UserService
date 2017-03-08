@@ -41,7 +41,7 @@ function GetUsers(req, res){
 
 
 
-    User.find({company: company, tenant: tenant, systemuser: true})
+    User.find({company: company, tenant: tenant, systemuser: true, Active: true})
         .select("-password")
         .exec( function(err, users) {
         if (err) {
@@ -143,10 +143,10 @@ function GetUsersByIDs(req, res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    var query = {_id: {$in:req.query.id},company: company, tenant: tenant};
+    var query = {_id: {$in:req.query.id},company: company, tenant: tenant, Active: true};
 
     if(!util.isArray(req.query.id))
-        query = {_id: req.query.id,company: company, tenant: tenant};
+        query = {_id: req.query.id,company: company, tenant: tenant, Active: true};
 
 
 
@@ -257,11 +257,11 @@ function DeleteUser(req,res){
 
             }else {
 
-                User.findOneAndRemove({
+                User.findOneAndUpdate({
                     username: req.params.name,
                     company: company,
                     tenant: tenant
-                }, function (err, user) {
+                }, {Active:false}, function (err, user) {
                     if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
                     } else {
@@ -330,6 +330,7 @@ function CreateUser(req, res){
                                 name: req.body.name,
                                 avatar: req.body.avatar,
                                 birthday: req.body.birthday,
+                                Active: true,
                                 gender: req.body.gender,
                                 firstname: req.body.firstname,
                                 lastname: req.body.lastname,
@@ -450,6 +451,103 @@ function CreateUser(req, res){
                     jsonString = messageFormatter.FormatMessage(err, "No User Role Found", false, undefined);
                     res.end(jsonString);
                 }
+            }else{
+                jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
+                res.end(jsonString);
+            }
+        }
+    });
+}
+
+function ReActivateUser(req, res){
+
+    logger.debug("DVP-UserService.ReActivateUser Internal method ");
+    var jsonString;
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+            res.end(jsonString);
+        }else{
+            if(org){
+                User.findOne({company: company, tenant: tenant, username: req.params.username, Active: false})
+                    .select("-password")
+                    .exec( function(err, user) {
+                        if (err) {
+
+                            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+                            res.end(jsonString);
+                        }else {
+
+                            if (user) {
+
+                                if(user.user_meta.role){
+                                    var userRole = user.user_meta.role.toLowerCase();
+                                    var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
+                                    if(limitObj){
+                                        if(limitObj.accessLimit > limitObj.currentAccess.length){
+
+                                            User.findOneAndUpdate({
+                                                username: user.username,
+                                                company: company,
+                                                tenant: tenant
+                                            }, {Active:true}, function (err, updatedUser) {
+                                                if (err) {
+                                                    jsonString = messageFormatter.FormatMessage(err, "Re-Activate User Failed", false, undefined);
+                                                } else {
+
+
+                                                    if(updatedUser) {
+                                                        limitObj.currentAccess.push(updatedUser.username);
+                                                        Org.findOneAndUpdate({
+                                                            id: company,
+                                                            tenant: tenant
+                                                        }, org, function (err, rOrg) {
+                                                            if (err) {
+                                                                console.log(messageFormatter.FormatMessage(err, "Update Limit Failed", false, undefined));
+                                                            } else {
+
+                                                                console.log(messageFormatter.FormatMessage(err, "Update Limit Success", false, undefined));
+
+                                                            }
+
+                                                        });
+                                                        jsonString = messageFormatter.FormatMessage(undefined, "Re-Activate User Success", true, undefined);
+                                                    }else{
+                                                        jsonString = messageFormatter.FormatMessage(undefined, "Re-Activate User Failed", true, undefined);
+                                                    }
+
+
+
+
+                                                }
+                                                res.end(jsonString);
+                                            });
+
+                                        }else{
+                                            jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
+                                            res.end(jsonString);
+                                        }
+                                    }else{
+                                        jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
+                                        res.end(jsonString);
+                                    }
+                                }else{
+                                    jsonString = messageFormatter.FormatMessage(err, "No User Role Found", false, undefined);
+                                    res.end(jsonString);
+                                }
+
+                            }else{
+
+                                jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+                                res.end(jsonString);
+
+                            }
+                        }
+
+                    });
+
             }else{
                 jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
                 res.end(jsonString);
@@ -2611,6 +2709,7 @@ module.exports.GetUsers = GetUsers;
 module.exports.GetUsersByIDs = GetUsersByIDs;
 module.exports.DeleteUser = DeleteUser;
 module.exports.CreateUser = CreateUser;
+module.exports.ReActivateUser = ReActivateUser;
 module.exports.UpdateUser = UpdateUser;
 module.exports.GetUserProfile = GetUserProfile;
 module.exports.GetUserProfileByContact = GetUserProfileByContact;

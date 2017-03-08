@@ -194,6 +194,7 @@ app.get('/DVP/API/:version/UsersByIds', jwt({secret: secret.Secret}),authorizati
 app.get('/DVP/API/:version/User/:name/exsists', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserExists);
 
 app.delete('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), userService.DeleteUser);
+app.put('/DVP/API/:version/User/ReActivate/:username', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.ReActivateUser);
 app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateUser);
 app.put('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.UpdateUser);
 
