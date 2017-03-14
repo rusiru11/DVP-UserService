@@ -44,25 +44,25 @@ function GetUsers(req, res){
     User.find({company: company, tenant: tenant, systemuser: true, Active: true})
         .select("-password")
         .exec( function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
-        }else {
+            }else {
 
-            if (users) {
+                if (users) {
 
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+                    jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
-            }else{
+                }else{
 
-                jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
 
+                }
             }
-        }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 }
 
@@ -75,26 +75,26 @@ function GetExternalUsers(req, res){
     User.find({company: company, tenant: tenant, systemuser: false})
         .select("-password")
         .exec( function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
-        }else {
+            }else {
 
-            if (users) {
+                if (users) {
 
 
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+                    jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
-            }else{
+                }else{
 
-                jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
 
+                }
             }
-        }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 }
 
@@ -112,18 +112,18 @@ function GetUser(req, res){
     User.findOne(query)
         .select("-password")
         .exec( function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+            }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 
 
@@ -152,19 +152,19 @@ function GetUsersByIDs(req, res){
 
     User.findOne(query).select("-password")
         .exec(  function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+            }else{
 
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 }
 
@@ -184,15 +184,15 @@ function UserExists(req, res){
         }else{
 
 
-           if(users)
-           {
-               jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
+            if(users)
+            {
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
 
-           }else{
+            }else{
 
-               jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-           }
+            }
 
         }
 
@@ -374,14 +374,14 @@ function CreateUser(req, res){
                                     res.end(jsonString);
                                 }else{
                                     /*Org.findOneAndUpdate({company: company, tenant: tenant},{$filter: {input: "$consoleAccessLimits", as: "consoleAccessLimit", cond: { $eq: [ "$$consoleAccessLimit.accessType", userRole] }}, $addToSet :{$consoleAccessLimit : user.username}}, function(err, rUsers) {
-                                        if (err) {
-                                            user.remove(function (err) {});
-                                            jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
-                                        }else{
-                                            jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
-                                        }
-                                        res.end(jsonString);
-                                    });*/
+                                     if (err) {
+                                     user.remove(function (err) {});
+                                     jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
+                                     }else{
+                                     jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
+                                     }
+                                     res.end(jsonString);
+                                     });*/
 
                                     limitObj.currentAccess.push(user.username);
                                     Org.findOneAndUpdate({id: company, tenant: tenant},org, function(err, rOrg) {
@@ -631,7 +631,7 @@ function UpdateUser(req, res){
     if(req.params.name) {
 
         User.findOneAndUpdate({
-            username: req.params.name,
+            username:req.params.name,
             company: company,
             tenant: tenant
         }, req.body, function (err, users) {
@@ -640,8 +640,15 @@ function UpdateUser(req, res){
                 jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
 
             } else {
+                if(users)
+                {
+                    jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, users);
+                }
+                else
+                {
+                    jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
+                }
 
-                jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
 
             }
 
@@ -805,19 +812,19 @@ function GetUserProfileByResourceId(req, res){
 
     User.findOne({resourceid: req.params.resourceid ,company: company, tenant: tenant}).select("-password")
         .exec(   function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+            }else{
 
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 
 }
@@ -837,18 +844,18 @@ function GetUserProfileByContact(req, res){
     queryObject[category+".contact"] = contact
     User.find(queryObject).select("-password")
         .exec(   function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+            }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 
 }
@@ -863,19 +870,19 @@ function GetExternalUserProfile(req, res){
     var jsonString;
     User.findOne({username: req.params.name,company: company, tenant: tenant}).select("-password")
         .exec(   function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
 
-        }else{
+            }else{
 
 
-            jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 
 }
@@ -890,19 +897,19 @@ function GetUserProfile(req, res){
     var jsonString;
     User.findOne({username: req.params.name,company: company, tenant: tenant}).select("-password")
         .exec(  function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+            }else{
 
 
-            jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 
 }
@@ -1756,18 +1763,18 @@ function AddUserScopes(req, res){
                             res.end(jsonString);
                         } else {
                             if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
-                                 /*
-                                       assignUser.user_scopes.push(req.body);
-                                       assignUser.user_scopes = UniqueObjectArray(assignUser.user_scopes,"scope");
-                                       User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},assignUser, function(err, rUsers) {
-                                           if (err) {
-                                               jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
-                                           }else{
-                                               jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
-                                           }
-                                           res.end(jsonString);
-                                       });
-                                       */
+                                /*
+                                 assignUser.user_scopes.push(req.body);
+                                 assignUser.user_scopes = UniqueObjectArray(assignUser.user_scopes,"scope");
+                                 User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},assignUser, function(err, rUsers) {
+                                 if (err) {
+                                 jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
+                                 }else{
+                                 jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
+                                 }
+                                 res.end(jsonString);
+                                 });
+                                 */
                                 User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ $addToSet :{user_scopes : req.body}}, function(err, rUsers) {
                                     if (err) {
                                         jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
@@ -2630,22 +2637,22 @@ function GetUserTag(req, res){
 
 
     UserTag.findOne({company: company, tenant: tenant,name:req.params.tag}).exec( function(errTag, userTags) {
-            if (errTag) {
+        if (errTag) {
 
-                jsonString = messageFormatter.FormatMessage(errTag, "Get UserTag Failed", false, undefined);
-                res.end(jsonString);
+            jsonString = messageFormatter.FormatMessage(errTag, "Get UserTag Failed", false, undefined);
+            res.end(jsonString);
 
-            }
-            else
-            {
+        }
+        else
+        {
 
-                    jsonString = messageFormatter.FormatMessage(undefined, "Get UserTag Successful", true, userTags);
-                res.end(jsonString);
+            jsonString = messageFormatter.FormatMessage(undefined, "Get UserTag Successful", true, userTags);
+            res.end(jsonString);
 
-            }
+        }
 
 
-        });
+    });
 
 }
 
