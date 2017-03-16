@@ -663,6 +663,82 @@ function UpdateUser(req, res){
 
 }
 
+
+function UpdateUserProfilePassword(req, res) {
+
+    logger.debug("DVP-UserService.UpdateUserProfilePassword Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.user.iss;
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+
+
+    var jsonString;
+
+    if (req.params.name) {
+        User.findOne({
+            username: req.params.name,
+            company: company,
+            tenant: tenant
+        }, function (err, existingUser) {
+            if (!existingUser || err) {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "User not exists", false, undefined);
+                res.end(jsonString);
+
+
+            } else {
+
+                crypto.randomBytes(20, function (err, buf) {
+                    var token = buf.toString('hex');
+
+                   // var url = config.auth.ui_host + '#/reset/' + token;
+
+                    redisClient.set("reset" + ":" + token, existingUser._id.toString(), function (err, val) {
+                        if (err) {
+
+                            jsonString = messageFormatter.FormatMessage(undefined, "Error in process", false, undefined);
+                            res.end(jsonString);
+
+                        } else {
+
+
+                            redisClient.expireat("reset" + ":" + token, parseInt((+new Date) / 1000) + 86400);
+                            var sendObj = {
+                                "company": 0,
+                                "tenant": 1
+                            };
+
+                            //existingUser.url = url;
+
+                            //sendObj.to = req.body.email;
+                            //sendObj.from = "no-reply";
+                            //sendObj.template = "By-User Reset Password";
+                            //sendObj.Parameters = {
+                            //    username: existingUser.username,
+                            //    url: url
+                            //};
+                            //
+                            //PublishToQueue("EMAILOUT", sendObj);
+
+                            jsonString = messageFormatter.FormatMessage(undefined, "Reset token generated", true, token);
+                            res.end(jsonString);
+                        }
+                    });
+
+                });
+            }
+        });
+    } else {
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Email is not valid", false, undefined);
+        res.end(jsonString);
+    }
+}
+
 function UpdateMyPassword(req, res){
 
     logger.debug("DVP-UserService.UpdateUserPassword Internal method ");
@@ -2773,4 +2849,5 @@ module.exports.GetUserTag = GetUserTag;
 
 module.exports.UpdateMyAppMetadata = UpdateMyAppMetadata;
 module.exports.GetMyAppMetadata = GetMyAppMetadata;
+module.exports.UpdateUserProfilePassword = UpdateUserProfilePassword;
 
