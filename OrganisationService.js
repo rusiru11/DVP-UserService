@@ -1306,6 +1306,9 @@ function AssignPackageUnitToOrganisation(req,res){
                                                     } else {
 
                                                         if (packageUnit) {
+                                                            if(packageUnit.unitType.toLowerCase() === 'spacelimit'){
+                                                                topUpCount = 1;
+                                                            }
                                                             var billingObj = {
                                                                 userInfo: rUser,
                                                                 companyInfo: org,
