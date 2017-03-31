@@ -504,7 +504,7 @@ function CreateOrganisation(req, res){
                                         unitDetails: [],
                                         consoleAccessLimits:[],
                                         resourceAccessLimits:[],
-                                        spaceLimit: 0,
+                                        spaceLimit: [],
                                         tenantRef:Tenants._id,
                                         ownerRef: user._id,
                                         created_at: Date.now(),
@@ -628,9 +628,24 @@ function ActivateOrganisation(req, res){
 var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, org, callback){
     var jsonString;
 
-    var tempSpaceLimit = vPackage.spaceLimit? vPackage.spaceLimit: 0;
-    org.spaceLimit = org.spaceLimit?org.spaceLimit:0;
-    org.spaceLimit = org.spaceLimit + tempSpaceLimit;
+    if(vPackage.spaceLimit && vPackage.spaceLimit.length >0){
+        var spaceLimitsToAdd = [];
+        vPackage.spaceLimit.forEach(function (sLimit) {
+            var existingSpaceLimit = org.spaceLimit.filter(function (esl) {
+                return esl.spaceType === sLimit.spaceType;
+            });
+
+            if(existingSpaceLimit && existingSpaceLimit.length > 0){
+                existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit + sLimit.spaceLimit;
+            }else{
+                spaceLimitsToAdd.push(sLimit);
+            }
+        });
+
+        if(spaceLimitsToAdd && spaceLimitsToAdd.length >0) {
+            org.spaceLimit = org.spaceLimit.concat(spaceLimitsToAdd);
+        }
+    }
 
     if (vPackage.consoleAccessLimit && vPackage.consoleAccessLimit.length > 0) {
         for (var i = 0; i < vPackage.consoleAccessLimit.length; i++) {
@@ -854,6 +869,21 @@ function RemovePackageFromOrganisation(req,res){
                         var tempSpaceLimit = vPackage.spaceLimit? vPackage.spaceLimit: 0;
                         org.spaceLimit = org.spaceLimit - tempSpaceLimit;
                         org.spaceLimit = org.spaceLimit < 0? 0:org.spaceLimit;
+
+
+
+                        if(vPackage.spaceLimit && vPackage.spaceLimit.length >0){
+                            vPackage.spaceLimit.forEach(function (sLimit) {
+                                var existingSpaceLimit = org.spaceLimit.filter(function (esl) {
+                                    return esl.spaceType === sLimit.spaceType;
+                                });
+
+                                if(existingSpaceLimit && existingSpaceLimit.length > 0){
+                                    existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit - sLimit.spaceLimit;
+                                }
+                            });
+                        }
+
 
                         for(var i in vPackage.consoleAccessLimit){
                             var vCal = vPackage.consoleAccessLimit[i];
@@ -1300,8 +1330,27 @@ function AssignPackageUnitToOrganisation(req,res){
                                                                         if(response.IsSuccess) {
                                                                             org.updated_at = Date.now();
 
-                                                                            if(packageUnit.unitType.toLowerCase() === 'space'){
-                                                                                org.spaceLimit = org.spaceLimit + topUpCount;
+                                                                            if(packageUnit.unitType.toLowerCase() === 'spacelimit'){
+
+                                                                                if(packageUnit.spaceLimit && packageUnit.spaceLimit.length >0){
+                                                                                    var spaceLimitsToAdd = [];
+                                                                                    packageUnit.spaceLimit.forEach(function (sLimit) {
+                                                                                        var existingSpaceLimit = org.spaceLimit.filter(function (esl) {
+                                                                                            return esl.spaceType === sLimit.spaceType;
+                                                                                        });
+
+                                                                                        if(existingSpaceLimit && existingSpaceLimit.length > 0){
+                                                                                            existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit + sLimit.spaceLimit;
+                                                                                        }else{
+                                                                                            spaceLimitsToAdd.push(sLimit);
+                                                                                        }
+                                                                                    });
+
+                                                                                    if(spaceLimitsToAdd && spaceLimitsToAdd.length >0) {
+                                                                                        org.spaceLimit = org.spaceLimit.concat(spaceLimitsToAdd);
+                                                                                    }
+                                                                                }
+
                                                                             }else {
                                                                                 if (org.consoleAccessLimits.length > 0) {
 

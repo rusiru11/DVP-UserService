@@ -198,6 +198,7 @@ function CreatePackageUnit(req, res){
         unitType: req.body.unitType,
         description: req.body.description,
         consoleAccessLimit: req.body.consoleAccessLimit,
+        spaceLimit: req.body.spaceLimit,
         unitprice: req.body.unitPrice,
         created_at: Date.now(),
         updated_at: Date.now()
