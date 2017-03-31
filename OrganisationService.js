@@ -504,6 +504,7 @@ function CreateOrganisation(req, res){
                                         unitDetails: [],
                                         consoleAccessLimits:[],
                                         resourceAccessLimits:[],
+                                        spaceLimit: 0,
                                         tenantRef:Tenants._id,
                                         ownerRef: user._id,
                                         created_at: Date.now(),
@@ -626,6 +627,10 @@ function ActivateOrganisation(req, res){
 
 var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, org, callback){
     var jsonString;
+
+    var tempSpaceLimit = vPackage.spaceLimit? vPackage.spaceLimit: 0;
+    org.spaceLimit = org.spaceLimit?org.spaceLimit:0;
+    org.spaceLimit = org.spaceLimit + tempSpaceLimit;
 
     if (vPackage.consoleAccessLimit && vPackage.consoleAccessLimit.length > 0) {
         for (var i = 0; i < vPackage.consoleAccessLimit.length; i++) {
@@ -846,6 +851,10 @@ function RemovePackageFromOrganisation(req,res){
                         jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
                         console.log(jsonString);
                     } else {
+                        var tempSpaceLimit = vPackage.spaceLimit? vPackage.spaceLimit: 0;
+                        org.spaceLimit = org.spaceLimit - tempSpaceLimit;
+                        org.spaceLimit = org.spaceLimit < 0? 0:org.spaceLimit;
+
                         for(var i in vPackage.consoleAccessLimit){
                             var vCal = vPackage.consoleAccessLimit[i];
                             var tempCal = {accessType: vCal.accessType, accessLimit: vCal.accessLimit, currentAccess: []};
@@ -926,7 +935,7 @@ function GetUserScopes(scopes){
 function ExtractResources(resources){
     var e = new EventEmitter();
     process.nextTick(function () {
-        if (resources && Array.isArray(resources)) {
+        if (resources && Array.isArray(resources) && resources.length > 0) {
             var count = 0;
             var userScopes = [];
             for (var i = 0; i< resources.length; i++) {
@@ -1291,19 +1300,23 @@ function AssignPackageUnitToOrganisation(req,res){
                                                                         if(response.IsSuccess) {
                                                                             org.updated_at = Date.now();
 
-                                                                            if (org.consoleAccessLimits.length > 0) {
+                                                                            if(packageUnit.unitType.toLowerCase() === 'space'){
+                                                                                org.spaceLimit = org.spaceLimit + topUpCount;
+                                                                            }else {
+                                                                                if (org.consoleAccessLimits.length > 0) {
 
-                                                                                for (var j = 0; j < org.consoleAccessLimits.length; j++) {
+                                                                                    for (var j = 0; j < org.consoleAccessLimits.length; j++) {
 
-                                                                                    var cal = org.consoleAccessLimits[j];
+                                                                                        var cal = org.consoleAccessLimits[j];
 
-                                                                                    if (cal.accessType == packageUnit.consoleAccessLimit.accessType) {
-                                                                                        org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
-                                                                                        break;
+                                                                                        if (cal.accessType == packageUnit.consoleAccessLimit.accessType) {
+                                                                                            org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
+                                                                                            break;
 
+                                                                                        }
                                                                                     }
-                                                                                }
 
+                                                                                }
                                                                             }
 
 
