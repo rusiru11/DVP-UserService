@@ -40,7 +40,6 @@ redisClient.auth(redispass, function (error) {
     console.log("Error Redis : " + error);
 });
 
-
 var generator = new FlakeIdGen;
 
 var server = oauth2orize.createServer();
@@ -347,89 +346,94 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
 
             return done(null, false);
         }
+        /*
         if (password !== user.password) {
             return done(null, false);
         }
-       // var token = uuid.v1();
+ */
 
 
+        user.comparePassword(password, function (err, isMatch) {
+            if (!isMatch) {
 
-        var scopeArray = scope;
-        ////////////////////////////////////////////////////////////////////////////////////
+                return done(null, false);
 
-        var jti = uuid.v4();
-        var secret = uuid.v4();
-        var expin  = moment().add(7, 'days').unix();
-        var redisKey = "token:iss:"+user.username+":"+jti;
-        redisClient.set(redisKey, secret, redis.print);
-        redisClient.expireat(redisKey, expin);
-
-        var payload = {};
-        payload.iss = user.username;
-        payload.jti = jti;
-        payload.sub = "Access client";
-        payload.exp = expin;
-        payload.tenant = user.tenant;
-        payload.company = user.company;
-        payload.aud = client.name;
-
-        //payload.scope = scope;
-
-        var scopes = GetScopes(user,scopeArray);
-        payload.context = scopes.context;
-        payload.scope = scopes.scope;
+            }else{
 
 
-        var token = jwt.sign(payload, secret);
+                var scopeArray = scope;
+                ////////////////////////////////////////////////////////////////////////////////////
+
+                var jti = uuid.v4();
+                var secret = uuid.v4();
+                var expin  = moment().add(7, 'days').unix();
+                var redisKey = "token:iss:"+user.username+":"+jti;
+                redisClient.set(redisKey, secret, redis.print);
+                redisClient.expireat(redisKey, expin);
+
+                var payload = {};
+                payload.iss = user.username;
+                payload.jti = jti;
+                payload.sub = "Access client";
+                payload.exp = expin;
+                payload.tenant = user.tenant;
+                payload.company = user.company;
+                payload.aud = client.name;
+
+                //payload.scope = scope;
+
+                var scopes = GetScopes(user,scopeArray);
+                payload.context = scopes.context;
+                payload.scope = scopes.scope;
 
 
-        ////////////////////////////////////////////////////////////////////////////////////////////
+                var token = jwt.sign(payload, secret);
 
+                var accesstoken = accessToken({
 
-        var accesstoken = accessToken({
-
-            userId: user.id,
-            type: 'password',
-            clientId: client.id,
-            jti: jti,
-            scope: scopeArray,
-            expirationDate: Date.now()
-        });
-
-        accesstoken.save(function (err, accesstoken) {
-            if (err) {
-
-                return done(err);
-            }
-
-
-            var rToken = null;
-
-            if (scope && scope.indexOf("offline_access") == 0) {
-                rToken = uuid.v1();
-
-                var refreshToken = RefreshToken({
-                    token: rToken,
                     userId: user.id,
+                    type: 'password',
                     clientId: client.id,
+                    jti: jti,
                     scope: scopeArray,
                     expirationDate: Date.now()
                 });
 
-                refreshToken.save(function (err, refToken) {
+                accesstoken.save(function (err, accesstoken) {
                     if (err) {
+
                         return done(err);
                     }
-                    return done(null, token, rToken, {expires_in: expin});
+
+
+                    var rToken = null;
+
+                    if (scope && scope.indexOf("offline_access") == 0) {
+                        rToken = uuid.v1();
+
+                        var refreshToken = RefreshToken({
+                            token: rToken,
+                            userId: user.id,
+                            clientId: client.id,
+                            scope: scopeArray,
+                            expirationDate: Date.now()
+                        });
+
+                        refreshToken.save(function (err, refToken) {
+                            if (err) {
+                                return done(err);
+                            }
+                            return done(null, token, rToken, {expires_in: expin});
+                        });
+                    }
+                    else {
+                        return done(null, token, rToken, {expires_in: expin});
+                    }
+
                 });
-            }
-            else {
-                return done(null, token, rToken, {expires_in: expin});
-            }
 
+            }
         });
-
-
     });
 }));
 

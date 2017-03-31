@@ -58,6 +58,8 @@ module.exports = {
         TWITTER_SECRET: 'TWITTER_CLIENT_SECRET',
 
         login_verification: 'LOGIN_VERIFICATION_REQUIRE',
+        signup_verification: 'SIGNUP_VERIFICATION_REQUIRE',
+        recaptcha_key: 'GOOGLE_RECAPTCHA_KEY',
 
         ui_host: 'SYS_APP_UI_HOST'
 
@@ -88,7 +90,14 @@ module.exports = {
         "sipuserendpointserviceVersion": "SYS_SIPUSERENDPOINTSERVICE_VERSION",
         "clusterconfigserviceHost": "SYS_CLUSTERCONFIG_HOST",
         "clusterconfigservicePort": "SYS_CLUSTERCONFIG_PORT",
-        "clusterconfigserviceVersion": "SYS_CLUSTERCONFIG_VERSION"
+        "clusterconfigserviceVersion": "SYS_CLUSTERCONFIG_VERSION",
+        "billingserviceHost": "SYS_BILLINGSERVICE_HOST",
+        "billingservicePort": "SYS_BILLINGSERVICE_PORT",
+        "billingserviceVersion": "SYS_BILLINGSERVICE_VERSION"
+    },
+
+    "Tenant": {
+        "activeTenant": "ACTIVE_TENANT"
     }
 };
 

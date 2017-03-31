@@ -127,6 +127,9 @@ function CreatePackage(req, res){
 
     var vPackage = VPackage({
         packageName: req.body.packageName,
+        packageType: req.body.packageType,
+        navigationType: req.body.navigationType,
+        description: req.body.description,
         consoleAccessLimit: req.body.consoleAccessLimit,
         veeryTask: req.body.veeryTask,
         price: req.body.price,
@@ -191,6 +194,8 @@ function CreatePackageUnit(req, res){
 
     var unit = PackageUnit({
         unitName: req.body.unitName,
+        unitType: req.body.unitType,
+        description: req.body.description,
         consoleAccessLimit: req.body.consoleAccessLimit,
         unitprice: req.body.unitPrice,
         created_at: Date.now(),
@@ -288,6 +293,7 @@ function GetPackageUnits(req, res){
         res.end(jsonString);
     });
 }
+
 
 
 module.exports.GetPackages = GetPackages;

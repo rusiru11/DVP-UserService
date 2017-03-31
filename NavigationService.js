@@ -239,6 +239,7 @@ function AddNavigationToConsole(req, res){
 
     var navigation = Navigation({
         navigationName: req.body.navigationName,
+        navigationTypes: req.body.navigationTypes,
         navigationStatus: req.body.navigationStatus,
         created_at: Date.now(),
         updated_at: Date.now()

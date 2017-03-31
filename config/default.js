@@ -44,6 +44,8 @@ module.exports = {
     TWITTER_SECRET: 'cUIobhRgRlXsFyObUMg3tBq56EgGSwabmcavQP4fncABvotRMA',
 
     login_verification: true,
+    signup_verification: true,
+    recaptcha_key: "6LezaAsUAAAAAFbtiyMzOlMmqEwzMwmMYszmO_Ve",
 
     ui_host: 'http://localhost:3000/'
 
@@ -54,8 +56,8 @@ module.exports = {
     "User":"duo",
     "Password":"DuoS123",
     "Port":5432,
-    "Host":"localhost",
-    "Database":"dvpdb"
+    "Host":"104.236.231.11",//104.131.105.222
+    "Database":"duo" //duo
   },
 
 
@@ -67,6 +69,19 @@ module.exports = {
     "password": "DuoS123"
 
   },
+
+  /*
+   "Redis":
+   {
+   "ip": "45.55.142.207",
+   "port": 6389,
+   "user": "duo",
+   "password": "DuoS123"
+
+   },
+
+
+   */
 
 
   "Security":
@@ -83,8 +98,8 @@ module.exports = {
     "resource": "cluster",
     "vdomain": "localhost",
     "domain": "localhost",
-    "port": "3637",
-    "version": "1.0"
+    "port": "3638",
+    "version": "1.0.0.0"
   },
 
   "LBServer" : {
@@ -122,8 +137,15 @@ module.exports = {
       "sipuserendpointserviceVersion": "1.0.0.0",
       "clusterconfigserviceHost": "clusterconfig.app.veery.cloud",
       "clusterconfigservicePort": "8831",
-      "clusterconfigserviceVersion": "1.0.0.0"
-    }
+      "clusterconfigserviceVersion": "1.0.0.0",
+      "billingserviceHost": "billingservice.app.veery.cloud",
+      "billingservicePort": "4444",
+      "billingserviceVersion": "1.0.0.0"
+    },
+
+  "Tenant": {
+      "activeTenant": 1
+  }
 
 
 

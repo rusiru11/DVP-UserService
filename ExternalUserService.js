@@ -50,30 +50,65 @@ function GetExternalUser(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.findOne({_id: req.params.id,company: company, tenant: tenant}).
-    populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
+    ExternalUser.findOne({_id: req.params.id,company: company, tenant: tenant}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
 
-        }else{
+        } else {
 
-            if(users) {
-                var userObj;
-                jsonString = messageFormatter.FormatMessage(err, "Get External User Successful", true, users);
+            if (users) {
 
-            }else{
+                    jsonString = messageFormatter.FormatMessage(err, "Get External User Successful", true, users);
+
+
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "No external user found", false, undefined);
-
             }
-
         }
 
         res.end(jsonString);
     });
 
 }
+
+
+function GetExternalUserAttribute(req, res){
+
+
+    logger.debug("DVP-UserService.GetExternalUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    ExternalUser.findOne({_id: req.params.id,company: company, tenant: tenant}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
+
+        } else {
+
+            if (users) {
+                if( req.params.attribute && req.params.attribute && users[req.params.attribute]) {
+                    var userObj;
+                    jsonString = messageFormatter.FormatMessage(err, "Get External User Successful", true, users[req.params.attribute]);
+                }else{
+                    jsonString = messageFormatter.FormatMessage(err, "Get External User Successful but no attribute found", true, undefined);
+                }
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "No external user found", false, undefined);
+            }
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+
 
 function DeleteExternalUser(req,res){
 
@@ -100,7 +135,7 @@ function CreateExternalUser(req, res) {
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
 
-    if(req.body && req.body.firstname && req.body.lastname && req.body.phone && req.body.email) {
+    if(req.body && req.body.firstname && req.body.lastname && req.body.phone) {
         var extUser = ExternalUser({
             title: req.body.title,
             name: req.body.name,
@@ -117,18 +152,17 @@ function CreateExternalUser(req, res) {
                 street: req.body.address.street,
                 city: req.body.address.city,
                 province: req.body.address.province,
-                country: req.body.address.country,
-
+                country: req.body.address.country
 
             },
-
 
             phone: req.body.phone,
             email: req.body.email,
             company: parseInt(req.user.company),
             tenant: parseInt(req.user.tenant),
             created_at: Date.now(),
-            updated_at: Date.now()
+            updated_at: Date.now(),
+            tags:req.body.tags
         });
 
 
@@ -677,7 +711,39 @@ function UpdateFormSubmission(req, res) {
 
         res.end(jsonString);
     });
-};
+}
+
+function GetExternalUsersByTags(req, res){
+
+
+    logger.debug("DVP-UserService.GetExternalUsersByTags Internal method ");
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var tags = req.query.tags;
+    var jsonString;
+    ExternalUser.find({company: company, tenant: tenant, tags:{ $all: tags }}, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get External Users By Tags Failed", false, undefined);
+
+        }else {
+
+            if (users) {
+
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users By Tags Successful", true, users);
+
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "No External Users Found", false, undefined);
+
+            }
+        }
+
+        res.end(jsonString);
+    });
+
+}
 
 
 
@@ -698,3 +764,5 @@ module.exports.BulkCreate = BulkCreate;
 module.exports.SearchExternalUsers =SearchExternalUsers;
 module.exports.UpdateExternalUserProfileDynamicFields = UpdateExternalUserProfileDynamicFields;
 module.exports.UpdateFormSubmission = UpdateFormSubmission;
+module.exports.GetExternalUserAttribute = GetExternalUserAttribute;
+module.exports.GetExternalUsersByTags = GetExternalUsersByTags;

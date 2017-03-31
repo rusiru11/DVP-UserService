@@ -12,26 +12,24 @@ var queueConnection = amqp.createConnection({
 queueConnection.on('ready', function () {
 
     logger.info("Conection with the queue is OK");
-
 });
 
 queueConnection.on('error', function (error) {
 
     logger.info("There is an error" + error);
-
 });
 
-module.exports.PublishToQueue = function(messageType,sendObj ){
+module.exports.PublishToQueue = function(messageType,sendObj ) {
 
-    console.log("From: "+ sendObj.from +" :: To: "+ sendObj.to);
+    logger.info("From: " + sendObj.from + " To: " + sendObj.to);
 
     try {
-        if(sendObj) {
+        if (sendObj) {
             queueConnection.publish(messageType, sendObj, {
                 contentType: 'application/json'
             });
         }
-    }catch(exp){
+    } catch (exp) {
 
         console.log(exp);
     }
