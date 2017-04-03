@@ -1524,6 +1524,77 @@ module.exports.ForgetPassword = function(req, res){
 
 };
 
+
+module.exports.ForgetPasswordToken = function(req, res){
+
+
+    var jsonString;
+
+    if(req.body.email) {
+        User.findOne({"email.contact": req.body.email}, function (err, existingUser) {
+            if (!existingUser || err) {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "User not exists", false, undefined);
+                res.end(jsonString);
+
+
+            } else {
+
+                crypto.randomBytes(20, function (err, buf) {
+                    var token = buf.toString('hex');
+
+                    var url = config.auth.ui_host + '#/reset/' + token;
+
+                    redisClient.set("reset"+":"+token,existingUser._id.toString() ,function (err, val) {
+                        if (err) {
+
+                            jsonString = messageFormatter.FormatMessage(undefined, "Error in process", false, undefined);
+                            res.end(jsonString);
+
+                        }else{
+
+
+                            redisClient.expireat("reset"+":"+token,  parseInt((+new Date)/1000) + 86400);
+                            var sendObj = {
+                                "company": 0,
+                                "tenant": 1
+                            };
+
+                            //existingUser.url = url;
+
+                            sendObj.to =  req.body.email;
+                            sendObj.from = "no-reply";
+                            sendObj.template = "By-User Reset Password Token";
+                            sendObj.Parameters = {username: existingUser.username,
+                                token: token};
+
+                            PublishToQueue("EMAILOUT", sendObj);
+
+                            jsonString = messageFormatter.FormatMessage(undefined, "Reset email send", true, undefined);
+                            res.end(jsonString);
+                        }
+                    });
+
+                });
+            }
+        });
+    }else{
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Email is not valid", false, undefined);
+        res.end(jsonString);
+    }
+
+
+
+};
+
+
+
+
+
+
+
+
 module.exports.ResetPassword = function(req, res){
 
 

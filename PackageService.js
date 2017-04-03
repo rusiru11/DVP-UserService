@@ -12,7 +12,7 @@ var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJ
 function ValidateResources(resources){
     var e = new EventEmitter();
     process.nextTick(function () {
-        if (Array.isArray(resources)) {
+        if (resources && Array.isArray(resources) && resources.length >0) {
             var count = 0;
             for (var i in resources) {
                 var _resource = resources[i];
@@ -133,6 +133,7 @@ function CreatePackage(req, res){
         consoleAccessLimit: req.body.consoleAccessLimit,
         veeryTask: req.body.veeryTask,
         price: req.body.price,
+        spaceLimit: req.body.spaceLimit,
         created_at: Date.now(),
         updated_at: Date.now()
 
@@ -197,6 +198,7 @@ function CreatePackageUnit(req, res){
         unitType: req.body.unitType,
         description: req.body.description,
         consoleAccessLimit: req.body.consoleAccessLimit,
+        spaceLimit: req.body.spaceLimit,
         unitprice: req.body.unitPrice,
         created_at: Date.now(),
         updated_at: Date.now()
