@@ -417,7 +417,7 @@ module.exports.Login =  function(req, res) {
                                         return res.status(449).send({message: 'Request console is not valid ...'});
                                     }else{
 
-                                        if(console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) &&  console.consoleUserRoles.indexOf(user.user_meta.role) > 0) {
+                                        if(console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) &&  console.consoleUserRoles.indexOf(user.user_meta.role) >= 0) {
 
                                             GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
 
