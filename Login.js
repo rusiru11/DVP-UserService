@@ -21,6 +21,7 @@ var util = require('util');
 var crypto = require('crypto');
 var accessToken = require ('dvp-mongomodels/model/AccessToken');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+var Console = require('dvp-mongomodels/model/Console');
 
 
 var redisip = config.Redis.ip;
@@ -404,14 +405,38 @@ module.exports.Login =  function(req, res) {
                     }else{
 
                         if(org && org.companyEnabled) {
-                            GetJWT(user, claims_arr, '111', 'password', req, function (err, isSuccess, token) {
 
-                                if (token) {
-                                    return res.send({state: 'login', token: token});
+
+                            Console.findOne({consoleName: req.body.console}, function(err, console) {
+                                if (err) {
+                                    return res.status(449).send({message: 'Request console is not valid ...'});
                                 } else {
-                                    return res.status(401).send({message: 'Invalid email and/or password'});
+
+                                    if(!console){
+
+                                        return res.status(449).send({message: 'Request console is not valid ...'});
+                                    }else{
+
+                                        if(console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) &&  console.consoleUserRoles.indexOf(user.user_meta.role) > 0) {
+
+                                            GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
+
+                                                if (token) {
+                                                    return res.send({state: 'login', token: token});
+                                                } else {
+                                                    return res.status(401).send({message: 'Invalid email and/or password'});
+                                                }
+                                            });
+                                        }else{
+
+                                            return res.status(449).send({message: 'User console request is invalid'});
+                                        }
+
+                                    }
                                 }
                             });
+
+
                         }else{
 
                             return res.status(449 ).send({message: 'Activate your organization before login'});
@@ -1524,7 +1549,6 @@ module.exports.ForgetPassword = function(req, res){
 
 };
 
-
 module.exports.ForgetPasswordToken = function(req, res){
 
 
@@ -1587,13 +1611,6 @@ module.exports.ForgetPasswordToken = function(req, res){
 
 
 };
-
-
-
-
-
-
-
 
 module.exports.ResetPassword = function(req, res){
 
