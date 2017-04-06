@@ -144,7 +144,7 @@ function GetOrganisation(req, res){
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
     var jsonString;
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({tenant: tenant, id: company}).populate('tenantRef').populate({path: 'packageDetails.veeryPackage',populate : {path: 'Package'}}).populate('ownerRef' , '-password').exec( function(err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
         }else{
@@ -1335,9 +1335,9 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                                                             if(packageUnit.unitType.toLowerCase() === 'spacelimit'){
 
-                                                                                if(packageUnit.spaceLimit && packageUnit.spaceLimit.length >0){
+                                                                                if(packageUnit.unitData && packageUnit.unitData.spaceLimit && packageUnit.unitData.spaceLimit.length >0){
                                                                                     var spaceLimitsToAdd = [];
-                                                                                    packageUnit.spaceLimit.forEach(function (sLimit) {
+                                                                                    packageUnit.unitData.spaceLimit.forEach(function (sLimit) {
                                                                                         var existingSpaceLimit = org.spaceLimit.filter(function (esl) {
                                                                                             return esl.spaceType === sLimit.spaceType;
                                                                                         });
@@ -1354,14 +1354,35 @@ function AssignPackageUnitToOrganisation(req,res){
                                                                                     }
                                                                                 }
 
+                                                                            }else if(packageUnit.unitType.toLowerCase() === 'codec'){
+
+                                                                                if(packageUnit.unitData && packageUnit.unitData.codecLimit && packageUnit.unitData.codecLimit.length >0){
+                                                                                    var codecLimitsToAdd = [];
+                                                                                    packageUnit.unitData.codecLimit.forEach(function (cLimit) {
+                                                                                        var existingCodecLimit = org.codecAccessLimits.filter(function (esl) {
+                                                                                            return esl.codec === cLimit.codec;
+                                                                                        });
+
+                                                                                        if(existingCodecLimit && existingCodecLimit.length > 0){
+                                                                                            existingCodecLimit[0].codecLimit = existingCodecLimit[0].codecLimit + topUpCount;
+                                                                                        }else{
+                                                                                            codecLimitsToAdd.push({codec: cLimit.codec, codecLimit: topUpCount, currentAccess: 0});
+                                                                                        }
+                                                                                    });
+
+                                                                                    if(codecLimitsToAdd && codecLimitsToAdd.length >0) {
+                                                                                        org.codecAccessLimits = org.codecAccessLimits.concat(codecLimitsToAdd);
+                                                                                    }
+                                                                                }
+
                                                                             }else {
-                                                                                if (org.consoleAccessLimits.length > 0) {
+                                                                                if (packageUnit.unitData && packageUnit.unitData.consoleAccessLimits && org.consoleAccessLimits.length > 0) {
 
                                                                                     for (var j = 0; j < org.consoleAccessLimits.length; j++) {
 
                                                                                         var cal = org.consoleAccessLimits[j];
 
-                                                                                        if (cal.accessType == packageUnit.consoleAccessLimit.accessType) {
+                                                                                        if (cal.accessType == packageUnit.unitData.consoleAccessLimit.accessType) {
                                                                                             org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
                                                                                             break;
 
@@ -1372,7 +1393,7 @@ function AssignPackageUnitToOrganisation(req,res){
                                                                             }
 
 
-                                                                            var er = ExtractResources(packageUnit.resources);
+                                                                            var er = ExtractResources(packageUnit.unitData.resources);
                                                                             er.on('endExtractResources', function (userScopes) {
                                                                                 if (userScopes) {
                                                                                     for (var i = 0; i < userScopes.length; i++) {
@@ -1499,7 +1520,7 @@ function GetBillingDetails(req, res){
                 if(org.packageDetails && org.packageDetails.length > 0){
                     for(var i=0; i<org.packageDetails.length;i++){
                         var pInfo = org.packageDetails[i];
-                        if(pInfo) {
+                        if(pInfo && pInfo.billingType === 'recurring') {
                             billingDetails.push({
                                 name: pInfo.veeryPackage.packageName,
                                 type: pInfo.veeryPackage.packageType,
@@ -1518,7 +1539,7 @@ function GetBillingDetails(req, res){
                 if(org.unitDetails && org.unitDetails.length > 0){
                     for(var j=0; j<org.unitDetails.length;j++){
                         var uInfo = org.unitDetails[j];
-                        if(uInfo) {
+                        if(uInfo && uInfo.billingType === 'recurring') {
                             billingDetails.push({
                                 name: uInfo.veeryUnit.unitName,
                                 type: uInfo.veeryUnit.unitType,
