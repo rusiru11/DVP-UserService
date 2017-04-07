@@ -402,6 +402,7 @@ app.get('/DVP/API/:version/Codec/Active/:type',jwt({secret: secret.Secret}), aut
 //-----------------------------------Tenant Monitoring----------------------------------------------------------
 
 app.get('/DVP/API/:version/Tenant/Company/BasicInfo', jwt({secret: secret.Secret}), authorization({resource:"tenant", action:"read"}), tenantService.GetBasicCompanyDetailsByTenant);
+app.get('/DVP/API/:version/Tenant/Company/:company', jwt({secret: secret.Secret}), authorization({resource:"tenant", action:"read"}), organisationService.GetOrganisation);
 
 app.listen(port, function () {
 

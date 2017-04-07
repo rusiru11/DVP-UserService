@@ -142,7 +142,12 @@ function GetOrganisation(req, res){
     logger.debug("DVP-UserService.GetOrganisation Internal method ");
 
     var tenant = parseInt(req.user.tenant);
-    var company = parseInt(req.user.company);
+    var company;
+    if(req.params.company){
+        company = parseInt(req.params.company);
+    }else {
+        company = parseInt(req.user.company);
+    }
     var jsonString;
     Org.findOne({tenant: tenant, id: company}).populate('tenantRef').populate({path: 'packageDetails.veeryPackage',populate : {path: 'Package'}}).populate('ownerRef' , '-password').exec( function(err, org) {
         if (err) {
