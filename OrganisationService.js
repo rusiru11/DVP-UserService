@@ -382,7 +382,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                     isTrial: false
                                 };
 
-                                var typeExist = FilterObjFromArray(org.packageDetails, 'veeryPackage.packageType', vPackage.packageType);
+                                var typeExist = FilterObjFromArray(org.packageDetails, 'veeryPackage.navigationType', vPackage.navigationType);
                                 if (typeExist) {
 
                                     if(typeExist.veeryPackage.price <= vPackage.price){
