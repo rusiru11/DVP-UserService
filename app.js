@@ -170,6 +170,7 @@ app.post('/auth/login', Login.Login);
 app.post('/auth/verify', Login.Validation);
 app.post('/auth/signup', Login.SignUP);
 app.post('/auth/forget', Login.ForgetPassword);
+app.post('/auth/forget/token', Login.ForgetPasswordToken);
 app.post('/auth/reset/:token', Login.ResetPassword);
 app.get('/auth/token/:token/exists', Login.CheckToken);
 app.get('/auth/activate/:token', Login.ActivateAccount);
@@ -194,6 +195,7 @@ app.get('/DVP/API/:version/UsersByIds', jwt({secret: secret.Secret}),authorizati
 app.get('/DVP/API/:version/User/:name/exsists', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserExists);
 
 app.delete('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), userService.DeleteUser);
+app.put('/DVP/API/:version/User/ReActivate/:username', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.ReActivateUser);
 app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateUser);
 app.put('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.UpdateUser);
 
@@ -226,6 +228,7 @@ app.put('/DVP/API/:version/Myprofile/Password', jwt({secret: secret.Secret}),aut
 app.put('/DVP/API/:version/User/:name/profile/resource/:resourceid', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.SetUserProfileResourceId);
 
 
+app.put('/DVP/API/:version/User/:name/profile/password', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfilePassword);
 app.put('/DVP/API/:version/User/:name/profile/email/:email', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfileEmail);
 app.put('/DVP/API/:version/User/:name/profile/phonen/:number', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfilePhone);
 app.put('/DVP/API/:version/User/:name/profile/contact/:contact', jwt({secret: secret.Secret}),authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfileContact);

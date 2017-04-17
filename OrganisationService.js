@@ -304,6 +304,7 @@ function CreateOwner(req, res){
                     lastname: req.body.lastname,
                     username: req.body.username,
                     password: req.body.password,
+                    Active: true,
                     phoneNumber: {contact: req.body.phone, type: "phone", verified: false},
                     email: {contact: req.body.mail, type: "phone", verified: false},
                     user_meta: {role: "admin"},
@@ -503,6 +504,7 @@ function CreateOrganisation(req, res){
                                         unitDetails: [],
                                         consoleAccessLimits:[],
                                         resourceAccessLimits:[],
+                                        spaceLimit: [],
                                         tenantRef:Tenants._id,
                                         ownerRef: user._id,
                                         created_at: Date.now(),
@@ -625,6 +627,25 @@ function ActivateOrganisation(req, res){
 
 var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, org, callback){
     var jsonString;
+
+    if(vPackage.spaceLimit && vPackage.spaceLimit.length >0){
+        var spaceLimitsToAdd = [];
+        vPackage.spaceLimit.forEach(function (sLimit) {
+            var existingSpaceLimit = org.spaceLimit.filter(function (esl) {
+                return esl.spaceType === sLimit.spaceType;
+            });
+
+            if(existingSpaceLimit && existingSpaceLimit.length > 0){
+                existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit + sLimit.spaceLimit;
+            }else{
+                spaceLimitsToAdd.push(sLimit);
+            }
+        });
+
+        if(spaceLimitsToAdd && spaceLimitsToAdd.length >0) {
+            org.spaceLimit = org.spaceLimit.concat(spaceLimitsToAdd);
+        }
+    }
 
     if (vPackage.consoleAccessLimit && vPackage.consoleAccessLimit.length > 0) {
         for (var i = 0; i < vPackage.consoleAccessLimit.length; i++) {
@@ -845,6 +866,25 @@ function RemovePackageFromOrganisation(req,res){
                         jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
                         console.log(jsonString);
                     } else {
+                        var tempSpaceLimit = vPackage.spaceLimit? vPackage.spaceLimit: 0;
+                        org.spaceLimit = org.spaceLimit - tempSpaceLimit;
+                        org.spaceLimit = org.spaceLimit < 0? 0:org.spaceLimit;
+
+
+
+                        if(vPackage.spaceLimit && vPackage.spaceLimit.length >0){
+                            vPackage.spaceLimit.forEach(function (sLimit) {
+                                var existingSpaceLimit = org.spaceLimit.filter(function (esl) {
+                                    return esl.spaceType === sLimit.spaceType;
+                                });
+
+                                if(existingSpaceLimit && existingSpaceLimit.length > 0){
+                                    existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit - sLimit.spaceLimit;
+                                }
+                            });
+                        }
+
+
                         for(var i in vPackage.consoleAccessLimit){
                             var vCal = vPackage.consoleAccessLimit[i];
                             var tempCal = {accessType: vCal.accessType, accessLimit: vCal.accessLimit, currentAccess: []};
@@ -925,7 +965,7 @@ function GetUserScopes(scopes){
 function ExtractResources(resources){
     var e = new EventEmitter();
     process.nextTick(function () {
-        if (resources && Array.isArray(resources)) {
+        if (resources && Array.isArray(resources) && resources.length > 0) {
             var count = 0;
             var userScopes = [];
             for (var i = 0; i< resources.length; i++) {
@@ -1266,6 +1306,9 @@ function AssignPackageUnitToOrganisation(req,res){
                                                     } else {
 
                                                         if (packageUnit) {
+                                                            if(packageUnit.unitType.toLowerCase() === 'spacelimit'){
+                                                                topUpCount = 1;
+                                                            }
                                                             var billingObj = {
                                                                 userInfo: rUser,
                                                                 companyInfo: org,
@@ -1290,19 +1333,42 @@ function AssignPackageUnitToOrganisation(req,res){
                                                                         if(response.IsSuccess) {
                                                                             org.updated_at = Date.now();
 
-                                                                            if (org.consoleAccessLimits.length > 0) {
+                                                                            if(packageUnit.unitType.toLowerCase() === 'spacelimit'){
 
-                                                                                for (var j = 0; j < org.consoleAccessLimits.length; j++) {
+                                                                                if(packageUnit.spaceLimit && packageUnit.spaceLimit.length >0){
+                                                                                    var spaceLimitsToAdd = [];
+                                                                                    packageUnit.spaceLimit.forEach(function (sLimit) {
+                                                                                        var existingSpaceLimit = org.spaceLimit.filter(function (esl) {
+                                                                                            return esl.spaceType === sLimit.spaceType;
+                                                                                        });
 
-                                                                                    var cal = org.consoleAccessLimits[j];
+                                                                                        if(existingSpaceLimit && existingSpaceLimit.length > 0){
+                                                                                            existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit + sLimit.spaceLimit;
+                                                                                        }else{
+                                                                                            spaceLimitsToAdd.push(sLimit);
+                                                                                        }
+                                                                                    });
 
-                                                                                    if (cal.accessType == packageUnit.consoleAccessLimit.accessType) {
-                                                                                        org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
-                                                                                        break;
-
+                                                                                    if(spaceLimitsToAdd && spaceLimitsToAdd.length >0) {
+                                                                                        org.spaceLimit = org.spaceLimit.concat(spaceLimitsToAdd);
                                                                                     }
                                                                                 }
 
+                                                                            }else {
+                                                                                if (org.consoleAccessLimits.length > 0) {
+
+                                                                                    for (var j = 0; j < org.consoleAccessLimits.length; j++) {
+
+                                                                                        var cal = org.consoleAccessLimits[j];
+
+                                                                                        if (cal.accessType == packageUnit.consoleAccessLimit.accessType) {
+                                                                                            org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
+                                                                                            break;
+
+                                                                                        }
+                                                                                    }
+
+                                                                                }
                                                                             }
 
 

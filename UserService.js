@@ -41,28 +41,28 @@ function GetUsers(req, res){
 
 
 
-    User.find({company: company, tenant: tenant, systemuser: true})
+    User.find({company: company, tenant: tenant, systemuser: true, Active: true})
         .select("-password")
         .exec( function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
-        }else {
+            }else {
 
-            if (users) {
+                if (users) {
 
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+                    jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
-            }else{
+                }else{
 
-                jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
 
+                }
             }
-        }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 }
 
@@ -75,26 +75,26 @@ function GetExternalUsers(req, res){
     User.find({company: company, tenant: tenant, systemuser: false})
         .select("-password")
         .exec( function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
-        }else {
+            }else {
 
-            if (users) {
+                if (users) {
 
 
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+                    jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
-            }else{
+                }else{
 
-                jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
 
+                }
             }
-        }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 }
 
@@ -112,18 +112,18 @@ function GetUser(req, res){
     User.findOne(query)
         .select("-password")
         .exec( function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+            }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 
 
@@ -143,28 +143,28 @@ function GetUsersByIDs(req, res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    var query = {_id: {$in:req.query.id},company: company, tenant: tenant};
+    var query = {_id: {$in:req.query.id},company: company, tenant: tenant, Active: true};
 
     if(!util.isArray(req.query.id))
-        query = {_id: req.query.id,company: company, tenant: tenant};
+        query = {_id: req.query.id,company: company, tenant: tenant, Active: true};
 
 
 
     User.findOne(query).select("-password")
         .exec(  function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+            }else{
 
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 }
 
@@ -184,15 +184,15 @@ function UserExists(req, res){
         }else{
 
 
-           if(users)
-           {
-               jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
+            if(users)
+            {
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
 
-           }else{
+            }else{
 
-               jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-           }
+            }
 
         }
 
@@ -257,11 +257,11 @@ function DeleteUser(req,res){
 
             }else {
 
-                User.findOneAndRemove({
+                User.findOneAndUpdate({
                     username: req.params.name,
                     company: company,
                     tenant: tenant
-                }, function (err, user) {
+                }, {Active:false}, function (err, user) {
                     if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
                     } else {
@@ -330,6 +330,7 @@ function CreateUser(req, res){
                                 name: req.body.name,
                                 avatar: req.body.avatar,
                                 birthday: req.body.birthday,
+                                Active: true,
                                 gender: req.body.gender,
                                 firstname: req.body.firstname,
                                 lastname: req.body.lastname,
@@ -373,14 +374,14 @@ function CreateUser(req, res){
                                     res.end(jsonString);
                                 }else{
                                     /*Org.findOneAndUpdate({company: company, tenant: tenant},{$filter: {input: "$consoleAccessLimits", as: "consoleAccessLimit", cond: { $eq: [ "$$consoleAccessLimit.accessType", userRole] }}, $addToSet :{$consoleAccessLimit : user.username}}, function(err, rUsers) {
-                                        if (err) {
-                                            user.remove(function (err) {});
-                                            jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
-                                        }else{
-                                            jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
-                                        }
-                                        res.end(jsonString);
-                                    });*/
+                                     if (err) {
+                                     user.remove(function (err) {});
+                                     jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
+                                     }else{
+                                     jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
+                                     }
+                                     res.end(jsonString);
+                                     });*/
 
                                     limitObj.currentAccess.push(user.username);
                                     Org.findOneAndUpdate({id: company, tenant: tenant},org, function(err, rOrg) {
@@ -450,6 +451,103 @@ function CreateUser(req, res){
                     jsonString = messageFormatter.FormatMessage(err, "No User Role Found", false, undefined);
                     res.end(jsonString);
                 }
+            }else{
+                jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
+                res.end(jsonString);
+            }
+        }
+    });
+}
+
+function ReActivateUser(req, res){
+
+    logger.debug("DVP-UserService.ReActivateUser Internal method ");
+    var jsonString;
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+            res.end(jsonString);
+        }else{
+            if(org){
+                User.findOne({company: company, tenant: tenant, username: req.params.username, Active: false})
+                    .select("-password")
+                    .exec( function(err, user) {
+                        if (err) {
+
+                            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+                            res.end(jsonString);
+                        }else {
+
+                            if (user) {
+
+                                if(user.user_meta.role){
+                                    var userRole = user.user_meta.role.toLowerCase();
+                                    var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
+                                    if(limitObj){
+                                        if(limitObj.accessLimit > limitObj.currentAccess.length){
+
+                                            User.findOneAndUpdate({
+                                                username: user.username,
+                                                company: company,
+                                                tenant: tenant
+                                            }, {Active:true}, function (err, updatedUser) {
+                                                if (err) {
+                                                    jsonString = messageFormatter.FormatMessage(err, "Re-Activate User Failed", false, undefined);
+                                                } else {
+
+
+                                                    if(updatedUser) {
+                                                        limitObj.currentAccess.push(updatedUser.username);
+                                                        Org.findOneAndUpdate({
+                                                            id: company,
+                                                            tenant: tenant
+                                                        }, org, function (err, rOrg) {
+                                                            if (err) {
+                                                                console.log(messageFormatter.FormatMessage(err, "Update Limit Failed", false, undefined));
+                                                            } else {
+
+                                                                console.log(messageFormatter.FormatMessage(err, "Update Limit Success", false, undefined));
+
+                                                            }
+
+                                                        });
+                                                        jsonString = messageFormatter.FormatMessage(undefined, "Re-Activate User Success", true, undefined);
+                                                    }else{
+                                                        jsonString = messageFormatter.FormatMessage(undefined, "Re-Activate User Failed", true, undefined);
+                                                    }
+
+
+
+
+                                                }
+                                                res.end(jsonString);
+                                            });
+
+                                        }else{
+                                            jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
+                                            res.end(jsonString);
+                                        }
+                                    }else{
+                                        jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
+                                        res.end(jsonString);
+                                    }
+                                }else{
+                                    jsonString = messageFormatter.FormatMessage(err, "No User Role Found", false, undefined);
+                                    res.end(jsonString);
+                                }
+
+                            }else{
+
+                                jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+                                res.end(jsonString);
+
+                            }
+                        }
+
+                    });
+
             }else{
                 jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
                 res.end(jsonString);
@@ -533,7 +631,7 @@ function UpdateUser(req, res){
     if(req.params.name) {
 
         User.findOneAndUpdate({
-            username: req.params.name,
+            username:req.params.name,
             company: company,
             tenant: tenant
         }, req.body, function (err, users) {
@@ -542,8 +640,15 @@ function UpdateUser(req, res){
                 jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
 
             } else {
+                if(users)
+                {
+                    jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, users);
+                }
+                else
+                {
+                    jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
+                }
 
-                jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
 
             }
 
@@ -556,6 +661,82 @@ function UpdateUser(req, res){
 
     }
 
+}
+
+
+function UpdateUserProfilePassword(req, res) {
+
+    logger.debug("DVP-UserService.UpdateUserProfilePassword Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.user.iss;
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+
+
+    var jsonString;
+
+    if (req.params.name) {
+        User.findOne({
+            username: req.params.name,
+            company: company,
+            tenant: tenant
+        }, function (err, existingUser) {
+            if (!existingUser || err) {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "User not exists", false, undefined);
+                res.end(jsonString);
+
+
+            } else {
+
+                crypto.randomBytes(20, function (err, buf) {
+                    var token = buf.toString('hex');
+
+                   // var url = config.auth.ui_host + '#/reset/' + token;
+
+                    redisClient.set("reset" + ":" + token, existingUser._id.toString(), function (err, val) {
+                        if (err) {
+
+                            jsonString = messageFormatter.FormatMessage(undefined, "Error in process", false, undefined);
+                            res.end(jsonString);
+
+                        } else {
+
+
+                            redisClient.expireat("reset" + ":" + token, parseInt((+new Date) / 1000) + 86400);
+                            var sendObj = {
+                                "company": 0,
+                                "tenant": 1
+                            };
+
+                            //existingUser.url = url;
+
+                            //sendObj.to = req.body.email;
+                            //sendObj.from = "no-reply";
+                            //sendObj.template = "By-User Reset Password";
+                            //sendObj.Parameters = {
+                            //    username: existingUser.username,
+                            //    url: url
+                            //};
+                            //
+                            //PublishToQueue("EMAILOUT", sendObj);
+
+                            jsonString = messageFormatter.FormatMessage(undefined, "Reset token generated", true, token);
+                            res.end(jsonString);
+                        }
+                    });
+
+                });
+            }
+        });
+    } else {
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Email is not valid", false, undefined);
+        res.end(jsonString);
+    }
 }
 
 function UpdateMyPassword(req, res){
@@ -707,19 +888,19 @@ function GetUserProfileByResourceId(req, res){
 
     User.findOne({resourceid: req.params.resourceid ,company: company, tenant: tenant}).select("-password")
         .exec(   function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+            }else{
 
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 
 }
@@ -739,18 +920,18 @@ function GetUserProfileByContact(req, res){
     queryObject[category+".contact"] = contact
     User.find(queryObject).select("-password")
         .exec(   function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+            }else{
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 
 }
@@ -765,19 +946,19 @@ function GetExternalUserProfile(req, res){
     var jsonString;
     User.findOne({username: req.params.name,company: company, tenant: tenant}).select("-password")
         .exec(   function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
 
-        }else{
+            }else{
 
 
-            jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 
 }
@@ -792,19 +973,19 @@ function GetUserProfile(req, res){
     var jsonString;
     User.findOne({username: req.params.name,company: company, tenant: tenant}).select("-password")
         .exec(  function(err, users) {
-        if (err) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+            }else{
 
 
-            jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users);
 
-        }
+            }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 
 }
@@ -1658,18 +1839,18 @@ function AddUserScopes(req, res){
                             res.end(jsonString);
                         } else {
                             if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
-                                 /*
-                                       assignUser.user_scopes.push(req.body);
-                                       assignUser.user_scopes = UniqueObjectArray(assignUser.user_scopes,"scope");
-                                       User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},assignUser, function(err, rUsers) {
-                                           if (err) {
-                                               jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
-                                           }else{
-                                               jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
-                                           }
-                                           res.end(jsonString);
-                                       });
-                                       */
+                                /*
+                                 assignUser.user_scopes.push(req.body);
+                                 assignUser.user_scopes = UniqueObjectArray(assignUser.user_scopes,"scope");
+                                 User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},assignUser, function(err, rUsers) {
+                                 if (err) {
+                                 jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
+                                 }else{
+                                 jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
+                                 }
+                                 res.end(jsonString);
+                                 });
+                                 */
                                 User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ $addToSet :{user_scopes : req.body}}, function(err, rUsers) {
                                     if (err) {
                                         jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
@@ -2532,22 +2713,22 @@ function GetUserTag(req, res){
 
 
     UserTag.findOne({company: company, tenant: tenant,name:req.params.tag}).exec( function(errTag, userTags) {
-            if (errTag) {
+        if (errTag) {
 
-                jsonString = messageFormatter.FormatMessage(errTag, "Get UserTag Failed", false, undefined);
-                res.end(jsonString);
+            jsonString = messageFormatter.FormatMessage(errTag, "Get UserTag Failed", false, undefined);
+            res.end(jsonString);
 
-            }
-            else
-            {
+        }
+        else
+        {
 
-                    jsonString = messageFormatter.FormatMessage(undefined, "Get UserTag Successful", true, userTags);
-                res.end(jsonString);
+            jsonString = messageFormatter.FormatMessage(undefined, "Get UserTag Successful", true, userTags);
+            res.end(jsonString);
 
-            }
+        }
 
 
-        });
+    });
 
 }
 
@@ -2611,6 +2792,7 @@ module.exports.GetUsers = GetUsers;
 module.exports.GetUsersByIDs = GetUsersByIDs;
 module.exports.DeleteUser = DeleteUser;
 module.exports.CreateUser = CreateUser;
+module.exports.ReActivateUser = ReActivateUser;
 module.exports.UpdateUser = UpdateUser;
 module.exports.GetUserProfile = GetUserProfile;
 module.exports.GetUserProfileByContact = GetUserProfileByContact;
@@ -2667,4 +2849,5 @@ module.exports.GetUserTag = GetUserTag;
 
 module.exports.UpdateMyAppMetadata = UpdateMyAppMetadata;
 module.exports.GetMyAppMetadata = GetMyAppMetadata;
+module.exports.UpdateUserProfilePassword = UpdateUserProfilePassword;
 
