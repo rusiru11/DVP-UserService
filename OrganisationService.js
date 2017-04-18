@@ -352,125 +352,136 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
             jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
             callback(jsonString);
         }else{
-            Org.findOne({tenant: tenant, id: company}).populate('tenantRef').populate({path: 'packageDetails.veeryPackage',populate : {path: 'Package'}}).populate('ownerRef' , '-password').exec( function(err, org) {
+            if(vPackage) {
+                Org.findOne({
+                    tenant: tenant,
+                    id: company
+                }).populate('tenantRef').populate({
+                    path: 'packageDetails.veeryPackage',
+                    populate: {path: 'Package'}
+                }).populate('ownerRef', '-password').exec(function (err, org) {
 
 
-                if (err) {
-                    jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
-                    callback(jsonString);
-                } else {
-                    if (org) {
-
-
-                        var domainData = "127.0.0.1";
-                        if (org.tenantRef && org.tenantRef.rootDomain) {
-                            domainData = org.companyName + "." + org.tenantRef.rootDomain;
-
-                            if (org.packages.indexOf(packageName) == -1) {
-                                var billingObj = {
-                                    userInfo: requestedUser,
-                                    companyInfo: org,
-                                    name: vPackage.packageName,
-                                    type: vPackage.packageType,
-                                    category: "Veery Package",
-                                    setupFee: vPackage.setupFee?vPackage.setupFee:0,
-                                    unitPrice: vPackage.price,
-                                    units: 1,
-                                    description: vPackage.description,
-                                    date: Date.now(),
-                                    valid: true,
-                                    isTrial: false
-                                };
-
-                                var typeExist = FilterObjFromArray(org.packageDetails, 'veeryPackage.navigationType', vPackage.navigationType);
-                                if (typeExist) {
-
-                                    if(typeExist.veeryPackage.price <= vPackage.price){
-
-                                        RequestToBill(org.id, org.tenant, billingObj, function(err, response){
-                                            if(err){
-                                                jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
-                                                callback(jsonString);
-                                            }else{
-                                                if(response) {
-                                                    if(response.IsSuccess) {
-                                                        try {
-                                                            org.packages.splice(org.packages.indexOf(typeExist.veeryPackage.packageName), 1);
-                                                        }catch(ex){
-                                                            console.log("No Package Found in the list:: ", ex);
-                                                        }
-                                                        org.packages.push(packageName);
-                                                        org.packages = UniqueArray(org.packages);
-                                                        typeExist.veeryPackage = vPackage._id;
-                                                        typeExist.buyDate = Date.now();
-
-                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function(jsonResponse){
-                                                            callback(jsonResponse);
-                                                        });
-                                                    }else{
-                                                        jsonString = messageFormatter.FormatMessage(undefined, response.CustomMessage, false, undefined);
-                                                        callback(jsonString);
-                                                    }
-                                                }else{
-                                                    jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
-                                                    callback(jsonString);
-                                                }
-                                            }
-                                        });
-
-                                    }else{
-                                        jsonString = messageFormatter.FormatMessage(undefined, "Cannot downgrade package, Please contact your system administrator", false, undefined);
-                                        callback(jsonString);
-                                    }
-
-                                }else{
-                                    org.updated_at = Date.now();
-                                    org.packages.push(packageName);
-                                    org.packages = UniqueArray(org.packages);
-                                    org.packageDetails.push({veeryPackage: vPackage._id, buyDate: Date.now()});
-
-                                    if(vPackage.price > 0) {
-                                        RequestToBill(org.id, org.tenant, billingObj, function (err, response) {
-                                            if (err) {
-                                                jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
-                                                callback(jsonString);
-                                            } else {
-                                                if (response) {
-                                                    if (response.IsSuccess) {
-                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function(jsonResponse){
-                                                            callback(jsonResponse);
-                                                        });
-                                                    } else {
-                                                        jsonString = messageFormatter.FormatMessage(undefined, response.CustomMessage, false, undefined);
-                                                        callback(jsonString);
-                                                    }
-                                                } else {
-                                                    jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
-                                                    callback(jsonString);
-                                                }
-                                            }
-                                        });
-                                    }else{
-                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function(jsonResponse){
-                                            callback(jsonResponse);
-                                        });
-                                    }
-                                }
-                            } else {
-                                jsonString = messageFormatter.FormatMessage(err, "Package Already Added", false, undefined);
-                                callback(jsonString);
-                            }
-
-                        } else {
-                            jsonString = messageFormatter.FormatMessage(err, "No Tenant Data Found", false, undefined);
-                            callback(jsonString);
-                        }
-                    }else {
+                    if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
                         callback(jsonString);
+                    } else {
+                        if (org) {
+
+
+                            var domainData = "127.0.0.1";
+                            if (org.tenantRef && org.tenantRef.rootDomain) {
+                                domainData = org.companyName + "." + org.tenantRef.rootDomain;
+
+                                if (org.packages.indexOf(packageName) == -1) {
+                                    var billingObj = {
+                                        userInfo: requestedUser,
+                                        companyInfo: org,
+                                        name: vPackage.packageName,
+                                        type: vPackage.packageType,
+                                        category: "Veery Package",
+                                        setupFee: vPackage.setupFee ? vPackage.setupFee : 0,
+                                        unitPrice: vPackage.price,
+                                        units: 1,
+                                        description: vPackage.description,
+                                        date: Date.now(),
+                                        valid: true,
+                                        isTrial: false
+                                    };
+
+                                    var typeExist = FilterObjFromArray(org.packageDetails, 'veeryPackage.navigationType', vPackage.navigationType);
+                                    if (typeExist) {
+
+                                        if (typeExist.veeryPackage.price <= vPackage.price) {
+
+                                            RequestToBill(org.id, org.tenant, billingObj, function (err, response) {
+                                                if (err) {
+                                                    jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
+                                                    callback(jsonString);
+                                                } else {
+                                                    if (response) {
+                                                        if (response.IsSuccess) {
+                                                            try {
+                                                                org.packages.splice(org.packages.indexOf(typeExist.veeryPackage.packageName), 1);
+                                                            } catch (ex) {
+                                                                console.log("No Package Found in the list:: ", ex);
+                                                            }
+                                                            org.packages.push(packageName);
+                                                            org.packages = UniqueArray(org.packages);
+                                                            typeExist.veeryPackage = vPackage._id;
+                                                            typeExist.buyDate = Date.now();
+
+                                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function (jsonResponse) {
+                                                                callback(jsonResponse);
+                                                            });
+                                                        } else {
+                                                            jsonString = messageFormatter.FormatMessage(undefined, response.CustomMessage, false, undefined);
+                                                            callback(jsonString);
+                                                        }
+                                                    } else {
+                                                        jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
+                                                        callback(jsonString);
+                                                    }
+                                                }
+                                            });
+
+                                        } else {
+                                            jsonString = messageFormatter.FormatMessage(undefined, "Cannot downgrade package, Please contact your system administrator", false, undefined);
+                                            callback(jsonString);
+                                        }
+
+                                    } else {
+                                        org.updated_at = Date.now();
+                                        org.packages.push(packageName);
+                                        org.packages = UniqueArray(org.packages);
+                                        org.packageDetails.push({veeryPackage: vPackage._id, buyDate: Date.now()});
+
+                                        if (vPackage.price > 0) {
+                                            RequestToBill(org.id, org.tenant, billingObj, function (err, response) {
+                                                if (err) {
+                                                    jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
+                                                    callback(jsonString);
+                                                } else {
+                                                    if (response) {
+                                                        if (response.IsSuccess) {
+                                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function (jsonResponse) {
+                                                                callback(jsonResponse);
+                                                            });
+                                                        } else {
+                                                            jsonString = messageFormatter.FormatMessage(undefined, response.CustomMessage, false, undefined);
+                                                            callback(jsonString);
+                                                        }
+                                                    } else {
+                                                        jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
+                                                        callback(jsonString);
+                                                    }
+                                                }
+                                            });
+                                        } else {
+                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function (jsonResponse) {
+                                                callback(jsonResponse);
+                                            });
+                                        }
+                                    }
+                                } else {
+                                    jsonString = messageFormatter.FormatMessage(err, "Package Already Added", false, undefined);
+                                    callback(jsonString);
+                                }
+
+                            } else {
+                                jsonString = messageFormatter.FormatMessage(err, "No Tenant Data Found", false, undefined);
+                                callback(jsonString);
+                            }
+                        } else {
+                            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+                            callback(jsonString);
+                        }
                     }
-                }
-            });
+                });
+            }else{
+                jsonString = messageFormatter.FormatMessage(err, "Find Packahe Failed", false, undefined);
+                callback(jsonString);
+            }
         }
     });
 };
