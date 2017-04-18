@@ -727,6 +727,17 @@ function AssignPackageToOrganisation(req,res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
 
+    var orgId;
+    var orgTenant;
+
+    if(req.query){
+        orgId = parseInt(req.query.companyId);
+        orgTenant = parseInt(req.query.tenantId);
+    }else{
+        orgId = company;
+        orgTenant = tenant;
+    }
+
     var jsonString;
 
     User.findOne({tenant: tenant, company: company, username: req.user.iss}).select("-password").exec(function (err, rUser) {
@@ -735,7 +746,7 @@ function AssignPackageToOrganisation(req,res){
             res.end(jsonString);
         } else {
             if(rUser) {
-                AssignPackageToOrganisationLib(company, tenant, req.params.packageName, rUser, function (jsonString) {
+                AssignPackageToOrganisationLib(orgId, orgTenant, req.params.packageName, rUser, function (jsonString) {
                     res.end(jsonString);
                 });
             }else{
