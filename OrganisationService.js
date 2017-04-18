@@ -1445,7 +1445,7 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                                                                 Org.findOneAndUpdate({
                                                                                     tenant: tenant,
-                                                                                    id: company
+                                                                                    id: orgId
                                                                                 }, org, function (err, rOrg) {
 
                                                                                     if (err) {
