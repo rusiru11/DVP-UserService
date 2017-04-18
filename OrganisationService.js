@@ -595,7 +595,7 @@ function CreateOrganisation(req, res){
 function UpdateOrganisation(req, res){
     logger.debug("DVP-UserService.UpdateOrganisation Internal method ");
 
-    var company = parseInt(req.user.company);
+    var company = req.params.company? parseInt(req.params.company): parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
@@ -728,14 +728,11 @@ function AssignPackageToOrganisation(req,res){
     var tenant = parseInt(req.user.tenant);
 
     var orgId;
-    var orgTenant;
 
-    if(req.query){
-        orgId = parseInt(req.query.companyId);
-        orgTenant = parseInt(req.query.tenantId);
+    if(req.params.company){
+        orgId = parseInt(req.params.company);
     }else{
         orgId = company;
-        orgTenant = tenant;
     }
 
     var jsonString;
@@ -746,7 +743,7 @@ function AssignPackageToOrganisation(req,res){
             res.end(jsonString);
         } else {
             if(rUser) {
-                AssignPackageToOrganisationLib(orgId, orgTenant, req.params.packageName, rUser, function (jsonString) {
+                AssignPackageToOrganisationLib(orgId, tenant, req.params.packageName, rUser, function (jsonString) {
                     res.end(jsonString);
                 });
             }else{
@@ -1273,10 +1270,20 @@ function AssignPackageUnitToOrganisation(req,res){
 
     logger.debug("DVP-UserService.AssignPackageUnitToOrganisation Internal method ");
     logger.debug("Package:: "+req.params.packageName);
-    logger.debug("PackageUnit:: "+req.body.unitName);
+    logger.debug("PackageUnit:: "+req.params.unitName);
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
+
+    var orgId;
+
+    if(req.params.company){
+        orgId = parseInt(req.params.company);
+    }else{
+        orgId = company;
+    }
+
+
     var topUpCount = 0;
     if(req.params.topUpCount) {
         topUpCount = parseInt(req.params.topUpCount);
@@ -1299,7 +1306,7 @@ function AssignPackageUnitToOrganisation(req,res){
 
                         } else {
                             if(vPackage) {
-                                Org.findOne({tenant: tenant, id: company}).populate('ownerRef' , '-password').exec( function (err, org) {
+                                Org.findOne({tenant: tenant, id: orgId}).populate('ownerRef' , '-password').exec( function (err, org) {
 
                                     if (err) {
 

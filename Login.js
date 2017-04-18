@@ -671,8 +671,7 @@ module.exports.SignUP = function(req, res) {
                                             redisClient.expireat("activate" + ":" + token, parseInt((+new Date) / 1000) + 86400);
                                             //var token = GetJWT(result, ["all_all"]);
                                             //res.send({state: "new", token: token});
-
-                                            res.send({state: "new", message: "check mail"});
+                                            res.send({state: "new", message: "check mail", companyId: result.company});
 
                                             var sendObj = {
                                                 "company": 0,

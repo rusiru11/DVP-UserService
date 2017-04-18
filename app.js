@@ -404,6 +404,11 @@ app.get('/DVP/API/:version/Codec/Active/:type',jwt({secret: secret.Secret}), aut
 app.get('/DVP/API/:version/Tenant/Company/BasicInfo', jwt({secret: secret.Secret}), authorization({resource:"tenant", action:"read"}), tenantService.GetBasicCompanyDetailsByTenant);
 app.get('/DVP/API/:version/Tenant/Company/:company', jwt({secret: secret.Secret}), authorization({resource:"tenant", action:"read"}), organisationService.GetOrganisation);
 
+app.put('/DVP/API/:version/Organisation/:company', jwt({secret: secret.Secret}),authorization({resource:"tenant", action:"write"}), organisationService.UpdateOrganisation);
+app.put('/DVP/API/:version/Organisation/:company/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"tenant", action:"write"}), organisationService.AssignPackageToOrganisation);
+app.put('/DVP/API/:version/Organisation/:company/Package/:packageName/Unit/:unitName/:topUpCount', jwt({secret: secret.Secret}),authorization({resource:"tenant", action:"write"}), organisationService.AssignPackageUnitToOrganisation);
+
+
 app.listen(port, function () {
 
     logger.info("DVP-UserService.main Server listening at %d", port);
