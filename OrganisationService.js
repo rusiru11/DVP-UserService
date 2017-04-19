@@ -628,6 +628,8 @@ function ActivateOrganisation(req, res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
+    company = req.params.company? parseInt(req.params.company): company;
+
     var state = req.params.state;
 
     var updated_at = Date.now();
