@@ -2786,6 +2786,39 @@ function RemoveUserTag(req,res){
 
 }
 
+function GetSuperUsers(req, res){
+
+
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+
+    User.find({tenant: tenant, systemuser: true, Active: true, 'user_meta.role': 'superadmin'})
+        .select("-password")
+        .exec( function(err, users) {
+            if (err) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get SuperUsers Failed", false, undefined);
+
+            }else {
+
+                if (users) {
+
+                    jsonString = messageFormatter.FormatMessage(err, "Get SuperUsers Successful", true, users);
+
+                }else{
+
+                    jsonString = messageFormatter.FormatMessage(undefined, "Get SuperUsers Failed", false, undefined);
+
+                }
+            }
+
+            res.end(jsonString);
+        });
+
+}
+
 
 module.exports.GetUser = GetUser;
 module.exports.GetUsers = GetUsers;
@@ -2851,3 +2884,4 @@ module.exports.UpdateMyAppMetadata = UpdateMyAppMetadata;
 module.exports.GetMyAppMetadata = GetMyAppMetadata;
 module.exports.UpdateUserProfilePassword = UpdateUserProfilePassword;
 
+module.exports.GetSuperUsers = GetSuperUsers;

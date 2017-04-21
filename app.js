@@ -409,6 +409,8 @@ app.put('/DVP/API/:version/Organisation/:company/Package/:packageName', jwt({sec
 app.put('/DVP/API/:version/Organisation/:company/Package/:packageName/Unit/:unitName/:topUpCount', jwt({secret: secret.Secret}),authorization({resource:"tenant", action:"write"}), organisationService.AssignPackageUnitToOrganisation);
 app.put('/DVP/API/:version/Organisation/:company/Activate/:state', jwt({secret: secret.Secret}),authorization({resource:"tenant", action:"write"}), organisationService.ActivateOrganisation);
 
+app.get('/DVP/API/:version/Tenant/superUsers', jwt({secret: secret.Secret}),authorization({resource:"tenant", action:"read"}), userService.GetSuperUsers);
+
 app.listen(port, function () {
 
     logger.info("DVP-UserService.main Server listening at %d", port);
