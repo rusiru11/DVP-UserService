@@ -297,58 +297,110 @@ function GetJWT(user, scopesx, client_id, type, req, done){
                 })
             }
 
+            redisClient.set(redisKey, secret, function(err, res){
+
+                if(!err) {
+
+
+                    redisClient.expireat(redisKey, expin);
+
+                    var payload = {};
+                    payload.iss = user.username;
+                    payload.jti = jti;
+                    payload.sub = "Access client";
+                    payload.exp = expin;
+                    payload.tenant = user.tenant;
+                    payload.company = user.company;
+                    //payload.aud = client.name;
+
+                    var scopes = GetScopes(user, scopesx);
+                    payload.context = scopes.context;
+                    payload.scope = scopes.scope;
+                    var token = jwt.sign(payload, secret);
+
+
+                    var accesstoken = accessToken({
+
+
+                        userId: user._id,
+                        clientId: client_id,
+                        jti: jti,
+                        Agent: req.headers['user-agent'],
+                        Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                        scope: scopesx,
+                        expirationDate: expin,
+                        type: type
+                    });
+
+                    accesstoken.save(function (err, accesstoken) {
+                        if (err) {
+
+                            return done(err, false, undefined);
+                        }
+                        return done(undefined, true, token);
+                    });
+                }else{
+
+                    return done(err, false, undefined);
+                }
+
+            });
+
+        });
+    }else{
+
+        redisClient.set(redisKey, secret, function(err, res){
+
+            if(!err) {
+
+
+                redisClient.expireat(redisKey, expin);
+
+                var payload = {};
+                payload.iss = user.username;
+                payload.jti = jti;
+                payload.sub = "Access client";
+                payload.exp = expin;
+                payload.tenant = user.tenant;
+                payload.company = user.company;
+                //payload.aud = client.name;
+
+                var scopes = GetScopes(user, scopesx);
+                payload.context = scopes.context;
+                payload.scope = scopes.scope;
+                var token = jwt.sign(payload, secret);
+
+
+                var accesstoken = accessToken({
+
+
+                    userId: user._id,
+                    clientId: client_id,
+                    jti: jti,
+                    Agent: req.headers['user-agent'],
+                    Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                    scope: scopesx,
+                    expirationDate: expin,
+                    type: type
+                });
+
+                accesstoken.save(function (err, accesstoken) {
+                    if (err) {
+
+                        return done(err, false, undefined);
+                    }
+                    return done(undefined, true, token);
+                });
+            }else{
+
+                return done(err, false, undefined);
+            }
+
         });
     }
 
 
-    redisClient.set(redisKey, secret, function(err, res){
 
-        if(!err) {
-
-
-            redisClient.expireat(redisKey, expin);
-
-            var payload = {};
-            payload.iss = user.username;
-            payload.jti = jti;
-            payload.sub = "Access client";
-            payload.exp = expin;
-            payload.tenant = user.tenant;
-            payload.company = user.company;
-            //payload.aud = client.name;
-
-            var scopes = GetScopes(user, scopesx);
-            payload.context = scopes.context;
-            payload.scope = scopes.scope;
-            var token = jwt.sign(payload, secret);
-
-
-            var accesstoken = accessToken({
-
-
-                userId: user._id,
-                clientId: client_id,
-                jti: jti,
-                Agent: req.headers['user-agent'],
-                Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-                scope: scopesx,
-                expirationDate: expin,
-                type: type
-            });
-
-            accesstoken.save(function (err, accesstoken) {
-                if (err) {
-
-                    return done(err, false, undefined);
-                }
-                return done(undefined, true, token);
-            });
-        }else{
-
-            return done(err, false, undefined);
-        }
-
-    });
 
 
 
