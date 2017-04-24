@@ -431,11 +431,9 @@ module.exports.Login =  function(req, res) {
 
                                             return res.status(449).send({message: 'User console request is invalid'});
                                         }
-
                                     }
                                 }
                             });
-
 
                         }else{
 
