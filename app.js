@@ -300,7 +300,7 @@ app.delete('/DVP/API/:version/User/:username/Scope/:scope', jwt({secret: secret.
 
 app.get('/DVP/API/:version/Users/:name/AppScope',jwt({secret: secret.Secret}), authorization({resource:"userAppScope", action:"read"}), userService.GetAppScopes);
 app.get('/DVP/API/:version/MyAppScopes/MyAppScopes/:console',jwt({secret: secret.Secret}), authorization({resource:"myNavigation", action:"read"}), userService.GetMyAppScopesByConsole);
-app.get('/DVP/API/:version/MyAppScopes/:consoles?',jwt({secret: secret.Secret}), authorization({resource:"myNavigation", action:"read"}), userService.GetMyAppScopesByConsoles);
+app.get('/DVP/API/:version/MyAppScopes/:consoles',jwt({secret: secret.Secret}), authorization({resource:"myNavigation", action:"read"}), userService.GetMyAppScopesByConsoles);
 
 
 
