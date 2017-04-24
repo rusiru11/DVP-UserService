@@ -495,7 +495,7 @@ module.exports.Validation =  function(req, res) {
 module.exports.SignUP = function(req, res) {
 
     logger.info("config.auth.signup_verification  -------->" +  config.auth.signup_verification);
-    if(config.auth.signup_verification ) {
+    if(config.auth.signup_verification == 'true') {
 
         if(!req.body || req.body['g-recaptcha-response'] === undefined || req.body['g-recaptcha-response'] === '' || req.body['g-recaptcha-response'] === null) {
             return res.status(409).send({message: 'Please select captcha'});
@@ -669,8 +669,7 @@ module.exports.SignUP = function(req, res) {
                                             redisClient.expireat("activate" + ":" + token, parseInt((+new Date) / 1000) + 86400);
                                             //var token = GetJWT(result, ["all_all"]);
                                             //res.send({state: "new", token: token});
-
-                                            res.send({state: "new", message: "check mail"});
+                                            res.send({state: "new", message: "check mail", companyId: result.company});
 
                                             var sendObj = {
                                                 "company": 0,

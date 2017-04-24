@@ -39,7 +39,7 @@ function CreateTenant(req, res) {
         res.end(jsonString);
 
     }
-};
+}
 
 function GetAllTenants(req, res){
 
@@ -69,7 +69,7 @@ function GetAllTenants(req, res){
         res.end(jsonString);
     });
 
-};
+}
 function GetTenant(req, res){
 
 
@@ -98,7 +98,7 @@ function GetTenant(req, res){
         res.end(jsonString);
     });
 
-};
+}
 
 function GetCompanyDomain(req, res){
 
@@ -134,9 +134,37 @@ function GetCompanyDomain(req, res){
         res.end(jsonString);
     });
 
-};
+}
+
+function GetBasicCompanyDetailsByTenant(req, res){
+    var jsonString;
+    try{
+        var tenant = req.user.tenant;
+        Org.find({tenant: tenant}).lean().exec(function (err, orgs) {
+            if(err){
+                jsonString = messageFormatter.FormatMessage(err, "Get Basic Company Details Failed", false, undefined);
+            }else{
+                var basicOrgDetails = orgs.map(function (org) {
+                    return{
+                        companyName: org.companyName,
+                        companyId: org.id,
+                        companyStatus: org.companyEnabled
+                    }
+                });
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get Basic Company Details Success", true, basicOrgDetails);
+            }
+
+            res.end(jsonString);
+        });
+    }catch(ex){
+        jsonString = messageFormatter.FormatMessage(ex, "Get Basic Company Details Failed", false, undefined);
+        res.end(jsonString);
+    }
+}
 
 module.exports.CreateTenant = CreateTenant;
 module.exports.GetAllTenants = GetAllTenants;
 module.exports.GetTenant = GetTenant;
 module.exports.GetCompanyDomain = GetCompanyDomain;
+module.exports.GetBasicCompanyDetailsByTenant = GetBasicCompanyDetailsByTenant;
