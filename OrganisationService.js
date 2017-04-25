@@ -611,14 +611,18 @@ function UpdateOrganisation(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    Org.findOneAndUpdate({tenant: tenant, id: company}, req.body, function(err, org) {
-        if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Update Organisation Failed", false, undefined);
-        }else{
-            jsonString = messageFormatter.FormatMessage(err, "Update Organisation Successful", true, org);
-        }
-        res.end(jsonString);
-    });
+    if(req.body.companyName) {
+        Org.findOneAndUpdate({tenant: tenant, id: company}, {companyName: req.body.companyName}, function (err, org) {
+            if (err) {
+                jsonString = messageFormatter.FormatMessage(err, "Update Organisation Failed", false, undefined);
+            } else {
+                jsonString = messageFormatter.FormatMessage(err, "Update Organisation Successful", true, org);
+            }
+            res.end(jsonString);
+        });
+    }else{
+        jsonString = messageFormatter.FormatMessage(undefined, "Update Organisation Failed", false, undefined);
+    }
 }
 
 function ActivateOrganisation(req, res){
