@@ -284,7 +284,7 @@ function GetJWT(user, scopesx, client_id, type, req, done){
     var redisKey = "token:iss:"+user.username+":"+jti;
     var tokenMap = "token:iss:"+user.username+":*";
 
-    if(user.multi_login){
+    if(user.multi_login && user.multi_login === false){
 
         redisClient.keys(tokenMap, function(err, res){
 
