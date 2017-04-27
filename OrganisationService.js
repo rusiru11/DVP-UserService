@@ -835,11 +835,11 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
             console.log(err);
         }
         else {
-            var companyInfoForCloudEndUser = util.format("%d:%d", 1, 3);
+            var companyInfoForCloudEndUser = util.format("%d:%d", 1, 0);
             var cloudEndUserReqBody = {
                 ClusterID: 1,
                 Domain: domain,
-                Provision: 1,
+                Provision: 2,
                 ClientTenant: tenant,
                 ClientCompany: company
             };
