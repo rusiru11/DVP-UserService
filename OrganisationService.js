@@ -835,11 +835,11 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
             console.log(err);
         }
         else {
-            var companyInfoForCloudEndUser = util.format("%d:%d", 1, 3);
+            var companyInfoForCloudEndUser = util.format("%d:%d", 1, 1);
             var cloudEndUserReqBody = {
                 ClusterID: 1,
                 Domain: domain,
-                Provision: 1,
+                Provision: 2,
                 ClientTenant: tenant,
                 ClientCompany: company
             };
@@ -1560,7 +1560,7 @@ function GetBillingDetails(req, res){
                 if(org.packageDetails && org.packageDetails.length > 0){
                     for(var i=0; i<org.packageDetails.length;i++){
                         var pInfo = org.packageDetails[i];
-                        if(pInfo && pInfo.billingType === 'recurring') {
+                        if(pInfo && pInfo.veeryPackage && pInfo.veeryPackage.billingType === 'recurring') {
                             billingDetails.push({
                                 name: pInfo.veeryPackage.packageName,
                                 type: pInfo.veeryPackage.packageType,
@@ -1579,7 +1579,7 @@ function GetBillingDetails(req, res){
                 if(org.unitDetails && org.unitDetails.length > 0){
                     for(var j=0; j<org.unitDetails.length;j++){
                         var uInfo = org.unitDetails[j];
-                        if(uInfo && uInfo.billingType === 'recurring') {
+                        if(uInfo && uInfo.veeryUnit && uInfo.veeryUnit.billingType === 'recurring') {
                             billingDetails.push({
                                 name: uInfo.veeryUnit.unitName,
                                 type: uInfo.veeryUnit.unitType,

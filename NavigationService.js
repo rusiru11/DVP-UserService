@@ -248,12 +248,16 @@ function AddNavigationToConsole(req, res){
 
     var gr = GetResources(req.body.resources);
     gr.on('validateResource',function(resource){
-        for(var i in req.body.resources){
-            var bResource = req.body.resources[i];
-            if(bResource && bResource.resourceName == resource.resourceName){
-                navigation.resources.push(bResource);
-                break;
+        if(resource) {
+            for (var i in req.body.resources) {
+                var bResource = req.body.resources[i];
+                if (bResource && bResource.resourceName == resource.resourceName) {
+                    navigation.resources.push(bResource);
+                    break;
+                }
             }
+        }else{
+            logger.warn('No Resource Service found');
         }
     });
     gr.on('endValidateResources',function(){
