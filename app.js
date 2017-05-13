@@ -65,6 +65,8 @@ var mongoreplicaset= config.Mongo.replicaset;
 
 var mongoose = require('mongoose');
 var connectionstring = '';
+mongoip = mongoip.split(',');
+
 if(util.isArray(mongoip)){
 
     mongoip.forEach(function(item){
@@ -300,7 +302,7 @@ app.delete('/DVP/API/:version/User/:username/Scope/:scope', jwt({secret: secret.
 
 app.get('/DVP/API/:version/Users/:name/AppScope',jwt({secret: secret.Secret}), authorization({resource:"userAppScope", action:"read"}), userService.GetAppScopes);
 app.get('/DVP/API/:version/MyAppScopes/MyAppScopes/:console',jwt({secret: secret.Secret}), authorization({resource:"myNavigation", action:"read"}), userService.GetMyAppScopesByConsole);
-app.get('/DVP/API/:version/MyAppScopes/:consoles?',jwt({secret: secret.Secret}), authorization({resource:"myNavigation", action:"read"}), userService.GetMyAppScopesByConsoles);
+app.get('/DVP/API/:version/MyAppScopes/:consoles',jwt({secret: secret.Secret}), authorization({resource:"myNavigation", action:"read"}), userService.GetMyAppScopesByConsoles);
 
 
 
@@ -380,14 +382,36 @@ app.get('/DVP/API/:version/CompanyDomain/:companyname',jwt({secret: secret.Secre
 app.post('/DVP/API/:version/Phone/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"write"}), phoneConfig.AddPhoneConfig);
 app.get('/DVP/API/:version/Phone/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"read"}), phoneConfig.GetPhoneConfig);
 app.put('/DVP/API/:version/Phone/:id/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"read"}), phoneConfig.UpdatePhoneConfig);
-app.del('/DVP/API/:version/Phone/:id/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"write"}), phoneConfig.DeletePhoneConfig);
+app.delete('/DVP/API/:version/Phone/:id/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"write"}), phoneConfig.DeletePhoneConfig);
 
 
 app.post('/DVP/API/:version/CustomerTag',jwt({secret: secret.Secret}), authorization({resource:"tag", action:"write"}), userService.CreateUserTag);
 app.get('/DVP/API/:version/CustomerTags',jwt({secret: secret.Secret}), authorization({resource:"tag", action:"read"}), userService.GetUserTags);
 app.get('/DVP/API/:version/CustomerTag/:tag',jwt({secret: secret.Secret}), authorization({resource:"tag", action:"write"}), userService.GetUserTag);
-app.del('/DVP/API/:version/CustomerTag/:tag',jwt({secret: secret.Secret}), authorization({resource:"tag", action:"write"}), userService.RemoveUserTag);
+app.delete('/DVP/API/:version/CustomerTag/:tag',jwt({secret: secret.Secret}), authorization({resource:"tag", action:"write"}), userService.RemoveUserTag);
 
+
+//------------------------------------Codec---------------------------------------------------------------------
+
+app.post('/DVP/API/:version/Codec',jwt({secret: secret.Secret}), authorization({resource:"codec", action:"write"}), packageService.CreateCodec);
+app.put('/DVP/API/:version/Codec/:codec',jwt({secret: secret.Secret}), authorization({resource:"codec", action:"write"}), packageService.UpdateCodec);
+app.delete('/DVP/API/:version/Codec/:codec',jwt({secret: secret.Secret}), authorization({resource:"codec", action:"delete"}), packageService.DeleteCodec);
+app.get('/DVP/API/:version/Codec/All',jwt({secret: secret.Secret}), authorization({resource:"codec", action:"read"}), packageService.GetAllCodec);
+app.get('/DVP/API/:version/Codec/Active',jwt({secret: secret.Secret}), authorization({resource:"codec", action:"read"}), packageService.GetAllActiveCodec);
+app.get('/DVP/API/:version/Codec/Active/:type',jwt({secret: secret.Secret}), authorization({resource:"codec", action:"read"}), packageService.GetCodecByType);
+
+
+//-----------------------------------Tenant Monitoring----------------------------------------------------------
+
+app.get('/DVP/API/:version/Tenant/Company/BasicInfo', jwt({secret: secret.Secret}), authorization({resource:"tenant", action:"read"}), tenantService.GetBasicCompanyDetailsByTenant);
+app.get('/DVP/API/:version/Tenant/Company/:company', jwt({secret: secret.Secret}), authorization({resource:"tenant", action:"read"}), organisationService.GetOrganisation);
+
+app.put('/DVP/API/:version/Organisation/:company', jwt({secret: secret.Secret}),authorization({resource:"tenant", action:"write"}), organisationService.UpdateOrganisation);
+app.put('/DVP/API/:version/Organisation/:company/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"tenant", action:"write"}), organisationService.AssignPackageToOrganisation);
+app.put('/DVP/API/:version/Organisation/:company/Package/:packageName/Unit/:unitName/:topUpCount', jwt({secret: secret.Secret}),authorization({resource:"tenant", action:"write"}), organisationService.AssignPackageUnitToOrganisation);
+app.put('/DVP/API/:version/Organisation/:company/Activate/:state', jwt({secret: secret.Secret}),authorization({resource:"tenant", action:"write"}), organisationService.ActivateOrganisation);
+
+app.get('/DVP/API/:version/Tenant/Monitoring/superUsers', jwt({secret: secret.Secret}),authorization({resource:"tenant", action:"read"}), userService.GetSuperUsers);
 
 app.listen(port, function () {
 

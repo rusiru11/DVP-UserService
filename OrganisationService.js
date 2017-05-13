@@ -142,9 +142,14 @@ function GetOrganisation(req, res){
     logger.debug("DVP-UserService.GetOrganisation Internal method ");
 
     var tenant = parseInt(req.user.tenant);
-    var company = parseInt(req.user.company);
+    var company;
+    if(req.params.company){
+        company = parseInt(req.params.company);
+    }else {
+        company = parseInt(req.user.company);
+    }
     var jsonString;
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({tenant: tenant, id: company}).populate('tenantRef').populate({path: 'packageDetails.veeryPackage',populate : {path: 'Package'}}).populate('ownerRef' , '-password').exec( function(err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
         }else{
@@ -347,125 +352,136 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
             jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
             callback(jsonString);
         }else{
-            Org.findOne({tenant: tenant, id: company}).populate('tenantRef').populate({path: 'packageDetails.veeryPackage',populate : {path: 'Package'}}).populate('ownerRef' , '-password').exec( function(err, org) {
+            if(vPackage) {
+                Org.findOne({
+                    tenant: tenant,
+                    id: company
+                }).populate('tenantRef').populate({
+                    path: 'packageDetails.veeryPackage',
+                    populate: {path: 'Package'}
+                }).populate('ownerRef', '-password').exec(function (err, org) {
 
 
-                if (err) {
-                    jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
-                    callback(jsonString);
-                } else {
-                    if (org) {
-
-
-                        var domainData = "127.0.0.1";
-                        if (org.tenantRef && org.tenantRef.rootDomain) {
-                            domainData = org.companyName + "." + org.tenantRef.rootDomain;
-
-                            if (org.packages.indexOf(packageName) == -1) {
-                                var billingObj = {
-                                    userInfo: requestedUser,
-                                    companyInfo: org,
-                                    name: vPackage.packageName,
-                                    type: vPackage.packageType,
-                                    category: "Veery Package",
-                                    setupFee: vPackage.setupFee?vPackage.setupFee:0,
-                                    unitPrice: vPackage.price,
-                                    units: 1,
-                                    description: vPackage.description,
-                                    date: Date.now(),
-                                    valid: true,
-                                    isTrial: false
-                                };
-
-                                var typeExist = FilterObjFromArray(org.packageDetails, 'veeryPackage.packageType', vPackage.packageType);
-                                if (typeExist) {
-
-                                    if(typeExist.veeryPackage.price <= vPackage.price){
-
-                                        RequestToBill(org.id, org.tenant, billingObj, function(err, response){
-                                            if(err){
-                                                jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
-                                                callback(jsonString);
-                                            }else{
-                                                if(response) {
-                                                    if(response.IsSuccess) {
-                                                        try {
-                                                            org.packages.splice(org.packages.indexOf(typeExist.veeryPackage.packageName), 1);
-                                                        }catch(ex){
-                                                            console.log("No Package Found in the list:: ", ex);
-                                                        }
-                                                        org.packages.push(packageName);
-                                                        org.packages = UniqueArray(org.packages);
-                                                        typeExist.veeryPackage = vPackage._id;
-                                                        typeExist.buyDate = Date.now();
-
-                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function(jsonResponse){
-                                                            callback(jsonResponse);
-                                                        });
-                                                    }else{
-                                                        jsonString = messageFormatter.FormatMessage(undefined, response.CustomMessage, false, undefined);
-                                                        callback(jsonString);
-                                                    }
-                                                }else{
-                                                    jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
-                                                    callback(jsonString);
-                                                }
-                                            }
-                                        });
-
-                                    }else{
-                                        jsonString = messageFormatter.FormatMessage(undefined, "Cannot downgrade package, Please contact your system administrator", false, undefined);
-                                        callback(jsonString);
-                                    }
-
-                                }else{
-                                    org.updated_at = Date.now();
-                                    org.packages.push(packageName);
-                                    org.packages = UniqueArray(org.packages);
-                                    org.packageDetails.push({veeryPackage: vPackage._id, buyDate: Date.now()});
-
-                                    if(vPackage.price > 0) {
-                                        RequestToBill(org.id, org.tenant, billingObj, function (err, response) {
-                                            if (err) {
-                                                jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
-                                                callback(jsonString);
-                                            } else {
-                                                if (response) {
-                                                    if (response.IsSuccess) {
-                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function(jsonResponse){
-                                                            callback(jsonResponse);
-                                                        });
-                                                    } else {
-                                                        jsonString = messageFormatter.FormatMessage(undefined, response.CustomMessage, false, undefined);
-                                                        callback(jsonString);
-                                                    }
-                                                } else {
-                                                    jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
-                                                    callback(jsonString);
-                                                }
-                                            }
-                                        });
-                                    }else{
-                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function(jsonResponse){
-                                            callback(jsonResponse);
-                                        });
-                                    }
-                                }
-                            } else {
-                                jsonString = messageFormatter.FormatMessage(err, "Package Already Added", false, undefined);
-                                callback(jsonString);
-                            }
-
-                        } else {
-                            jsonString = messageFormatter.FormatMessage(err, "No Tenant Data Found", false, undefined);
-                            callback(jsonString);
-                        }
-                    }else {
+                    if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
                         callback(jsonString);
+                    } else {
+                        if (org) {
+
+
+                            var domainData = "127.0.0.1";
+                            if (org.tenantRef && org.tenantRef.rootDomain) {
+                                domainData = org.companyName + "." + org.tenantRef.rootDomain;
+
+                                if (org.packages.indexOf(packageName) == -1) {
+                                    var billingObj = {
+                                        userInfo: requestedUser,
+                                        companyInfo: org,
+                                        name: vPackage.packageName,
+                                        type: vPackage.packageType,
+                                        category: "Veery Package",
+                                        setupFee: vPackage.setupFee ? vPackage.setupFee : 0,
+                                        unitPrice: vPackage.price,
+                                        units: 1,
+                                        description: vPackage.description,
+                                        date: Date.now(),
+                                        valid: true,
+                                        isTrial: false
+                                    };
+
+                                    var typeExist = FilterObjFromArray(org.packageDetails, 'veeryPackage.navigationType', vPackage.navigationType);
+                                    if (typeExist) {
+
+                                        if (typeExist.veeryPackage.price <= vPackage.price) {
+
+                                            RequestToBill(org.id, org.tenant, billingObj, function (err, response) {
+                                                if (err) {
+                                                    jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
+                                                    callback(jsonString);
+                                                } else {
+                                                    if (response) {
+                                                        if (response.IsSuccess) {
+                                                            try {
+                                                                org.packages.splice(org.packages.indexOf(typeExist.veeryPackage.packageName), 1);
+                                                            } catch (ex) {
+                                                                console.log("No Package Found in the list:: ", ex);
+                                                            }
+                                                            org.packages.push(packageName);
+                                                            org.packages = UniqueArray(org.packages);
+                                                            typeExist.veeryPackage = vPackage._id;
+                                                            typeExist.buyDate = Date.now();
+
+                                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function (jsonResponse) {
+                                                                callback(jsonResponse);
+                                                            });
+                                                        } else {
+                                                            jsonString = messageFormatter.FormatMessage(undefined, response.CustomMessage, false, undefined);
+                                                            callback(jsonString);
+                                                        }
+                                                    } else {
+                                                        jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
+                                                        callback(jsonString);
+                                                    }
+                                                }
+                                            });
+
+                                        } else {
+                                            jsonString = messageFormatter.FormatMessage(undefined, "Cannot downgrade package, Please contact your system administrator", false, undefined);
+                                            callback(jsonString);
+                                        }
+
+                                    } else {
+                                        org.updated_at = Date.now();
+                                        org.packages.push(packageName);
+                                        org.packages = UniqueArray(org.packages);
+                                        org.packageDetails.push({veeryPackage: vPackage._id, buyDate: Date.now()});
+
+                                        if (vPackage.price > 0) {
+                                            RequestToBill(org.id, org.tenant, billingObj, function (err, response) {
+                                                if (err) {
+                                                    jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
+                                                    callback(jsonString);
+                                                } else {
+                                                    if (response) {
+                                                        if (response.IsSuccess) {
+                                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function (jsonResponse) {
+                                                                callback(jsonResponse);
+                                                            });
+                                                        } else {
+                                                            jsonString = messageFormatter.FormatMessage(undefined, response.CustomMessage, false, undefined);
+                                                            callback(jsonString);
+                                                        }
+                                                    } else {
+                                                        jsonString = messageFormatter.FormatMessage(err, "Error in Billing request", false, undefined);
+                                                        callback(jsonString);
+                                                    }
+                                                }
+                                            });
+                                        } else {
+                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function (jsonResponse) {
+                                                callback(jsonResponse);
+                                            });
+                                        }
+                                    }
+                                } else {
+                                    jsonString = messageFormatter.FormatMessage(err, "Package Already Added", false, undefined);
+                                    callback(jsonString);
+                                }
+
+                            } else {
+                                jsonString = messageFormatter.FormatMessage(err, "No Tenant Data Found", false, undefined);
+                                callback(jsonString);
+                            }
+                        } else {
+                            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+                            callback(jsonString);
+                        }
                     }
-                }
-            });
+                });
+            }else{
+                jsonString = messageFormatter.FormatMessage(err, "Find Packahe Failed", false, undefined);
+                callback(jsonString);
+            }
         }
     });
 };
@@ -590,19 +606,23 @@ function CreateOrganisation(req, res){
 function UpdateOrganisation(req, res){
     logger.debug("DVP-UserService.UpdateOrganisation Internal method ");
 
-    var company = parseInt(req.user.company);
+    var company = req.params.company? parseInt(req.params.company): parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
     req.body.updated_at = Date.now();
-    Org.findOneAndUpdate({tenant: tenant, id: company}, req.body, function(err, org) {
-        if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Update Organisation Failed", false, undefined);
-        }else{
-            jsonString = messageFormatter.FormatMessage(err, "Update Organisation Successful", true, org);
-        }
-        res.end(jsonString);
-    });
+    if(req.body.companyName) {
+        Org.findOneAndUpdate({tenant: tenant, id: company}, {companyName: req.body.companyName}, function (err, org) {
+            if (err) {
+                jsonString = messageFormatter.FormatMessage(err, "Update Organisation Failed", false, undefined);
+            } else {
+                jsonString = messageFormatter.FormatMessage(err, "Update Organisation Successful", true, org);
+            }
+            res.end(jsonString);
+        });
+    }else{
+        jsonString = messageFormatter.FormatMessage(undefined, "Update Organisation Failed", false, undefined);
+    }
 }
 
 function ActivateOrganisation(req, res){
@@ -611,6 +631,8 @@ function ActivateOrganisation(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
+
+    company = req.params.company? parseInt(req.params.company): company;
 
     var state = req.params.state;
 
@@ -722,6 +744,14 @@ function AssignPackageToOrganisation(req,res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
 
+    var orgId;
+
+    if(req.params.company){
+        orgId = parseInt(req.params.company);
+    }else{
+        orgId = company;
+    }
+
     var jsonString;
 
     User.findOne({tenant: tenant, company: company, username: req.user.iss}).select("-password").exec(function (err, rUser) {
@@ -730,7 +760,7 @@ function AssignPackageToOrganisation(req,res){
             res.end(jsonString);
         } else {
             if(rUser) {
-                AssignPackageToOrganisationLib(company, tenant, req.params.packageName, rUser, function (jsonString) {
+                AssignPackageToOrganisationLib(orgId, tenant, req.params.packageName, rUser, function (jsonString) {
                     res.end(jsonString);
                 });
             }else{
@@ -805,11 +835,11 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
             console.log(err);
         }
         else {
-            var companyInfoForCloudEndUser = util.format("%d:%d", 1, 3);
+            var companyInfoForCloudEndUser = util.format("%d:%d", 1, 1);
             var cloudEndUserReqBody = {
                 ClusterID: 1,
                 Domain: domain,
-                Provision: 1,
+                Provision: 2,
                 ClientTenant: tenant,
                 ClientCompany: company
             };
@@ -1257,10 +1287,20 @@ function AssignPackageUnitToOrganisation(req,res){
 
     logger.debug("DVP-UserService.AssignPackageUnitToOrganisation Internal method ");
     logger.debug("Package:: "+req.params.packageName);
-    logger.debug("PackageUnit:: "+req.body.unitName);
+    logger.debug("PackageUnit:: "+req.params.unitName);
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
+
+    var orgId;
+
+    if(req.params.company){
+        orgId = parseInt(req.params.company);
+    }else{
+        orgId = company;
+    }
+
+
     var topUpCount = 0;
     if(req.params.topUpCount) {
         topUpCount = parseInt(req.params.topUpCount);
@@ -1283,7 +1323,7 @@ function AssignPackageUnitToOrganisation(req,res){
 
                         } else {
                             if(vPackage) {
-                                Org.findOne({tenant: tenant, id: company}).populate('ownerRef' , '-password').exec( function (err, org) {
+                                Org.findOne({tenant: tenant, id: orgId}).populate('ownerRef' , '-password').exec( function (err, org) {
 
                                     if (err) {
 
@@ -1335,9 +1375,9 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                                                             if(packageUnit.unitType.toLowerCase() === 'spacelimit'){
 
-                                                                                if(packageUnit.spaceLimit && packageUnit.spaceLimit.length >0){
+                                                                                if(packageUnit.unitData && packageUnit.unitData.spaceLimit && packageUnit.unitData.spaceLimit.length >0){
                                                                                     var spaceLimitsToAdd = [];
-                                                                                    packageUnit.spaceLimit.forEach(function (sLimit) {
+                                                                                    packageUnit.unitData.spaceLimit.forEach(function (sLimit) {
                                                                                         var existingSpaceLimit = org.spaceLimit.filter(function (esl) {
                                                                                             return esl.spaceType === sLimit.spaceType;
                                                                                         });
@@ -1354,14 +1394,35 @@ function AssignPackageUnitToOrganisation(req,res){
                                                                                     }
                                                                                 }
 
+                                                                            }else if(packageUnit.unitType.toLowerCase() === 'codec'){
+
+                                                                                if(packageUnit.unitData && packageUnit.unitData.codecLimit && packageUnit.unitData.codecLimit.length >0){
+                                                                                    var codecLimitsToAdd = [];
+                                                                                    packageUnit.unitData.codecLimit.forEach(function (cLimit) {
+                                                                                        var existingCodecLimit = org.codecAccessLimits.filter(function (esl) {
+                                                                                            return esl.codec === cLimit.codec;
+                                                                                        });
+
+                                                                                        if(existingCodecLimit && existingCodecLimit.length > 0){
+                                                                                            existingCodecLimit[0].codecLimit = existingCodecLimit[0].codecLimit + topUpCount;
+                                                                                        }else{
+                                                                                            codecLimitsToAdd.push({codec: cLimit.codec, codecLimit: topUpCount, currentAccess: 0});
+                                                                                        }
+                                                                                    });
+
+                                                                                    if(codecLimitsToAdd && codecLimitsToAdd.length >0) {
+                                                                                        org.codecAccessLimits = org.codecAccessLimits.concat(codecLimitsToAdd);
+                                                                                    }
+                                                                                }
+
                                                                             }else {
-                                                                                if (org.consoleAccessLimits.length > 0) {
+                                                                                if (packageUnit.unitData && packageUnit.unitData.consoleAccessLimits && org.consoleAccessLimits.length > 0) {
 
                                                                                     for (var j = 0; j < org.consoleAccessLimits.length; j++) {
 
                                                                                         var cal = org.consoleAccessLimits[j];
 
-                                                                                        if (cal.accessType == packageUnit.consoleAccessLimit.accessType) {
+                                                                                        if (cal.accessType == packageUnit.unitData.consoleAccessLimit.accessType) {
                                                                                             org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
                                                                                             break;
 
@@ -1372,7 +1433,7 @@ function AssignPackageUnitToOrganisation(req,res){
                                                                             }
 
 
-                                                                            var er = ExtractResources(packageUnit.resources);
+                                                                            var er = ExtractResources(packageUnit.unitData.resources);
                                                                             er.on('endExtractResources', function (userScopes) {
                                                                                 if (userScopes) {
                                                                                     for (var i = 0; i < userScopes.length; i++) {
@@ -1401,7 +1462,7 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                                                                 Org.findOneAndUpdate({
                                                                                     tenant: tenant,
-                                                                                    id: company
+                                                                                    id: orgId
                                                                                 }, org, function (err, rOrg) {
 
                                                                                     if (err) {
@@ -1499,7 +1560,7 @@ function GetBillingDetails(req, res){
                 if(org.packageDetails && org.packageDetails.length > 0){
                     for(var i=0; i<org.packageDetails.length;i++){
                         var pInfo = org.packageDetails[i];
-                        if(pInfo) {
+                        if(pInfo && pInfo.veeryPackage && pInfo.veeryPackage.billingType === 'recurring') {
                             billingDetails.push({
                                 name: pInfo.veeryPackage.packageName,
                                 type: pInfo.veeryPackage.packageType,
@@ -1518,7 +1579,7 @@ function GetBillingDetails(req, res){
                 if(org.unitDetails && org.unitDetails.length > 0){
                     for(var j=0; j<org.unitDetails.length;j++){
                         var uInfo = org.unitDetails[j];
-                        if(uInfo) {
+                        if(uInfo && uInfo.veeryUnit && uInfo.veeryUnit.billingType === 'recurring') {
                             billingDetails.push({
                                 name: uInfo.veeryUnit.unitName,
                                 type: uInfo.veeryUnit.unitType,
