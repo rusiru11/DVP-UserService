@@ -125,7 +125,7 @@ module.exports = {
     "dbname":"dvpdb",
     "password":"DuoS123",
     "user":"duo",
-    "replicaset" :"104.236.231.11"
+    "replicaset" :""
   },
 
     "Services" : {
