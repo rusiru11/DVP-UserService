@@ -1770,7 +1770,9 @@ function GetSpaceLimitForTenant(req, res){
 
                     }
 
-                    spaceLimits.push(tempObj);
+                    if(tempObj && tempObj.spaceLimit && tempObj.spaceLimit.length >0) {
+                        spaceLimits.push(tempObj);
+                    }
 
                 });
 
