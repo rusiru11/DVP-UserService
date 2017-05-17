@@ -1660,7 +1660,6 @@ function GetBillingDetails(req, res){
     //res.end(jsonString);
 }
 
-
 function RequestToBill(company, tenant, billInfo, callback){
     try {
         var contextUrl = util.format("http://%s/DVP/API/%s/Billing/BuyPackage", config.Services.billingserviceHost, config.Services.billingserviceVersion);
@@ -1684,6 +1683,108 @@ function RequestToBill(company, tenant, billInfo, callback){
     }
 }
 
+function GetSpaceLimit(req, res){
+    logger.debug("DVP-UserService.GetSpaceLimit Internal method ");
+
+    var tenant = parseInt(req.user.tenant);
+    var company;
+    if(req.params.company){
+        company = parseInt(req.params.company);
+    }else {
+        company = parseInt(req.user.company);
+    }
+    var jsonString;
+    Org.findOne({tenant: tenant, id: company}).exec( function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+        }else{
+            if(org){
+
+                var filteredSpaceValues = org.spaceLimit.filter(function (sLimit) {
+                    return sLimit.spaceType.toLowerCase() === req.params.spaceType.toLowerCase();
+                });
+
+                if(filteredSpaceValues){
+
+                    if(filteredSpaceValues.length > 1){
+
+                        var spaceLimitInfo = filteredSpaceValues[0];
+                        filteredSpaceValues.forEach(function (limit) {
+                            spaceLimitInfo.spaceLimit = spaceLimitInfo.spaceLimit + limit.spaceLimit;
+                        });
+                        jsonString = messageFormatter.FormatMessage(err, "Get Space Limit Successful", true, spaceLimitInfo);
+                    }else{
+                        if(filteredSpaceValues.length === 1) {
+                            jsonString = messageFormatter.FormatMessage(err, "Get Space Limit Successful", true, filteredSpaceValues[0]);
+                        }else{
+                            jsonString = messageFormatter.FormatMessage(undefined, "No Space Limit Found", false, undefined);
+                        }
+                    }
+
+                }else{
+                    jsonString = messageFormatter.FormatMessage(undefined, "No Space Limit Found", false, undefined);
+                }
+
+            }else{
+                jsonString = messageFormatter.FormatMessage(undefined, "No Organisation Found", false, undefined);
+            }
+
+        }
+        res.end(jsonString);
+    });
+}
+
+function GetSpaceLimitForTenant(req, res){
+    logger.debug("DVP-UserService.GetSpaceLimit Internal method ");
+
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    Org.find({tenant: tenant}).exec( function(err, orgs) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+        }else{
+            if(orgs){
+
+                var spaceLimits = [];
+
+                orgs.forEach(function (org) {
+                    var tempObj = {companyId: org.id, spaceLimit: {}};
+                    var filteredSpaceValues = org.spaceLimit.filter(function (sLimit) {
+                        return sLimit && sLimit.spaceType.toLowerCase() === req.params.spaceType.toLowerCase();
+                    });
+
+                    if(filteredSpaceValues){
+
+                        if(filteredSpaceValues.length > 1){
+
+                            var tempSpaceLimitInfo = filteredSpaceValues[0];
+                            filteredSpaceValues.forEach(function (limit) {
+                                tempSpaceLimitInfo.spaceLimit = tempSpaceLimitInfo.spaceLimit + limit.spaceLimit;
+                            });
+                            tempObj.spaceLimit = tempSpaceLimitInfo;
+                        }else{
+                            if(filteredSpaceValues.length === 1) {
+                                tempObj.spaceLimit = filteredSpaceValues[0];
+                            }
+                        }
+
+                    }
+
+                    spaceLimits.push(tempObj);
+
+                });
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get Space Limit Successful", true, spaceLimits);
+
+            }else{
+                jsonString = messageFormatter.FormatMessage(undefined, "No Organisation Found", false, undefined);
+            }
+
+        }
+        res.end(jsonString);
+    });
+}
+
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
 module.exports.DeleteOrganisation = DeleteOrganisation;
@@ -1701,3 +1802,5 @@ module.exports.ActivateOrganisation = ActivateOrganisation;
 module.exports.GetOrganisationsWithPaging = GetOrganisationsWithPaging;
 module.exports.GetBillingDetails = GetBillingDetails;
 module.exports.IsOrganizationExists = IsOrganizationExists;
+module.exports.GetSpaceLimit = GetSpaceLimit;
+module.exports.GetSpaceLimitForTenant = GetSpaceLimitForTenant;
