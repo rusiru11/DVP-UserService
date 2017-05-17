@@ -1705,17 +1705,21 @@ function GetSpaceLimit(req, res){
                 });
 
                 if(filteredSpaceValues){
-
+                    var spaceLimitInfo = {};
                     if(filteredSpaceValues.length > 1){
 
-                        var spaceLimitInfo = filteredSpaceValues[0];
+                        spaceLimitInfo.SpaceType = filteredSpaceValues[0].spaceType;
+                        spaceLimitInfo.SpaceUnit = filteredSpaceValues[0].spaceUnit;
                         filteredSpaceValues.forEach(function (limit) {
-                            spaceLimitInfo.spaceLimit = spaceLimitInfo.spaceLimit + limit.spaceLimit;
+                            spaceLimitInfo.SpaceLimit = spaceLimitInfo.SpaceLimit + limit.spaceLimit;
                         });
                         jsonString = messageFormatter.FormatMessage(err, "Get Space Limit Successful", true, spaceLimitInfo);
                     }else{
                         if(filteredSpaceValues.length === 1) {
-                            jsonString = messageFormatter.FormatMessage(err, "Get Space Limit Successful", true, filteredSpaceValues[0]);
+                            spaceLimitInfo.SpaceType = filteredSpaceValues[0].spaceType;
+                            spaceLimitInfo.SpaceUnit = filteredSpaceValues[0].spaceUnit;
+                            spaceLimitInfo.SpaceLimit = filteredSpaceValues[0].spaceLimit;
+                            jsonString = messageFormatter.FormatMessage(err, "Get Space Limit Successful", true, spaceLimitInfo);
                         }else{
                             jsonString = messageFormatter.FormatMessage(undefined, "No Space Limit Found", false, undefined);
                         }
@@ -1748,29 +1752,36 @@ function GetSpaceLimitForTenant(req, res){
                 var spaceLimits = [];
 
                 orgs.forEach(function (org) {
-                    var tempObj = {companyId: org.id, spaceLimit: undefined};
+                    var tempObj = {CompanyId: org.id, SpaceLimit: undefined};
                     var filteredSpaceValues = org.spaceLimit.filter(function (sLimit) {
                         return sLimit && sLimit.spaceType.toLowerCase() === req.params.spaceType.toLowerCase();
                     });
 
                     if(filteredSpaceValues){
 
+                        var tempSpaceLimitInfo = {};
                         if(filteredSpaceValues.length > 1){
 
-                            var tempSpaceLimitInfo = filteredSpaceValues[0];
+                            tempSpaceLimitInfo.SpaceType = filteredSpaceValues[0].spaceType;
+                            tempSpaceLimitInfo.SpaceUnit = filteredSpaceValues[0].spaceUnit;
                             filteredSpaceValues.forEach(function (limit) {
-                                tempSpaceLimitInfo.spaceLimit = tempSpaceLimitInfo.spaceLimit + limit.spaceLimit;
+                                tempSpaceLimitInfo.SpaceLimit = tempSpaceLimitInfo.SpaceLimit + limit.spaceLimit;
                             });
-                            tempObj.spaceLimit = tempSpaceLimitInfo;
+                            tempObj.SpaceLimit = tempSpaceLimitInfo;
                         }else{
+
                             if(filteredSpaceValues.length === 1) {
-                                tempObj.spaceLimit = filteredSpaceValues[0];
+                                tempSpaceLimitInfo.SpaceType = filteredSpaceValues[0].spaceType;
+                                tempSpaceLimitInfo.SpaceUnit = filteredSpaceValues[0].spaceUnit;
+                                tempSpaceLimitInfo.SpaceLimit = filteredSpaceValues[0].spaceLimit;
+
+                                tempObj.SpaceLimit = tempSpaceLimitInfo;
                             }
                         }
 
                     }
 
-                    if(tempObj && tempObj.spaceLimit) {
+                    if(tempObj && tempObj.SpaceLimit) {
                         spaceLimits.push(tempObj);
                     }
 
