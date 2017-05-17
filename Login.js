@@ -21,6 +21,7 @@ var util = require('util');
 var crypto = require('crypto');
 var accessToken = require ('dvp-mongomodels/model/AccessToken');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+var Console = require('dvp-mongomodels/model/Console');
 
 
 var redisip = config.Redis.ip;
@@ -281,45 +282,129 @@ function GetJWT(user, scopesx, client_id, type, req, done){
     var secret = uuid.v4();
     var expin  = moment().add(7, 'days').unix();
     var redisKey = "token:iss:"+user.username+":"+jti;
-    redisClient.set(redisKey, secret, redis.print);
-    redisClient.expireat(redisKey, expin);
+    var tokenMap = "token:iss:"+user.username+":*";
 
-    var payload = {};
-    payload.iss = user.username;
-    payload.jti = jti;
-    payload.sub = "Access client";
-    payload.exp = expin;
-    payload.tenant = user.tenant;
-    payload.company = user.company;
-    //payload.aud = client.name;
+    if(user.multi_login && user.multi_login === false){
 
-    var scopes = GetScopes(user, scopesx);
-    payload.context = scopes.context;
-    payload.scope = scopes.scope;
-    var token = jwt.sign(payload, secret);
+        redisClient.keys(tokenMap, function(err, res){
 
+            if(Array.isArray(res)){
+                res.forEach(function(item){
+                    //var delRedisKey = "token:iss:"+user.username+":"+item;
+                    redisClient.del(item,function(err, res){
+                        logger.info("JTI deleted -> ", item);
+                    })
+                })
+            }
 
+            redisClient.set(redisKey, secret, function(err, res){
 
-    var accesstoken = accessToken({
+                if(!err) {
 
 
-        userId: user._id,
-        clientId: client_id,
-        jti: jti,
-        Agent: req.headers['user-agent'],
-        Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-        scope: scopesx,
-        expirationDate: expin,
-        type: type
-    });
+                    redisClient.expireat(redisKey, expin);
 
-    accesstoken.save(function (err, accesstoken) {
-        if (err) {
+                    var payload = {};
+                    payload.iss = user.username;
+                    payload.jti = jti;
+                    payload.sub = "Access client";
+                    payload.exp = expin;
+                    payload.tenant = user.tenant;
+                    payload.company = user.company;
+                    //payload.aud = client.name;
 
-            return done(err, false, undefined);
-        }
-        return done(undefined, true, token);
-    });
+                    var scopes = GetScopes(user, scopesx);
+                    payload.context = scopes.context;
+                    payload.scope = scopes.scope;
+                    var token = jwt.sign(payload, secret);
+
+
+                    var accesstoken = accessToken({
+
+
+                        userId: user._id,
+                        clientId: client_id,
+                        jti: jti,
+                        Agent: req.headers['user-agent'],
+                        Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                        scope: scopesx,
+                        expirationDate: expin,
+                        type: type
+                    });
+
+                    accesstoken.save(function (err, accesstoken) {
+                        if (err) {
+
+                            return done(err, false, undefined);
+                        }
+                        return done(undefined, true, token);
+                    });
+                }else{
+
+                    return done(err, false, undefined);
+                }
+
+            });
+
+        });
+    }else{
+
+        redisClient.set(redisKey, secret, function(err, res){
+
+            if(!err) {
+
+
+                redisClient.expireat(redisKey, expin);
+
+                var payload = {};
+                payload.iss = user.username;
+                payload.jti = jti;
+                payload.sub = "Access client";
+                payload.exp = expin;
+                payload.tenant = user.tenant;
+                payload.company = user.company;
+                //payload.aud = client.name;
+
+                var scopes = GetScopes(user, scopesx);
+                payload.context = scopes.context;
+                payload.scope = scopes.scope;
+                var token = jwt.sign(payload, secret);
+
+
+                var accesstoken = accessToken({
+
+
+                    userId: user._id,
+                    clientId: client_id,
+                    jti: jti,
+                    Agent: req.headers['user-agent'],
+                    Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                    scope: scopesx,
+                    expirationDate: expin,
+                    type: type
+                });
+
+                accesstoken.save(function (err, accesstoken) {
+                    if (err) {
+
+                        return done(err, false, undefined);
+                    }
+                    return done(undefined, true, token);
+                });
+            }else{
+
+                return done(err, false, undefined);
+            }
+
+        });
+    }
+
+
+
+
+
+
+
 
 
 
@@ -404,14 +489,36 @@ module.exports.Login =  function(req, res) {
                     }else{
 
                         if(org && org.companyEnabled) {
-                            GetJWT(user, claims_arr, '111', 'password', req, function (err, isSuccess, token) {
 
-                                if (token) {
-                                    return res.send({state: 'login', token: token});
+
+                            Console.findOne({consoleName: req.body.console}, function(err, console) {
+                                if (err) {
+                                    return res.status(449).send({message: 'Request console is not valid ...'});
                                 } else {
-                                    return res.status(401).send({message: 'Invalid email and/or password'});
+
+                                    if(!console){
+
+                                        return res.status(449).send({message: 'Request console is not valid ...'});
+                                    }else{
+
+                                        if(console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) &&  console.consoleUserRoles.indexOf(user.user_meta.role) >= 0) {
+
+                                            GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
+
+                                                if (token) {
+                                                    return res.send({state: 'login', token: token});
+                                                } else {
+                                                    return res.status(401).send({message: 'Invalid email and/or password'});
+                                                }
+                                            });
+                                        }else{
+
+                                            return res.status(449).send({message: 'User console request is invalid'});
+                                        }
+                                    }
                                 }
                             });
+
                         }else{
 
                             return res.status(449 ).send({message: 'Activate your organization before login'});
@@ -472,7 +579,7 @@ module.exports.Validation =  function(req, res) {
 module.exports.SignUP = function(req, res) {
 
     logger.info("config.auth.signup_verification  -------->" +  config.auth.signup_verification);
-    if(config.auth.signup_verification == true ) {
+    if(config.auth.signup_verification == 'true') {
 
         if(!req.body || req.body['g-recaptcha-response'] === undefined || req.body['g-recaptcha-response'] === '' || req.body['g-recaptcha-response'] === null) {
             return res.status(409).send({message: 'Please select captcha'});
@@ -646,8 +753,7 @@ module.exports.SignUP = function(req, res) {
                                             redisClient.expireat("activate" + ":" + token, parseInt((+new Date) / 1000) + 86400);
                                             //var token = GetJWT(result, ["all_all"]);
                                             //res.send({state: "new", token: token});
-
-                                            res.send({state: "new", message: "check mail"});
+                                            res.send({state: "new", message: "check mail", companyId: result.company});
 
                                             var sendObj = {
                                                 "company": 0,
@@ -1524,7 +1630,6 @@ module.exports.ForgetPassword = function(req, res){
 
 };
 
-
 module.exports.ForgetPasswordToken = function(req, res){
 
 
@@ -1587,13 +1692,6 @@ module.exports.ForgetPasswordToken = function(req, res){
 
 
 };
-
-
-
-
-
-
-
 
 module.exports.ResetPassword = function(req, res){
 

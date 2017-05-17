@@ -254,6 +254,8 @@ function AddNavigationToConsole(req, res){
                 navigation.resources.push(bResource);
                 break;
             }
+        }else{
+            logger.warn('No Resource Service found');
         }
     });
     gr.on('endValidateResources',function(){
