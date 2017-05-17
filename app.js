@@ -89,7 +89,7 @@ if(util.isArray(mongoip)){
     connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodb);
 }
 
-
+console.log(connectionstring);
 mongoose.connect(connectionstring,{server:{auto_reconnect:true}});
 
 
