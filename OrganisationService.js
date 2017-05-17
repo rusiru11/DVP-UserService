@@ -1748,7 +1748,7 @@ function GetSpaceLimitForTenant(req, res){
                 var spaceLimits = [];
 
                 orgs.forEach(function (org) {
-                    var tempObj = {companyId: org.id, spaceLimit: {}};
+                    var tempObj = {companyId: org.id, spaceLimit: undefined};
                     var filteredSpaceValues = org.spaceLimit.filter(function (sLimit) {
                         return sLimit && sLimit.spaceType.toLowerCase() === req.params.spaceType.toLowerCase();
                     });
@@ -1770,7 +1770,7 @@ function GetSpaceLimitForTenant(req, res){
 
                     }
 
-                    if(tempObj && tempObj.spaceLimit && tempObj.spaceLimit.length >0) {
+                    if(tempObj && tempObj.spaceLimit) {
                         spaceLimits.push(tempObj);
                     }
 
