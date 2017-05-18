@@ -1431,13 +1431,13 @@ function AssignPackageUnitToOrganisation(req,res){
                                                                                 }
 
                                                                             }else {
-                                                                                if (packageUnit.unitData && packageUnit.unitData.consoleAccessLimits && org.consoleAccessLimits.length > 0) {
+                                                                                if (packageUnit.unitData && packageUnit.unitData.consoleAccessLimit && org.consoleAccessLimits.length > 0) {
 
                                                                                     for (var j = 0; j < org.consoleAccessLimits.length; j++) {
 
                                                                                         var cal = org.consoleAccessLimits[j];
 
-                                                                                        if (cal.accessType == packageUnit.unitData.consoleAccessLimits.accessType) {
+                                                                                        if (cal.accessType == packageUnit.unitData.consoleAccessLimit.accessType) {
                                                                                             org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
                                                                                             if(packageUnit.unitData && packageUnit.unitData.resources && packageUnit.unitData.resources.length >2) {
                                                                                                 if(packageUnit.unitData.resources[2].scopes && packageUnit.unitData.resources[2].scopes.length > 0) {
