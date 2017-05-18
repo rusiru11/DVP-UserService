@@ -1437,8 +1437,13 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                                                                         var cal = org.consoleAccessLimits[j];
 
-                                                                                        if (cal.accessType == packageUnit.unitData.consoleAccessLimit.accessType) {
+                                                                                        if (cal.accessType == packageUnit.unitData.consoleAccessLimits.accessType) {
                                                                                             org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
+                                                                                            if(packageUnit.unitData && packageUnit.unitData.resources && packageUnit.unitData.resources.length >2) {
+                                                                                                if(packageUnit.unitData.resources[2].scopes && packageUnit.unitData.resources[2].scopes.length > 0) {
+                                                                                                    packageUnit.unitData.resources[2].scopes[0].limit = topUpCount;
+                                                                                                }
+                                                                                            }
                                                                                             break;
 
                                                                                         }
