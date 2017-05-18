@@ -1148,7 +1148,22 @@ function UpdateUser(ownerId, vPackage){
                 ec.on('endExtractConsoles', function(clientScopes){
                     if(clientScopes) {
                         for (var j = 0; j < clientScopes.length; j++) {
-                            user.client_scopes.push(clientScopes[j]);
+                            if(user.client_scopes && user.client_scopes.length > 0) {
+                                var existingClientScope = FilterObjFromArray(user.client_scopes, "consoleName", clientScopes[j].consoleName);
+
+                                if(existingClientScope){
+                                    clientScopes[j].menus.forEach(function (cScopeMenu) {
+                                        if(cScopeMenu){
+
+                                            existingClientScope.menus.push(cScopeMenu);
+                                        }
+                                    });
+                                }else{
+                                    user.client_scopes.push(clientScopes[j]);
+                                }
+                            }else {
+                                user.client_scopes.push(clientScopes[j]);
+                            }
                         }
                     }
 
