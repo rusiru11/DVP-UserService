@@ -658,7 +658,9 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
             });
 
             if(existingSpaceLimit && existingSpaceLimit.length > 0){
-                existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit + sLimit.spaceLimit;
+                if(existingSpaceLimit[0].spaceLimit < sLimit.spaceLimit) {
+                    existingSpaceLimit[0].spaceLimit = sLimit.spaceLimit;
+                }
             }else{
                 spaceLimitsToAdd.push(sLimit);
             }
