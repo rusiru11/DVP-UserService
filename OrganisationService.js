@@ -658,7 +658,9 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
             });
 
             if(existingSpaceLimit && existingSpaceLimit.length > 0){
-                existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit + sLimit.spaceLimit;
+                if(existingSpaceLimit[0].spaceLimit < sLimit.spaceLimit) {
+                    existingSpaceLimit[0].spaceLimit = sLimit.spaceLimit;
+                }
             }else{
                 spaceLimitsToAdd.push(sLimit);
             }
@@ -1148,7 +1150,22 @@ function UpdateUser(ownerId, vPackage){
                 ec.on('endExtractConsoles', function(clientScopes){
                     if(clientScopes) {
                         for (var j = 0; j < clientScopes.length; j++) {
-                            user.client_scopes.push(clientScopes[j]);
+                            if(user.client_scopes && user.client_scopes.length > 0) {
+                                var existingClientScope = FilterObjFromArray(user.client_scopes, "consoleName", clientScopes[j].consoleName);
+
+                                if(existingClientScope){
+                                    clientScopes[j].menus.forEach(function (cScopeMenu) {
+                                        if(cScopeMenu){
+
+                                            existingClientScope.menus.push(cScopeMenu);
+                                        }
+                                    });
+                                }else{
+                                    user.client_scopes.push(clientScopes[j]);
+                                }
+                            }else {
+                                user.client_scopes.push(clientScopes[j]);
+                            }
                         }
                     }
 
@@ -1416,7 +1433,7 @@ function AssignPackageUnitToOrganisation(req,res){
                                                                                 }
 
                                                                             }else {
-                                                                                if (packageUnit.unitData && packageUnit.unitData.consoleAccessLimits && org.consoleAccessLimits.length > 0) {
+                                                                                if (packageUnit.unitData && packageUnit.unitData.consoleAccessLimit && org.consoleAccessLimits.length > 0) {
 
                                                                                     for (var j = 0; j < org.consoleAccessLimits.length; j++) {
 
@@ -1424,6 +1441,11 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                                                                         if (cal.accessType == packageUnit.unitData.consoleAccessLimit.accessType) {
                                                                                             org.consoleAccessLimits[j].accessLimit = org.consoleAccessLimits[j].accessLimit + topUpCount;
+                                                                                            if(packageUnit.unitData && packageUnit.unitData.resources && packageUnit.unitData.resources.length >2) {
+                                                                                                if(packageUnit.unitData.resources[2].scopes && packageUnit.unitData.resources[2].scopes.length > 0) {
+                                                                                                    packageUnit.unitData.resources[2].scopes[0].limit = topUpCount;
+                                                                                                }
+                                                                                            }
                                                                                             break;
 
                                                                                         }
@@ -1660,7 +1682,6 @@ function GetBillingDetails(req, res){
     //res.end(jsonString);
 }
 
-
 function RequestToBill(company, tenant, billInfo, callback){
     try {
         var contextUrl = util.format("http://%s/DVP/API/%s/Billing/BuyPackage", config.Services.billingserviceHost, config.Services.billingserviceVersion);
@@ -1684,6 +1705,142 @@ function RequestToBill(company, tenant, billInfo, callback){
     }
 }
 
+function GetSpaceLimit(req, res){
+    logger.debug("DVP-UserService.GetSpaceLimit Internal method ");
+
+    var tenant = parseInt(req.user.tenant);
+    var company;
+    if(req.params.company){
+        company = parseInt(req.params.company);
+    }else {
+        company = parseInt(req.user.company);
+    }
+    var jsonString;
+    Org.findOne({tenant: tenant, id: company}).exec( function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+        }else{
+            if(org){
+
+                var spaceLimits = [];
+                var filteredSpaceValues = org.spaceLimit.filter(function (sLimit) {
+                    return sLimit.spaceType.toLowerCase().indexOf(req.params.spaceType.toLowerCase()) > -1;
+                });
+
+                if(filteredSpaceValues){
+                    filteredSpaceValues.forEach(function (filterValue) {
+                        var tempObj = {CompanyId: org.id, SpaceLimit: undefined};
+                        var tempSpaceLimitInfo = {};
+
+                        tempSpaceLimitInfo.SpaceType = filterValue.spaceType;
+                        tempSpaceLimitInfo.SpaceUnit = filterValue.spaceUnit;
+                        tempSpaceLimitInfo.SpaceLimit = filterValue.spaceLimit;
+
+                        tempObj.SpaceLimit = tempSpaceLimitInfo;
+
+                        if(tempObj && tempObj.SpaceLimit) {
+                            spaceLimits.push(tempObj);
+                        }
+                    });
+
+
+
+                    jsonString = messageFormatter.FormatMessage(err, "Get Space Limit Successful", true, spaceLimits);
+
+                    //if(filteredSpaceValues.length > 1){
+                    //
+                    //    spaceLimitInfo.SpaceType = filteredSpaceValues[0].spaceType;
+                    //    spaceLimitInfo.SpaceUnit = filteredSpaceValues[0].spaceUnit;
+                    //    filteredSpaceValues.forEach(function (limit) {
+                    //        spaceLimitInfo.SpaceLimit = spaceLimitInfo.SpaceLimit + limit.spaceLimit;
+                    //    });
+                    //    jsonString = messageFormatter.FormatMessage(err, "Get Space Limit Successful", true, spaceLimitInfo);
+                    //}else{
+                    //    if(filteredSpaceValues.length === 1) {
+                    //        spaceLimitInfo.SpaceType = filteredSpaceValues[0].spaceType;
+                    //        spaceLimitInfo.SpaceUnit = filteredSpaceValues[0].spaceUnit;
+                    //        spaceLimitInfo.SpaceLimit = filteredSpaceValues[0].spaceLimit;
+                    //        jsonString = messageFormatter.FormatMessage(err, "Get Space Limit Successful", true, spaceLimitInfo);
+                    //    }else{
+                    //        jsonString = messageFormatter.FormatMessage(undefined, "No Space Limit Found", false, undefined);
+                    //    }
+                    //}
+
+                }else{
+                    jsonString = messageFormatter.FormatMessage(undefined, "No Space Limit Found", false, undefined);
+                }
+
+            }else{
+                jsonString = messageFormatter.FormatMessage(undefined, "No Organisation Found", false, undefined);
+            }
+
+        }
+        res.end(jsonString);
+    });
+}
+
+function GetSpaceLimitForTenant(req, res){
+    logger.debug("DVP-UserService.GetSpaceLimit Internal method ");
+
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    Org.find({tenant: tenant}).exec( function(err, orgs) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+        }else{
+            if(orgs){
+
+                var spaceLimits = [];
+
+                orgs.forEach(function (org) {
+
+                    var filteredSpaceValues = org.spaceLimit.filter(function (sLimit) {
+                        return sLimit && sLimit.spaceType.toLowerCase().indexOf(req.params.spaceType.toLowerCase()) > -1;
+                    });
+
+                    if(filteredSpaceValues){
+
+                        filteredSpaceValues.forEach(function (filterValue) {
+                            var tempObj = {CompanyId: org.id, SpaceLimit: undefined};
+                            var tempSpaceLimitInfo = {};
+                            //if(filteredSpaceValues.length > 1){
+                            //
+                            //    tempSpaceLimitInfo.SpaceType = filterValue.spaceType;
+                            //    tempSpaceLimitInfo.SpaceUnit = filterValue.spaceUnit;
+                            //    filteredSpaceValues.forEach(function (limit) {
+                            //        tempSpaceLimitInfo.SpaceLimit = tempSpaceLimitInfo.SpaceLimit + limit.spaceLimit;
+                            //    });
+                            //    tempObj.SpaceLimit = tempSpaceLimitInfo;
+                            //}else{
+                            //
+                            //    if(filteredSpaceValues.length === 1) {
+                                    tempSpaceLimitInfo.SpaceType = filterValue.spaceType;
+                                    tempSpaceLimitInfo.SpaceUnit = filterValue.spaceUnit;
+                                    tempSpaceLimitInfo.SpaceLimit = filterValue.spaceLimit;
+
+                                    tempObj.SpaceLimit = tempSpaceLimitInfo;
+                            //    }
+                            //}
+
+                            if(tempObj && tempObj.SpaceLimit) {
+                                spaceLimits.push(tempObj);
+                            }
+                        });
+
+                    }
+                });
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get Space Limit Successful", true, spaceLimits);
+
+            }else{
+                jsonString = messageFormatter.FormatMessage(undefined, "No Organisation Found", false, undefined);
+            }
+
+        }
+        res.end(jsonString);
+    });
+}
+
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
 module.exports.DeleteOrganisation = DeleteOrganisation;
@@ -1701,3 +1858,5 @@ module.exports.ActivateOrganisation = ActivateOrganisation;
 module.exports.GetOrganisationsWithPaging = GetOrganisationsWithPaging;
 module.exports.GetBillingDetails = GetBillingDetails;
 module.exports.IsOrganizationExists = IsOrganizationExists;
+module.exports.GetSpaceLimit = GetSpaceLimit;
+module.exports.GetSpaceLimitForTenant = GetSpaceLimitForTenant;
