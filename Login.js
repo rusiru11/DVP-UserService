@@ -422,7 +422,7 @@ module.exports.Login =  function(req, res) {
         if ((config.auth.login_verification === true || config.auth.login_verification === 'true') && (user.verified === false)) {
 
 
-            return res.status(449 ).send({message: 'Activate your account before login'});
+            //res.status(449 ).send({message: 'Activate your account before login'});
 
             crypto.randomBytes(20, function (err, buf) {
                 var token = buf.toString('hex');
@@ -452,7 +452,7 @@ module.exports.Login =  function(req, res) {
                             created_at: new Date(),
                             url:url}
 
-                        //PublishToQueue("EMAILOUT", sendObj)
+                        PublishToQueue("EMAILOUT", sendObj)
 
                         return res.status(449 ).send({message: 'Activate your account before login'});
                     }
