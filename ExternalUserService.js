@@ -108,6 +108,40 @@ function GetExternalUserAttribute(req, res){
 
 }
 
+function UpdateExternalUserAttribute(req, res){
+
+
+    logger.debug("DVP-UserService.UpdateExternalUserAttribute Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    var updateObject= {};
+    updateObject[req.params.attribute] = req.params.value;
+
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant},updateObject, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update External User Failed", false, undefined);
+
+        } else {
+
+            if (users) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Update External User Successful", true, users);
+
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "No external user found", false, undefined);
+            }
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
 
 
 function DeleteExternalUser(req,res){
@@ -766,3 +800,4 @@ module.exports.UpdateExternalUserProfileDynamicFields = UpdateExternalUserProfil
 module.exports.UpdateFormSubmission = UpdateFormSubmission;
 module.exports.GetExternalUserAttribute = GetExternalUserAttribute;
 module.exports.GetExternalUsersByTags = GetExternalUsersByTags;
+module.exports.UpdateExternalUserAttribute = UpdateExternalUserAttribute;
