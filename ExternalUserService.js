@@ -267,6 +267,7 @@ function GetExternalUserProfileByInteraction(req, res){
     var orQuery = {$or:[queryObject, otherQuery]};
  */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -437,8 +438,8 @@ function GetExternalUserProfileByField(req, res){
 
     var queryObject = {company: company, tenant: tenant};
 
-    var likeval = new RegExp('^'+value+'$', "i");
-    queryObject[field] = likeval;
+    //var likeval = new RegExp('^'+value+'$', "i");
+    queryObject[field] = value;
 
     ExternalUser.find(queryObject).populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
         if (err) {
