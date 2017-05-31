@@ -524,7 +524,8 @@ function CreateOrganisation(req, res){
                                         tenantRef:Tenants._id,
                                         ownerRef: user._id,
                                         created_at: Date.now(),
-                                        updated_at: Date.now()
+                                        updated_at: Date.now(),
+                                        timeZone: req.body.timeZone
                                     });
                                     user.user_meta = {role: "admin"};
                                     user.user_scopes =[
@@ -612,7 +613,7 @@ function UpdateOrganisation(req, res){
 
     req.body.updated_at = Date.now();
     if(req.body.companyName) {
-        Org.findOneAndUpdate({tenant: tenant, id: company}, {companyName: req.body.companyName}, function (err, org) {
+        Org.findOneAndUpdate({tenant: tenant, id: company}, {companyName: req.body.companyName, timeZone: req.body.timeZone}, function (err, org) {
             if (err) {
                 jsonString = messageFormatter.FormatMessage(err, "Update Organisation Failed", false, undefined);
             } else {
@@ -1224,7 +1225,7 @@ function UpdateUser(ownerId, vPackage){
     });
 }
 
-function CreateOrganisationStanAlone(user, companyname, callback) {
+function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
     logger.debug("DVP-UserService.CreateOrganisationStanAlone Internal method ");
 
     GetNewCompanyId(function (cid) {
@@ -1258,7 +1259,8 @@ function CreateOrganisationStanAlone(user, companyname, callback) {
                                 tenantRef: Tenants._id,
                                 ownerRef: user._id,
                                 created_at: Date.now(),
-                                updated_at: Date.now()
+                                updated_at: Date.now(),
+                                timeZone: timezone
                             });
                             var usr = {};
                             usr.company = cid;

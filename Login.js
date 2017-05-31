@@ -633,7 +633,7 @@ module.exports.SignUP = function(req, res) {
                     if (!err && result) {
 
 
-                        orgService.CreateOrganisationStanAlone(user,req.body.companyname, function (err, result) {
+                        orgService.CreateOrganisationStanAlone(user,req.body.companyname, req.body.timeZone, function (err, result) {
 
                             if (!err && result) {
 
@@ -732,7 +732,7 @@ module.exports.SignUP = function(req, res) {
                     if (!err && result) {
 
 
-                        orgService.CreateOrganisationStanAlone(user,req.body.companyname, function (err, result) {
+                        orgService.CreateOrganisationStanAlone(user,req.body.companyname, req.body.timeZone, function (err, result) {
 
                             if (!err && result) {
 
@@ -943,11 +943,12 @@ module.exports.Google = function(req, res) {
                                         {"scope": "myUserProfile", "read": true}
                                     ];
 
+                                    var defaultTimezone = {tz: "", utcOffset: ""};
 
                                     user.save(function (err) {
 
                                         if (!err) {
-                                            orgService.CreateOrganisationStanAlone(user,profile.email, function (err, rUser) {
+                                            orgService.CreateOrganisationStanAlone(user,profile.email, defaultTimezone, function (err, rUser) {
                                                 if (!err && rUser) {
 
                                                     //var token = GetJWT(rUser,claims_arr);
@@ -1202,8 +1203,8 @@ module.exports.GitHub = function(req, res) {
 
                                     if (!err) {
 
-
-                                        orgService.CreateOrganisationStanAlone(user,profile.email, function (err, rUser) {
+                                        var defaultTimezone = {tz: "", utcOffset: ""};
+                                        orgService.CreateOrganisationStanAlone(user,profile.email, defaultTimezone, function (err, rUser) {
 
                                             if (!err && rUser) {
 
@@ -1452,9 +1453,9 @@ module.exports.Facebook = function(req, res) {
                             user.save(function (err) {
 
                                 if(!err) {
+                                    var defaultTimezone = {tz: "", utcOffset: ""};
 
-
-                                    orgService.CreateOrganisationStanAlone(user,profile.email,function(err, rUser){
+                                    orgService.CreateOrganisationStanAlone(user,profile.email, defaultTimezone,function(err, rUser){
 
                                         if(!err && rUser ){
 
