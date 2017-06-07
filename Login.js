@@ -521,9 +521,14 @@ module.exports.Login =  function(req, res) {
                                             var Hash_token_key = config.Tenant.activeTenant + "_BILL_HASH_TOKEN";
 
 
+                                            logger.info("The bill token key is "+ bill_token_key);
+                                            logger.info("The hash token key is "+ Hash_token_key);
+
+
+
                                             redisClient.get(bill_token_key, function(err, reply) {
 
-                                                if(!err) {
+                                                if(!err && reply) {
 
                                                     var bill_token = reply;
 
@@ -532,7 +537,7 @@ module.exports.Login =  function(req, res) {
 
                                                     redisClient.get(Hash_token_key, function(err, reply) {
 
-                                                        if (!err) {
+                                                        if (!err && reply) {
 
 
                                                             var hash_token = reply;
