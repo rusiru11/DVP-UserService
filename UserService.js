@@ -214,16 +214,14 @@ function GetUsersByRoles(req, res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    var query = {_id: {$in:req.query.id},company: company, tenant: tenant, Active: true};
 
-    if(!util.isArray(req.query.id))
-        query = {_id: req.query.id,company: company, tenant: tenant, Active: true};
 
 
     var qObj = {
         company:company,
         tenant:tenant,
-        $or:[]
+        $or:[],
+        Active: true
     }
 
    req.body.roles.forEach(function (item) {
