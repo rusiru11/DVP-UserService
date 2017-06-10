@@ -627,7 +627,7 @@ function SearchExternalUsers(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.find({$text : { $search : req.params.text } , company: company, tenant: tenant},{ score : { $meta: "textScore" } }).sort({ score : { $meta : 'textScore' } })
+    ExternalUser.find({$text : { $search : req.params.text } , company: company, tenant: tenant},{ score : { $meta: "textScore" } }).populate( {path: 'form_submission',populate : {path: 'form'}}).sort({ score : { $meta : 'textScore' } })
         .exec(function(err, users) {
         if (err) {
 
