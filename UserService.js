@@ -12,6 +12,7 @@ var crypto = require('crypto');
 var config = require('config');
 var redis = require('redis');
 var bcrypt = require('bcryptjs');
+var DbConn = require('dvp-dbmodels');
 
 
 var redisip = config.Redis.ip;
@@ -160,6 +161,84 @@ function GetUsersByIDs(req, res){
 
 
                 jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+
+            }
+
+            res.end(jsonString);
+        });
+
+}
+
+function GetUsersByRole(req, res){
+
+
+    logger.debug("DVP-UserService.GetUsersByRole Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    var query = {_id: {$in:req.query.id},company: company, tenant: tenant, Active: true};
+
+    if(!util.isArray(req.query.id))
+        query = {_id: req.query.id,company: company, tenant: tenant, Active: true};
+
+
+
+
+
+    User.find({company:company , tenant:tenant,'user_meta.role':req.params.role}).select("-password")
+        .exec(  function(err, users) {
+            if (err) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+
+            }else{
+
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+
+            }
+
+            res.end(jsonString);
+        });
+
+}
+
+function GetUsersByRoles(req, res){
+
+
+    logger.debug("DVP-UserService.GetUsersByRoles Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+
+
+    var qObj = {
+        company:company,
+        tenant:tenant,
+        $or:[],
+        Active: true
+    }
+
+   req.body.roles.forEach(function (item) {
+       qObj.$or.push({'user_meta.role':item});
+   });
+
+
+    User.find(qObj).select("-password")
+        .exec(  function(err, users) {
+            if (err) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+
+            }else{
+
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
             }
 
@@ -656,7 +735,7 @@ function UpdateUser(req, res){
         });
     }else{
 
-        jsonString = messageFormatter.FormatMessage(err, "Update User Failed Username empty", false, undefined);
+        jsonString = messageFormatter.FormatMessage(new Error('Update User Failed Username empty'), "Update User Failed Username empty", false, undefined);
         res.end(jsonString);
 
     }
@@ -695,7 +774,7 @@ function UpdateUserProfilePassword(req, res) {
                 crypto.randomBytes(20, function (err, buf) {
                     var token = buf.toString('hex');
 
-                   // var url = config.auth.ui_host + '#/reset/' + token;
+                    // var url = config.auth.ui_host + '#/reset/' + token;
 
                     redisClient.set("reset" + ":" + token, existingUser._id.toString(), function (err, val) {
                         if (err) {
@@ -2819,9 +2898,345 @@ function GetSuperUsers(req, res){
 
 }
 
+function AddFileCategoryToUser(req, res){
+
+
+
+    logger.debug("DVP-UserService.addFileCategoryToUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+
+    DbConn.FileCategory.findOne({where:[{Category:req.params.category}]}).then(function (resCat) {
+
+        if (resCat) {
+            if (req.user.iss) {
+
+                User.findOneAndUpdate({
+                    username: req.user.iss,
+                    company: company,
+                    tenant: tenant
+                }, {$push: {allowed_file_categories: req.params.category}}, function (err, users) {
+                    if (err) {
+
+                        jsonString = messageFormatter.FormatMessage(err, "Add file category to User Failed", false, undefined);
+
+                    } else {
+                        if (users) {
+                            jsonString = messageFormatter.FormatMessage(err, "Add file category to User Successful", true, users);
+                        }
+                        else {
+                            jsonString = messageFormatter.FormatMessage(err, "Add file category to User Failed", false, undefined);
+                        }
+
+
+                    }
+
+                    res.end(jsonString);
+                });
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(new Error('Add file category to User :- Username empty'), "Add file category to User :- Username empty", false, undefined);
+                res.end(jsonString);
+
+            }
+        }
+        else
+        {
+            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : '+req.params.category), "Invalid file category "+req.params.category, false, undefined);
+            res.end(jsonString);
+        }
+
+    }).catch(function (errCat) {
+        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category "+req.params.category, false, undefined);
+        res.end(jsonString);
+    });
+
+
+
+
+}
+
+
+function AddFileCategoryToSpecificUser(req, res){
+
+
+
+    logger.debug("DVP-UserService.addFileCategoryToUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+
+    DbConn.FileCategory.findOne({where:[{Category:req.params.category}]}).then(function (resCat) {
+
+        if (resCat) {
+            if (req.user.iss) {
+
+                User.findOneAndUpdate({
+                    username: req.params.user,
+                    company: company,
+                    tenant: tenant
+                }, {$push: {allowed_file_categories: req.params.category}}, function (err, users) {
+                    if (err) {
+
+                        jsonString = messageFormatter.FormatMessage(err, "Add file category to User Failed", false, undefined);
+
+                    } else {
+                        if (users) {
+                            jsonString = messageFormatter.FormatMessage(err, "Add file category to User Successful", true, users);
+                        }
+                        else {
+                            jsonString = messageFormatter.FormatMessage(err, "Add file category to User Failed", false, undefined);
+                        }
+
+
+                    }
+
+                    res.end(jsonString);
+                });
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(new Error('Add file category to User :- Username empty'), "Add file category to User :- Username empty", false, undefined);
+                res.end(jsonString);
+
+            }
+        }
+        else
+        {
+            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : '+req.params.category), "Invalid file category "+req.params.category, false, undefined);
+            res.end(jsonString);
+        }
+
+    }).catch(function (errCat) {
+        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category "+req.params.category, false, undefined);
+        res.end(jsonString);
+    });
+
+
+
+
+}
+
+/*function AddFileCategoriesToUser(req, res){
+
+
+
+ logger.debug("DVP-UserService.AddFileCategoriesToUser Internal method ");
+
+ var company = parseInt(req.user.company);
+ var tenant = parseInt(req.user.tenant);
+ var jsonString;
+
+ req.body.updated_at = Date.now();
+
+ var queryObj = {
+
+ $or:[]
+ }
+
+ if(req.body.fileCategories)
+ {
+ req.body.fileCategories.forEach(function (item) {
+
+ queryObj.$or.push({Category:item})
+ });
+ }
+
+
+ DbConn.FileCategory.find(queryObj).then(function (resCat) {
+
+ if (resCat) {
+
+
+ var CategoryDetails = resCat.map(function (item) {
+
+ return item.Category;
+
+ });
+
+ if (req.user.iss) {
+
+ User.findOneAndUpdate({
+ username: req.user.iss,
+ company: company,
+ tenant: tenant
+ }, {$push: {allowed_file_categories: CategoryDetails}}, function (err, users) {
+ if (err) {
+
+ jsonString = messageFormatter.FormatMessage(err, "Add file categories to User Failed", false, undefined);
+
+ } else {
+ if (users) {
+ jsonString = messageFormatter.FormatMessage(err, "Add file categories to User Successful", true, users);
+ }
+ else {
+ jsonString = messageFormatter.FormatMessage(err, "Add file categories to User Failed", false, undefined);
+ }
+
+
+ }
+
+ res.end(jsonString);
+ });
+ } else {
+
+ jsonString = messageFormatter.FormatMessage(new Error('Add file categories to User :- Username empty'), "Add file category to User :- Username empty", false, undefined);
+ res.end(jsonString);
+
+ }
+ }
+ else
+ {
+ jsonString = messageFormatter.FormatMessage(new Error('Invalid file categories  : '+req.body.fileCategories), "Invalid file category "+req.body.fileCategories, false, undefined);
+ res.end(jsonString);
+ }
+
+ }).catch(function (errCat) {
+ jsonString = messageFormatter.FormatMessage(errCat, "Invalid file categories "+req.body.fileCategories, false, undefined);
+ res.end(jsonString);
+ });
+
+
+
+
+ }*/
+function RemoveFileCategoryFromUser(req, res){
+
+
+
+    logger.debug("DVP-UserService.addFileCategoryToUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+
+    DbConn.FileCategory.findOne({where:[{Category:req.params.category}]}).then(function (resCat) {
+
+        if (resCat) {
+            if (req.user.iss) {
+
+                User.findOneAndUpdate({
+                    username: req.user.iss,
+                    company: company,
+                    tenant: tenant
+                }, {$pull: {allowed_file_categories: req.params.category}}, function (err, users) {
+                    if (err) {
+
+                        jsonString = messageFormatter.FormatMessage(err, "Add file category to User Failed", false, undefined);
+
+                    } else {
+                        if (users) {
+                            jsonString = messageFormatter.FormatMessage(err, "Add file category to User Successful", true, users);
+                        }
+                        else {
+                            jsonString = messageFormatter.FormatMessage(err, "Add file category to User Failed", false, undefined);
+                        }
+
+
+                    }
+
+                    res.end(jsonString);
+                });
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(new Error('Add file category to User :- Username empty'), "Add file category to User :- Username empty", false, undefined);
+                res.end(jsonString);
+
+            }
+        }
+        else
+        {
+            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : '+req.params.category), "Invalid file category "+req.params.category, false, undefined);
+            res.end(jsonString);
+        }
+
+    }).catch(function (errCat) {
+        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category "+req.params.category, false, undefined);
+        res.end(jsonString);
+    });
+
+
+
+
+}
+
+function RemoveFileCategoryFromSpecificUser(req, res){
+
+
+
+    logger.debug("DVP-UserService.addFileCategoryToUser Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+
+    DbConn.FileCategory.findOne({where:[{Category:req.params.category}]}).then(function (resCat) {
+
+        if (resCat) {
+            if (req.user.iss) {
+
+                User.findOneAndUpdate({
+                    username: req.params.user,
+                    company: company,
+                    tenant: tenant
+                }, {$pull: {allowed_file_categories: req.params.category}}, function (err, users) {
+                    if (err) {
+
+                        jsonString = messageFormatter.FormatMessage(err, "Add file category to User Failed", false, undefined);
+
+                    } else {
+                        if (users) {
+                            jsonString = messageFormatter.FormatMessage(err, "Add file category to User Successful", true, users);
+                        }
+                        else {
+                            jsonString = messageFormatter.FormatMessage(err, "Add file category to User Failed", false, undefined);
+                        }
+
+
+                    }
+
+                    res.end(jsonString);
+                });
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(new Error('Add file category to User :- Username empty'), "Add file category to User :- Username empty", false, undefined);
+                res.end(jsonString);
+
+            }
+        }
+        else
+        {
+            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : '+req.params.category), "Invalid file category "+req.params.category, false, undefined);
+            res.end(jsonString);
+        }
+
+    }).catch(function (errCat) {
+        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category "+req.params.category, false, undefined);
+        res.end(jsonString);
+    });
+
+
+
+
+}
+
+
+
 
 module.exports.GetUser = GetUser;
 module.exports.GetUsers = GetUsers;
+module.exports.GetUsersByRole = GetUsersByRole;
+module.exports.GetUsersByRoles = GetUsersByRoles;
 module.exports.GetUsersByIDs = GetUsersByIDs;
 module.exports.DeleteUser = DeleteUser;
 module.exports.CreateUser = CreateUser;
@@ -2885,3 +3300,11 @@ module.exports.GetMyAppMetadata = GetMyAppMetadata;
 module.exports.UpdateUserProfilePassword = UpdateUserProfilePassword;
 
 module.exports.GetSuperUsers = GetSuperUsers;
+
+
+module.exports.AddFileCategoryToUser = AddFileCategoryToUser;
+module.exports.AddFileCategoryToSpecificUser = AddFileCategoryToSpecificUser;
+module.exports.RemoveFileCategoryFromUser = RemoveFileCategoryFromUser;
+module.exports.RemoveFileCategoryFromSpecificUser = RemoveFileCategoryFromSpecificUser;
+/*
+ module.exports.AddFileCategoriesToUser = AddFileCategoriesToUser;*/

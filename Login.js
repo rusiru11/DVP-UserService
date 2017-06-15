@@ -21,6 +21,7 @@ var util = require('util');
 var crypto = require('crypto');
 var accessToken = require ('dvp-mongomodels/model/AccessToken');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+var crypto = require('crypto');
 var Console = require('dvp-mongomodels/model/Console');
 
 
@@ -410,6 +411,17 @@ function GetJWT(user, scopesx, client_id, type, req, done){
 
 }
 
+function Encrypt(plainText, workingKey) {
+
+    var key =workingKey;
+    var iv = '0123456789@#$%&*';
+    var cipher = crypto.createCipheriv('aes-128-ctr', key, iv);
+    var encoded = cipher.update(plainText, 'utf8', 'hex');
+    encoded += cipher.final('hex');
+    return encoded;
+}
+
+
 module.exports.Login =  function(req, res) {
     //email.contact
     User.findOne({"username": req.body.userName}, '+password', function (err, user) {
@@ -422,7 +434,7 @@ module.exports.Login =  function(req, res) {
         if ((config.auth.login_verification === true || config.auth.login_verification === 'true') && (user.verified === false)) {
 
 
-            return res.status(449 ).send({message: 'Activate your account before login'});
+            //res.status(449 ).send({message: 'Activate your account before login'});
 
             crypto.randomBytes(20, function (err, buf) {
                 var token = buf.toString('hex');
@@ -452,7 +464,7 @@ module.exports.Login =  function(req, res) {
                             created_at: new Date(),
                             url:url}
 
-                        //PublishToQueue("EMAILOUT", sendObj)
+                        PublishToQueue("EMAILOUT", sendObj)
 
                         return res.status(449 ).send({message: 'Activate your account before login'});
                     }
@@ -501,20 +513,93 @@ module.exports.Login =  function(req, res) {
                                         return res.status(449).send({message: 'Request console is not valid ...'});
                                     }else{
 
-                                        if(console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) &&  console.consoleUserRoles.indexOf(user.user_meta.role) >= 0) {
 
-                                            GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
+                                        if(console.consoleName == "OPERATOR_CONSOLE"){
 
-                                                if (token) {
-                                                    return res.send({state: 'login', token: token});
-                                                } else {
-                                                    return res.status(401).send({message: 'Invalid email and/or password'});
+
+                                            var bill_token_key = config.Tenant.activeTenant + "_BILL_TOKEN";
+                                            var Hash_token_key = config.Tenant.activeTenant + "_BILL_HASH_TOKEN";
+
+
+                                            logger.info("The bill token key is "+ bill_token_key);
+                                            logger.info("The hash token key is "+ Hash_token_key);
+
+
+
+                                            redisClient.get(bill_token_key, function(err, reply) {
+
+                                                if(!err && reply) {
+
+                                                    var bill_token = reply;
+
+                                                    logger.debug("The bill token is "+ reply)
+
+
+                                                    redisClient.get(Hash_token_key, function(err, reply) {
+
+                                                        if (!err && reply) {
+
+
+                                                            var hash_token = reply;
+
+                                                            logger.debug("The hash token is "+ reply)
+
+                                                            if(bill_token == Encrypt(hash_token,'DuoS123412341234') ){
+
+                                                                if(console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) &&  console.consoleUserRoles.indexOf(user.user_meta.role) >= 0) {
+
+                                                                    GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
+
+                                                                        if (token) {
+                                                                            return res.send({state: 'login', token: token});
+                                                                        } else {
+                                                                            return res.status(401).send({message: 'Invalid email and/or password'});
+                                                                        }
+                                                                    });
+                                                                }else{
+
+                                                                    return res.status(449).send({message: 'User console request is invalid'});
+                                                                }
+
+                                                            }else {
+
+                                                                return res.status(449).send({message: 'Bill token is not match'});
+                                                            }
+
+                                                        }else{
+
+                                                            logger.error("Hash token failed", err);
+                                                            return res.status(449).send({message: 'Hash token is not found'});
+                                                        }
+                                                    });
+                                                }else{
+
+                                                    logger.error("Bill token failed ", err);
+                                                    return res.status(449).send({message: 'Bill token is not found'});
                                                 }
                                             });
+
+
                                         }else{
 
-                                            return res.status(449).send({message: 'User console request is invalid'});
+                                            if(console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) &&  console.consoleUserRoles.indexOf(user.user_meta.role) >= 0) {
+
+                                                GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
+
+                                                    if (token) {
+                                                        return res.send({state: 'login', token: token});
+                                                    } else {
+                                                        return res.status(401).send({message: 'Invalid email and/or password'});
+                                                    }
+                                                });
+                                            }else{
+
+                                                return res.status(449).send({message: 'User console request is invalid'});
+                                            }
+
                                         }
+
+
                                     }
                                 }
                             });
@@ -633,7 +718,7 @@ module.exports.SignUP = function(req, res) {
                     if (!err && result) {
 
 
-                        orgService.CreateOrganisationStanAlone(user,req.body.companyname, function (err, result) {
+                        orgService.CreateOrganisationStanAlone(user,req.body.companyname, req.body.timeZone, function (err, result) {
 
                             if (!err && result) {
 
@@ -732,7 +817,7 @@ module.exports.SignUP = function(req, res) {
                     if (!err && result) {
 
 
-                        orgService.CreateOrganisationStanAlone(user,req.body.companyname, function (err, result) {
+                        orgService.CreateOrganisationStanAlone(user,req.body.companyname, req.body.timeZone, function (err, result) {
 
                             if (!err && result) {
 
@@ -943,11 +1028,12 @@ module.exports.Google = function(req, res) {
                                         {"scope": "myUserProfile", "read": true}
                                     ];
 
+                                    var defaultTimezone = {tz: "", utcOffset: ""};
 
                                     user.save(function (err) {
 
                                         if (!err) {
-                                            orgService.CreateOrganisationStanAlone(user,profile.email, function (err, rUser) {
+                                            orgService.CreateOrganisationStanAlone(user,profile.email, defaultTimezone, function (err, rUser) {
                                                 if (!err && rUser) {
 
                                                     //var token = GetJWT(rUser,claims_arr);
@@ -1202,8 +1288,8 @@ module.exports.GitHub = function(req, res) {
 
                                     if (!err) {
 
-
-                                        orgService.CreateOrganisationStanAlone(user,profile.email, function (err, rUser) {
+                                        var defaultTimezone = {tz: "", utcOffset: ""};
+                                        orgService.CreateOrganisationStanAlone(user,profile.email, defaultTimezone, function (err, rUser) {
 
                                             if (!err && rUser) {
 
@@ -1452,9 +1538,9 @@ module.exports.Facebook = function(req, res) {
                             user.save(function (err) {
 
                                 if(!err) {
+                                    var defaultTimezone = {tz: "", utcOffset: ""};
 
-
-                                    orgService.CreateOrganisationStanAlone(user,profile.email,function(err, rUser){
+                                    orgService.CreateOrganisationStanAlone(user,profile.email, defaultTimezone,function(err, rUser){
 
                                         if(!err && rUser ){
 
