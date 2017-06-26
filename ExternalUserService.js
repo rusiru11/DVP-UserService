@@ -108,6 +108,40 @@ function GetExternalUserAttribute(req, res){
 
 }
 
+function UpdateExternalUserAttribute(req, res){
+
+
+    logger.debug("DVP-UserService.UpdateExternalUserAttribute Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    var updateObject= {};
+    updateObject[req.params.attribute] = req.params.value;
+
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant},updateObject, function(err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update External User Failed", false, undefined);
+
+        } else {
+
+            if (users) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Update External User Successful", true, users);
+
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "No external user found", false, undefined);
+            }
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
 
 
 function DeleteExternalUser(req,res){
@@ -232,6 +266,7 @@ function GetExternalUserProfileByInteraction(req, res){
 
     var orQuery = {$or:[queryObject, otherQuery]};
  */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -403,8 +438,8 @@ function GetExternalUserProfileByField(req, res){
 
     var queryObject = {company: company, tenant: tenant};
 
-    var likeval = new RegExp('^'+value+'$', "i");
-    queryObject[field] = likeval;
+    //var likeval = new RegExp('^'+value+'$', "i");
+    queryObject[field] = value;
 
     ExternalUser.find(queryObject).populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
         if (err) {
@@ -592,7 +627,7 @@ function SearchExternalUsers(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.find({$text : { $search : req.params.text } , company: company, tenant: tenant},{ score : { $meta: "textScore" } }).sort({ score : { $meta : 'textScore' } })
+    ExternalUser.find({$text : { $search : req.params.text } , company: company, tenant: tenant},{ score : { $meta: "textScore" } }).populate( {path: 'form_submission',populate : {path: 'form'}}).sort({ score : { $meta : 'textScore' } })
         .exec(function(err, users) {
         if (err) {
 
@@ -766,3 +801,4 @@ module.exports.UpdateExternalUserProfileDynamicFields = UpdateExternalUserProfil
 module.exports.UpdateFormSubmission = UpdateFormSubmission;
 module.exports.GetExternalUserAttribute = GetExternalUserAttribute;
 module.exports.GetExternalUsersByTags = GetExternalUsersByTags;
+module.exports.UpdateExternalUserAttribute = UpdateExternalUserAttribute;
