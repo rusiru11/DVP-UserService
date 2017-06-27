@@ -23,6 +23,7 @@ var accessToken = require ('dvp-mongomodels/model/AccessToken');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var crypto = require('crypto');
 var Console = require('dvp-mongomodels/model/Console');
+var ActiveDirectory = require('activedirectory');
 
 
 var redisip = config.Redis.ip;
@@ -420,6 +421,51 @@ function Encrypt(plainText, workingKey) {
     encoded += cipher.final('hex');
     return encoded;
 }
+
+
+
+//-------ActiveDirectory-----------------------------------
+
+var adConfig = { url: 'ldap://192.168.3.242',
+    baseDN: 'dc=duo,dc=lk',
+    username: 'Administrator@duo.lk',
+    password: 'DuoS123' };
+var ad = new ActiveDirectory(adConfig);
+
+var query = 'cn=*';
+var opts = {
+    includeMembership : [ 'group', 'user' ], // Optionally can use 'all'
+    includeDeleted : false
+};
+
+
+ad.findUsers(query, true, function(err, users) {
+    if (err) {
+        console.log('ERROR: ' +JSON.stringify(err));
+        return;
+    }
+
+    if ((! users) || (users.length == 0)) console.log('No users found.');
+    else {
+        console.log('findUsers: '+JSON.stringify(users));
+    }
+});
+
+//ad.find(query, function(err, results) {
+//    if ((err) || (! results)) {
+//        console.log('ERROR: ' + JSON.stringify(err));
+//        return;
+//    }
+//
+//    console.log('Info: ' + JSON.stringify(results.groups));
+//
+//    console.log('Info: ' + JSON.stringify(results.users));
+//
+//    console.log('Info: ' + JSON.stringify(results.other));
+//});
+
+
+
 
 
 module.exports.Login =  function(req, res) {
