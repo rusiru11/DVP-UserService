@@ -451,19 +451,6 @@ ad.findUsers(query, true, function(err, users) {
     }
 });
 
-//ad.find(query, function(err, results) {
-//    if ((err) || (! results)) {
-//        console.log('ERROR: ' + JSON.stringify(err));
-//        return;
-//    }
-//
-//    console.log('Info: ' + JSON.stringify(results.groups));
-//
-//    console.log('Info: ' + JSON.stringify(results.users));
-//
-//    console.log('Info: ' + JSON.stringify(results.other));
-//});
-
 
 
 

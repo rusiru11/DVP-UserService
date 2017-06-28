@@ -436,11 +436,12 @@ app.get('/DVP/API/:version/Tenant/Monitoring/superUsers', jwt({secret: secret.Se
 
 //--------------------------------Active Directory Configuration-------------------------------------------------
 
-app.post('/DVP/API/:version/ActiveDirectory',jwt({secret: secret.Secret}), authorization({resource:"codec", action:"write"}), ActiveDirectory.CreateActiveDirectory);
-app.put('/DVP/API/:version/ActiveDirectory/:adId',jwt({secret: secret.Secret}), authorization({resource:"codec", action:"write"}), ActiveDirectory.UpdateActiveDirectory);
-app.put('/DVP/API/:version/ActiveDirectory/:adId/ResetPassword',jwt({secret: secret.Secret}), authorization({resource:"codec", action:"write"}), ActiveDirectory.ResetActiveDirectoryPassword);
-app.delete('/DVP/API/:version/ActiveDirectory/:adId',jwt({secret: secret.Secret}), authorization({resource:"codec", action:"delete"}), ActiveDirectory.RemoveActiveDirectory);
-app.get('/DVP/API/:version/ActiveDirectory',jwt({secret: secret.Secret}), authorization({resource:"codec", action:"read"}), ActiveDirectory.GetActiveDirectory);
+app.post('/DVP/API/:version/ActiveDirectory',jwt({secret: secret.Secret}), authorization({resource:"organisation", action:"write"}), ActiveDirectory.CreateActiveDirectory);
+app.put('/DVP/API/:version/ActiveDirectory/:adId',jwt({secret: secret.Secret}), authorization({resource:"organisation", action:"write"}), ActiveDirectory.UpdateActiveDirectory);
+app.put('/DVP/API/:version/ActiveDirectory/:adId/ResetPassword',jwt({secret: secret.Secret}), authorization({resource:"organisation", action:"write"}), ActiveDirectory.ResetActiveDirectoryPassword);
+app.delete('/DVP/API/:version/ActiveDirectory/:adId',jwt({secret: secret.Secret}), authorization({resource:"organisation", action:"delete"}), ActiveDirectory.RemoveActiveDirectory);
+app.get('/DVP/API/:version/ActiveDirectory',jwt({secret: secret.Secret}), authorization({resource:"organisation", action:"read"}), ActiveDirectory.GetActiveDirectory);
+app.get('/DVP/API/:version/ActiveDirectory/Group/Users',jwt({secret: secret.Secret}), authorization({resource:"organisation", action:"read"}), ActiveDirectory.GetUsersForGroup);
 
 
 
