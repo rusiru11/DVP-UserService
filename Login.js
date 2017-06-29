@@ -109,10 +109,6 @@ redisClient.on('error', function (err) {
     console.log('Error '.red, err);
 });
 
-redisClient.auth(redispass, function (error) {
-    console.log("Error Redis : " + error);
-});
-
 function GetVerification(token, done) {
 
     var payload = jwt.decode(token);
