@@ -10,7 +10,7 @@ var PublishToQueue = require('./Worker').PublishToQueue;
 var util = require('util');
 var crypto = require('crypto');
 var config = require('config');
-var redis = require('redis');
+var redis = require('ioredis');
 var bcrypt = require('bcryptjs');
 var DbConn = require('dvp-dbmodels');
 
