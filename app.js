@@ -443,6 +443,7 @@ app.delete('/DVP/API/:version/ActiveDirectory/:adId',jwt({secret: secret.Secret}
 app.get('/DVP/API/:version/ActiveDirectory',jwt({secret: secret.Secret}), authorization({resource:"organisation", action:"read"}), ActiveDirectory.GetActiveDirectory);
 app.get('/DVP/API/:version/ActiveDirectory/Group/Users',jwt({secret: secret.Secret}), authorization({resource:"organisation", action:"read"}), ActiveDirectory.GetUsersForGroup);
 
+app.post('/DVP/API/:version/ActiveDirectory/FaceTone/User', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateUserFromAD);
 
 
 app.listen(port, function () {

@@ -153,6 +153,7 @@ var resetActiveDirectoryPassword = function (req, res) {
             if (err) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Find Active Directory Configuration Failed", false, undefined);
+                res.end(jsonString);
 
             }else{
 
@@ -161,7 +162,7 @@ var resetActiveDirectoryPassword = function (req, res) {
 
                     var password = CryptoJS.AES.encrypt(req.body.newPassword, util.format('%d %d edj44thgjfdje', tenant, company));
 
-                    activeDirectory.findOneAndUpdate({company: company, tenant: tenant}, {password: password}, function(err, adResult) {
+                    activeDirectory.findOneAndUpdate({company: company, tenant: tenant}, {password: password.toString()}, function(err, adResult) {
                         if (err) {
 
                             jsonString = messageFormatter.FormatMessage(err, "Reset Active Directory Password Failed", false, undefined);
@@ -178,12 +179,12 @@ var resetActiveDirectoryPassword = function (req, res) {
                 }else{
 
                     jsonString = messageFormatter.FormatMessage(err, "Invalid Current Password", false, undefined);
+                    res.end(jsonString);
 
                 }
 
             }
 
-            res.end(jsonString);
         });
     }catch(ex){
         jsonString = messageFormatter.FormatMessage(ex, "Error Occurred in Get Active Directory Configuration", false, undefined);
