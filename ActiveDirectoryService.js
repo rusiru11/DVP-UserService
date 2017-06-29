@@ -261,6 +261,9 @@ var getUsersForGroup = function (req, res) {
 };
 
 
+
+
+
 //--------------------------ActiveDirectoryFunctions-----------------------------------
 
 var getActiveDirectoryInternal = function (tenant, company) {
@@ -302,6 +305,56 @@ var getActiveDirectoryInternal = function (tenant, company) {
     return deferred.promise;
 };
 
+var authenticateUser = function (tenant, company, username, password, callback) {
+
+    try {
+
+        getActiveDirectoryInternal(tenant, company).then(function(result){
+
+            if(result) {
+
+                var adConfig = {
+                    url: util.format('ldap://%s', result.ldapServerIp),
+                    baseDN: result.baseDN,
+                    username: result.username,
+                    password: result.password
+                };
+
+                var ad = new ActiveDirectory(adConfig);
+
+                ad.authenticate(username, password, function(err, auth) {
+                    if (err) {
+                        callback(err, undefined)
+                    }
+
+                    if (auth) {
+                        callback(undefined, auth);
+                    }
+                    else {
+                        callback(new Error("Failed to authenticate"), undefined);
+                    }
+                });
+
+            }else{
+
+                callback(new Error("No Active Directory Configuration Found"), undefined);
+
+            }
+
+        }).catch(function(err){
+
+            callback(err, undefined);
+
+        });
+
+
+    }catch(ex){
+
+        callback(ex, undefined);
+
+    }
+};
+
 
 
 module.exports.CreateActiveDirectory = createActiveDirectory;
@@ -311,5 +364,4 @@ module.exports.RemoveActiveDirectory = removeActiveDirectory;
 module.exports.ResetActiveDirectoryPassword = resetActiveDirectoryPassword;
 module.exports.GetUsersForGroup = getUsersForGroup;
 
-
-module.exports.GetActiveDirectoryInternal = getActiveDirectoryInternal;
+module.exports.AuthenticateUser = authenticateUser;
