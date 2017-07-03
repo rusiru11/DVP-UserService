@@ -3320,71 +3320,82 @@ function CreateUserFromAD(req, res){
                     if(limitObj){
                         if(limitObj.accessLimit > limitObj.currentAccess.length){
 
-                            if(!req.body.address)
-                            {
-                                req.body.address = {};
-                            }
-
-
-                            var user = User({
-                                systemuser: true,
-                                title: req.body.title,
-                                name: req.body.name,
-                                avatar: req.body.avatar,
-                                birthday: req.body.birthday,
-                                Active: true,
-                                gender: req.body.gender,
-                                firstname: req.body.firstname,
-                                lastname: req.body.lastname,
-                                locale: req.body.locale,
-                                ssn: req.body.ssn,
-                                address:{
-                                    zipcode: req.body.address.zipcode,
-                                    number: req.body.address.number,
-                                    street: req.body.address.street,
-                                    city: req.body.address.city,
-                                    province: req.body.address.province,
-                                    country: req.body.address.country
-
-
-                                },
-                                username: req.body.username,
-                                password: req.body.password,
-                                email:{contact:req.body.mail, type: "phone", verified: false},
-                                company: parseInt(req.user.company),
-                                tenant: parseInt(req.user.tenant),
-                                user_meta: {role: userRole},
-                                auth_mechanism: "ad",
-                                verified: true,
-                                created_at: Date.now(),
-                                updated_at: Date.now()
-                            });
-
-
-
-                            user.save(function(err, user) {
-                                if (err) {
-                                    jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+                            User.findOne({tenant: tenant, company: company, username: req.body.username}, function(err, existingUser) {
+                                if(err){
+                                    jsonString = messageFormatter.FormatMessage(err, "Error on find existing user", false, undefined);
                                     res.end(jsonString);
-                                }else{
+                                }
 
-                                    limitObj.currentAccess.push(user.username);
-                                    Org.findOneAndUpdate({id: company, tenant: tenant},org, function(err, rOrg) {
+                                if(!existingUser){
+                                    if(!req.body.address)
+                                    {
+                                        req.body.address = {};
+                                    }
+
+                                    var user = User({
+                                        systemuser: true,
+                                        title: req.body.title,
+                                        name: req.body.name,
+                                        avatar: req.body.avatar,
+                                        birthday: req.body.birthday,
+                                        Active: true,
+                                        gender: req.body.gender,
+                                        firstname: req.body.firstname,
+                                        lastname: req.body.lastname,
+                                        locale: req.body.locale,
+                                        ssn: req.body.ssn,
+                                        address:{
+                                            zipcode: req.body.address.zipcode,
+                                            number: req.body.address.number,
+                                            street: req.body.address.street,
+                                            city: req.body.address.city,
+                                            province: req.body.address.province,
+                                            country: req.body.address.country
+
+
+                                        },
+                                        username: req.body.username,
+                                        password: req.body.password,
+                                        email:{contact:req.body.mail, type: "phone", verified: false},
+                                        company: parseInt(req.user.company),
+                                        tenant: parseInt(req.user.tenant),
+                                        user_meta: {role: userRole},
+                                        auth_mechanism: "ad",
+                                        verified: true,
+                                        created_at: Date.now(),
+                                        updated_at: Date.now()
+                                    });
+
+                                    user.save(function(err, user) {
                                         if (err) {
-                                            user.remove(function (err) {});
-                                            jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
+                                            jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+                                            res.end(jsonString);
                                         }else{
 
+                                            limitObj.currentAccess.push(user.username);
+                                            Org.findOneAndUpdate({id: company, tenant: tenant},org, function(err, rOrg) {
+                                                if (err) {
+                                                    user.remove(function (err) {});
+                                                    jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
+                                                }else{
 
 
-                                            jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
-                                            res.end(jsonString);
 
+                                                    jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                    res.end(jsonString);
+
+                                                }
+
+                                            });
                                         }
-
                                     });
+                                }else{
+                                    jsonString = messageFormatter.FormatMessage(err, "User already in deactivate state", false, undefined);
+                                    res.end(jsonString);
                                 }
+
                             });
+
                         }else{
                             jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
                             res.end(jsonString);
