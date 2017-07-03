@@ -9,6 +9,7 @@ var CryptoJS = require("crypto-js");
 var util = require('util');
 var Q = require('q');
 var ActiveDirectory = require('activedirectory');
+var config = require('config');
 
 
 //--------------------------ActiveDirectoryServices------------------------------------
@@ -115,24 +116,14 @@ var removeActiveDirectory = function (req, res) {
         var tenant = parseInt(req.user.tenant);
         var company = parseInt(req.user.company);
 
-        activeDirectory.findOne({company: company, tenant: tenant}, function (err, adResult) {
+        activeDirectory.findOneAndRemove({company: company, tenant: tenant}, function (err, adResult) {
             if (err) {
-                jsonString = messageFormatter.FormatMessage(err, "Find Active Directory Configuration Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Remove Active Directory Configuration Failed", false, undefined);
                 res.end(jsonString);
             } else {
-                if (adResult) {
-                    adResult.remove(function (err) {
-                        if (err) {
-                            jsonString = messageFormatter.FormatMessage(err, "Remove Active Directory Configuration Failed", false, undefined);
-                        } else {
-                            jsonString = messageFormatter.FormatMessage(undefined, "Remove Active Directory Configuration Successful", true, undefined);
-                        }
-                        res.end(jsonString);
-                    });
-                } else {
-                    jsonString = messageFormatter.FormatMessage(undefined, "Find Active Directory Configuration Failed, No Active Directory Found", false, undefined);
-                    res.end(jsonString);
-                }
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Remove Active Directory Configuration Successful", true, undefined);
+                res.end(jsonString);
             }
         });
     }catch(ex){
@@ -212,7 +203,7 @@ var getUsersForGroup = function (req, res) {
 
                 var ad = new ActiveDirectory(adConfig);
 
-                ad.getUsersForGroup('FaceTone', function(err, users) {
+                ad.getUsersForGroup(config.ActiveDirectory.groupName, function(err, users) {
                     if (err) {
 
                         jsonString = messageFormatter.FormatMessage(err, "Error Occurred in Active Directory:Get Users For Group", false, undefined);

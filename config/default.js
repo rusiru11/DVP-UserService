@@ -146,6 +146,10 @@ module.exports = {
 
   "Tenant": {
     "activeTenant": 1
+  },
+
+  "ActiveDirectory": {
+    "groupName": "FaceTone"
   }
 
 

@@ -99,6 +99,10 @@ module.exports = {
 
     "Tenant": {
         "activeTenant": "ACTIVE_TENANT"
+    },
+
+    "ActiveDirectory": {
+        "groupName": "AD_GROUPNAME"
     }
 };
 
