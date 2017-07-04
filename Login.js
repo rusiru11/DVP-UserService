@@ -23,6 +23,7 @@ var accessToken = require ('dvp-mongomodels/model/AccessToken');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var crypto = require('crypto');
 var Console = require('dvp-mongomodels/model/Console');
+var ADService = require('./ActiveDirectoryService');
 
 
 var redisip = config.Redis.ip;
@@ -496,6 +497,10 @@ module.exports.Login =  function(req, res) {
             return res.status(401).send({message: 'Invalid email and/or password'});
         }
 
+        if (user && !user.Active) {
+            return res.status(401).send({message: 'User account deactivated, Please activate your account before login'});
+        }
+
         logger.info("config.auth.login_verification --> " + config.auth.login_verification + (config.auth.login_verification === true) + " user.verified --->"+ user.verified + (user.verified === false)+ " result -->" + ((config.auth.login_verification == true) && (user.verified == false)));
 
         if ((config.auth.login_verification === true || config.auth.login_verification === 'true') && (user.verified === false)) {
@@ -548,137 +553,278 @@ module.exports.Login =  function(req, res) {
              res.send({token: GetJWT(user, ["all_all"])});
              });*/
 
-            user.comparePassword(req.body.password, function (err, isMatch) {
-                if (!isMatch) {
-                    return res.status(401).send({message: 'Invalid email and/or password'});
-                }
+            if(user.auth_mechanism && user.auth_mechanism === 'ad'){
 
-                var claims_arr = ["all_all"];
-                if (req.body.scope && util.isArray(req.body.scope) && req.body.scope.length > 0) {
-
-                    claims_arr = req.body.scope;
-                }
-
-
-                Org.findOne({tenant: user.tenant, id: user.company}, function(err, org) {
+                ADService.AuthenticateUser(user.tenant, user.company, req.body.userName, req.body.password, function (err, auth) {
                     if (err) {
-
-                        return res.status(449 ).send({message: 'Activate your organization before login'});
-
-                    }else{
-
-                        if(org && org.companyEnabled) {
-
-
-                            Console.findOne({consoleName: req.body.console}, function(err, console) {
-                                if (err) {
-                                    return res.status(449).send({message: 'Request console is not valid ...'});
-                                } else {
-
-                                    if(!console){
-
-                                        return res.status(449).send({message: 'Request console is not valid ...'});
-                                    }else{
-
-
-                                        if(console.consoleName == "OPERATOR_CONSOLE"){
-
-
-                                            var bill_token_key = config.Tenant.activeTenant + "_BILL_TOKEN";
-                                            var Hash_token_key = config.Tenant.activeTenant + "_BILL_HASH_TOKEN";
-
-
-                                            logger.info("The bill token key is "+ bill_token_key);
-                                            logger.info("The hash token key is "+ Hash_token_key);
-
-
-
-                                            redisClient.get(bill_token_key, function(err, reply) {
-
-                                                if(!err && reply) {
-
-                                                    var bill_token = reply;
-
-                                                    logger.debug("The bill token is "+ reply)
-
-
-                                                    redisClient.get(Hash_token_key, function(err, reply) {
-
-                                                        if (!err && reply) {
-
-
-                                                            var hash_token = reply;
-
-                                                            logger.debug("The hash token is "+ reply)
-
-                                                            if(bill_token == Encrypt(hash_token,'DuoS123412341234') ){
-
-                                                                if(console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) &&  console.consoleUserRoles.indexOf(user.user_meta.role) >= 0) {
-
-                                                                    GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
-
-                                                                        if (token) {
-                                                                            return res.send({state: 'login', token: token});
-                                                                        } else {
-                                                                            return res.status(401).send({message: 'Invalid email and/or password'});
-                                                                        }
-                                                                    });
-                                                                }else{
-
-                                                                    return res.status(449).send({message: 'User console request is invalid'});
-                                                                }
-
-                                                            }else {
-
-                                                                return res.status(449).send({message: 'Bill token is not match'});
-                                                            }
-
-                                                        }else{
-
-                                                            logger.error("Hash token failed", err);
-                                                            return res.status(449).send({message: 'Hash token is not found'});
-                                                        }
-                                                    });
-                                                }else{
-
-                                                    logger.error("Bill token failed ", err);
-                                                    return res.status(449).send({message: 'Bill token is not found'});
-                                                }
-                                            });
-
-
-                                        }else{
-
-                                            if(console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) &&  console.consoleUserRoles.indexOf(user.user_meta.role) >= 0) {
-
-                                                GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
-
-                                                    if (token) {
-                                                        return res.send({state: 'login', token: token});
-                                                    } else {
-                                                        return res.status(401).send({message: 'Invalid email and/or password'});
-                                                    }
-                                                });
-                                            }else{
-
-                                                return res.status(449).send({message: 'User console request is invalid'});
-                                            }
-
-                                        }
-
-
-                                    }
-                                }
-                            });
-
-                        }else{
-
-                            return res.status(449 ).send({message: 'Activate your organization before login'});
-                        }
+                        return res.status(401).send({message: err.message});
                     }
 
+                    var claims_arr = ["all_all"];
+                    if (req.body.scope && util.isArray(req.body.scope) && req.body.scope.length > 0) {
+
+                        claims_arr = req.body.scope;
+                    }
+
+
+                    Org.findOne({tenant: user.tenant, id: user.company}, function (err, org) {
+                        if (err) {
+
+                            return res.status(449).send({message: 'Activate your organization before login'});
+
+                        } else {
+
+                            if (org && org.companyEnabled) {
+
+
+                                Console.findOne({consoleName: req.body.console}, function (err, console) {
+                                    if (err) {
+                                        return res.status(449).send({message: 'Request console is not valid ...'});
+                                    } else {
+
+                                        if (!console) {
+
+                                            return res.status(449).send({message: 'Request console is not valid ...'});
+                                        } else {
+
+
+                                            if (console.consoleName == "OPERATOR_CONSOLE") {
+
+
+                                                var bill_token_key = config.Tenant.activeTenant + "_BILL_TOKEN";
+                                                var Hash_token_key = config.Tenant.activeTenant + "_BILL_HASH_TOKEN";
+
+
+                                                logger.info("The bill token key is " + bill_token_key);
+                                                logger.info("The hash token key is " + Hash_token_key);
+
+
+                                                redisClient.get(bill_token_key, function (err, reply) {
+
+                                                    if (!err && reply) {
+
+                                                        var bill_token = reply;
+
+                                                        logger.debug("The bill token is " + reply)
+
+
+                                                        redisClient.get(Hash_token_key, function (err, reply) {
+
+                                                            if (!err && reply) {
+
+
+                                                                var hash_token = reply;
+
+                                                                logger.debug("The hash token is " + reply)
+
+                                                                if (bill_token == Encrypt(hash_token, 'DuoS123412341234')) {
+
+                                                                    if (console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) && console.consoleUserRoles.indexOf(user.user_meta.role) >= 0) {
+
+                                                                        GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
+
+                                                                            if (token) {
+                                                                                return res.send({
+                                                                                    state: 'login',
+                                                                                    token: token
+                                                                                });
+                                                                            } else {
+                                                                                return res.status(401).send({message: 'Invalid email and/or password'});
+                                                                            }
+                                                                        });
+                                                                    } else {
+
+                                                                        return res.status(449).send({message: 'User console request is invalid'});
+                                                                    }
+
+                                                                } else {
+
+                                                                    return res.status(449).send({message: 'Bill token is not match'});
+                                                                }
+
+                                                            } else {
+
+                                                                logger.error("Hash token failed", err);
+                                                                return res.status(449).send({message: 'Hash token is not found'});
+                                                            }
+                                                        });
+                                                    } else {
+
+                                                        logger.error("Bill token failed ", err);
+                                                        return res.status(449).send({message: 'Bill token is not found'});
+                                                    }
+                                                });
+
+
+                                            } else {
+
+                                                if (console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) && console.consoleUserRoles.indexOf(user.user_meta.role) >= 0) {
+
+                                                    GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
+
+                                                        if (token) {
+                                                            return res.send({state: 'login', token: token});
+                                                        } else {
+                                                            return res.status(401).send({message: 'Invalid email and/or password'});
+                                                        }
+                                                    });
+                                                } else {
+
+                                                    return res.status(449).send({message: 'User console request is invalid'});
+                                                }
+
+                                            }
+
+
+                                        }
+                                    }
+                                });
+
+                            } else {
+
+                                return res.status(449).send({message: 'Activate your organization before login'});
+                            }
+                        }
+
+                    });
                 });
-            });
+            }else
+            {
+
+                user.comparePassword(req.body.password, function (err, isMatch) {
+                    if (!isMatch) {
+                        return res.status(401).send({message: 'Invalid email and/or password'});
+                    }
+
+                    var claims_arr = ["all_all"];
+                    if (req.body.scope && util.isArray(req.body.scope) && req.body.scope.length > 0) {
+
+                        claims_arr = req.body.scope;
+                    }
+
+
+                    Org.findOne({tenant: user.tenant, id: user.company}, function (err, org) {
+                        if (err) {
+
+                            return res.status(449).send({message: 'Activate your organization before login'});
+
+                        } else {
+
+                            if (org && org.companyEnabled) {
+
+
+                                Console.findOne({consoleName: req.body.console}, function (err, console) {
+                                    if (err) {
+                                        return res.status(449).send({message: 'Request console is not valid ...'});
+                                    } else {
+
+                                        if (!console) {
+
+                                            return res.status(449).send({message: 'Request console is not valid ...'});
+                                        } else {
+
+
+                                            if (console.consoleName == "OPERATOR_CONSOLE") {
+
+
+                                                var bill_token_key = config.Tenant.activeTenant + "_BILL_TOKEN";
+                                                var Hash_token_key = config.Tenant.activeTenant + "_BILL_HASH_TOKEN";
+
+
+                                                logger.info("The bill token key is " + bill_token_key);
+                                                logger.info("The hash token key is " + Hash_token_key);
+
+
+                                                redisClient.get(bill_token_key, function (err, reply) {
+
+                                                    if (!err && reply) {
+
+                                                        var bill_token = reply;
+
+                                                        logger.debug("The bill token is " + reply)
+
+
+                                                        redisClient.get(Hash_token_key, function (err, reply) {
+
+                                                            if (!err && reply) {
+
+
+                                                                var hash_token = reply;
+
+                                                                logger.debug("The hash token is " + reply)
+
+                                                                if (bill_token == Encrypt(hash_token, 'DuoS123412341234')) {
+
+                                                                    if (console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) && console.consoleUserRoles.indexOf(user.user_meta.role) >= 0) {
+
+                                                                        GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
+
+                                                                            if (token) {
+                                                                                return res.send({
+                                                                                    state: 'login',
+                                                                                    token: token
+                                                                                });
+                                                                            } else {
+                                                                                return res.status(401).send({message: 'Invalid email and/or password'});
+                                                                            }
+                                                                        });
+                                                                    } else {
+
+                                                                        return res.status(449).send({message: 'User console request is invalid'});
+                                                                    }
+
+                                                                } else {
+
+                                                                    return res.status(449).send({message: 'Bill token is not match'});
+                                                                }
+
+                                                            } else {
+
+                                                                logger.error("Hash token failed", err);
+                                                                return res.status(449).send({message: 'Hash token is not found'});
+                                                            }
+                                                        });
+                                                    } else {
+
+                                                        logger.error("Bill token failed ", err);
+                                                        return res.status(449).send({message: 'Bill token is not found'});
+                                                    }
+                                                });
+
+
+                                            } else {
+
+                                                if (console.consoleUserRoles && user.user_meta && user.user_meta.role && Array.isArray(console.consoleUserRoles) && console.consoleUserRoles.indexOf(user.user_meta.role) >= 0) {
+
+                                                    GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
+
+                                                        if (token) {
+                                                            return res.send({state: 'login', token: token});
+                                                        } else {
+                                                            return res.status(401).send({message: 'Invalid email and/or password'});
+                                                        }
+                                                    });
+                                                } else {
+
+                                                    return res.status(449).send({message: 'User console request is invalid'});
+                                                }
+
+                                            }
+
+
+                                        }
+                                    }
+                                });
+
+                            } else {
+
+                                return res.status(449).send({message: 'Activate your organization before login'});
+                            }
+                        }
+
+                    });
+                });
+            }
         }
 
     });
