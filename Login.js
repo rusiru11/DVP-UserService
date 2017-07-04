@@ -497,6 +497,10 @@ module.exports.Login =  function(req, res) {
             return res.status(401).send({message: 'Invalid email and/or password'});
         }
 
+        if (user && !user.Active) {
+            return res.status(401).send({message: 'User account deactivated, Please activate your account before login'});
+        }
+
         logger.info("config.auth.login_verification --> " + config.auth.login_verification + (config.auth.login_verification === true) + " user.verified --->"+ user.verified + (user.verified === false)+ " result -->" + ((config.auth.login_verification == true) && (user.verified == false)));
 
         if ((config.auth.login_verification === true || config.auth.login_verification === 'true') && (user.verified === false)) {
