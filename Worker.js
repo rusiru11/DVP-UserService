@@ -38,7 +38,7 @@ queueConnection.on('error', function (error) {
 
 module.exports.PublishToQueue = function(messageType,sendObj ) {
 
-    logger.info("From: " + sendObj.from + " To: " + sendObj.to);
+    logger.info("From: " + sendObj.from + " To: " + sendObj.to + " Queue ": +messageType);
 
     try {
         if (sendObj) {
