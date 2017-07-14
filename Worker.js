@@ -4,9 +4,26 @@ var config = require('config');
 var amqp = require('amqp');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 
-var queueHost = format('amqp://{0}:{1}@{2}:{3}', config.RabbitMQ.user, config.RabbitMQ.password, config.RabbitMQ.ip, config.RabbitMQ.port);
+//var queueHost = format('amqp://{0}:{1}@{2}:{3}', config.RabbitMQ.user, config.RabbitMQ.password, config.RabbitMQ.ip, config.RabbitMQ.port);
+
+var amqpIPs = [];
+if(config.RabbitMQ.ip) {
+    amqpIPs = config.RabbitMQ.ip.split(",");
+}
+
 var queueConnection = amqp.createConnection({
-    url: queueHost
+    host: amqpIPs,
+    port: config.RabbitMQ.port,
+    login: config.RabbitMQ.user,
+    password: config.RabbitMQ.password,
+    vhost: config.RabbitMQ.vhost,
+    noDelay: true,
+    heartbeat:10
+}, {
+    reconnect: true,
+    reconnectBackoffStrategy: 'linear',
+    reconnectExponentialLimit: 120000,
+    reconnectBackoffTime: 1000
 });
 
 queueConnection.on('ready', function () {
@@ -21,7 +38,7 @@ queueConnection.on('error', function (error) {
 
 module.exports.PublishToQueue = function(messageType,sendObj ) {
 
-    logger.info("From: " + sendObj.from + " To: " + sendObj.to);
+    logger.info("From: " + sendObj.from + " To: " + sendObj.to + " Queue :" +messageType);
 
     try {
         if (sendObj) {
