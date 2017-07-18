@@ -10,27 +10,95 @@ var PublishToQueue = require('./Worker').PublishToQueue;
 var util = require('util');
 var crypto = require('crypto');
 var config = require('config');
-var redis = require('redis');
+var redis = require('ioredis');
 var bcrypt = require('bcryptjs');
 var DbConn = require('dvp-dbmodels');
 
 
 var redisip = config.Redis.ip;
 var redisport = config.Redis.port;
-var redisuser = config.Redis.user;
 var redispass = config.Redis.password;
+var redismode = config.Redis.mode;
+var redisdb = config.Redis.db;
 
-//[redis:]//[user][:password@][host][:port][/db-number][?db=db-number[&password=bar[&option=value]]]
-//redis://user:secret@localhost:6379
-var redisClient = redis.createClient(redisport, redisip);
+
+
+var redisSetting =  {
+    port:redisport,
+    host:redisip,
+    family: 4,
+    password: redispass,
+    db: redisdb,
+    retryStrategy: function (times) {
+        var delay = Math.min(times * 50, 2000);
+        return delay;
+    },
+    reconnectOnError: function (err) {
+
+        return true;
+    }
+};
+
+if(redismode == 'sentinel'){
+
+    if(config.Redis.sentinels && config.Redis.sentinels.hosts && config.Redis.sentinels.port, config.Redis.sentinels.name){
+        var sentinelHosts = config.Redis.sentinels.hosts.split(',');
+        if(Array.isArray(sentinelHosts) && sentinelHosts.length > 2){
+            var sentinelConnections = [];
+
+            sentinelHosts.forEach(function(item){
+
+                sentinelConnections.push({host: item, port:config.Redis.sentinels.port})
+
+            })
+
+            redisSetting = {
+                sentinels:sentinelConnections,
+                name: config.Redis.sentinels.name,
+                password: redispass
+            }
+
+        }else{
+
+            console.log("No enough sentinel servers found .........");
+        }
+
+    }
+}
+
+var redisClient = undefined;
+
+if(redismode != "cluster") {
+    redisClient = new redis(redisSetting);
+}else{
+
+    var redisHosts = redisip.split(",");
+    if(Array.isArray(redisHosts)){
+
+
+        redisSetting = [];
+        redisHosts.forEach(function(item){
+            redisSetting.push({
+                host: item,
+                port: redisport,
+                family: 4,
+                password: redispass});
+        });
+
+        var redisClient = new redis.Cluster([redisSetting]);
+
+    }else{
+
+        redisClient = new redis(redisSetting);
+    }
+
+
+}
 
 redisClient.on('error', function (err) {
     console.log('Error '.red, err);
 });
 
-redisClient.auth(redispass, function (error) {
-    console.log("Error Redis : " + error);
-});
 
 
 function GetUsers(req, res){
@@ -224,9 +292,9 @@ function GetUsersByRoles(req, res){
         Active: true
     }
 
-   req.body.roles.forEach(function (item) {
-       qObj.$or.push({'user_meta.role':item});
-   });
+    req.body.roles.forEach(function (item) {
+        qObj.$or.push({'user_meta.role':item});
+    });
 
 
     User.find(qObj).select("-password")
@@ -3232,6 +3300,124 @@ function RemoveFileCategoryFromSpecificUser(req, res){
 
 
 
+//----------------------------ActiveDirectory------------------------------------
+
+function CreateUserFromAD(req, res){
+
+    logger.debug("DVP-UserService.CreateUserFromAD Internal method ");
+    var jsonString;
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+            res.end(jsonString);
+        }else{
+            if(org){
+                if(req.body.role && req.body.username){
+                    var userRole = req.body.role.toLowerCase();
+                    var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
+                    if(limitObj){
+                        if(limitObj.accessLimit > limitObj.currentAccess.length){
+
+                            User.findOne({tenant: tenant, company: company, username: req.body.username}, function(err, existingUser) {
+                                if(err){
+                                    jsonString = messageFormatter.FormatMessage(err, "Error on find existing user", false, undefined);
+                                    res.end(jsonString);
+                                }
+
+                                if(!existingUser){
+                                    if(!req.body.address)
+                                    {
+                                        req.body.address = {};
+                                    }
+
+                                    var user = User({
+                                        systemuser: true,
+                                        title: req.body.title,
+                                        name: req.body.name,
+                                        avatar: req.body.avatar,
+                                        birthday: req.body.birthday,
+                                        Active: true,
+                                        gender: req.body.gender,
+                                        firstname: req.body.firstname,
+                                        lastname: req.body.lastname,
+                                        locale: req.body.locale,
+                                        ssn: req.body.ssn,
+                                        address:{
+                                            zipcode: req.body.address.zipcode,
+                                            number: req.body.address.number,
+                                            street: req.body.address.street,
+                                            city: req.body.address.city,
+                                            province: req.body.address.province,
+                                            country: req.body.address.country
+
+
+                                        },
+                                        username: req.body.username,
+                                        password: req.body.password,
+                                        email:{contact:req.body.mail, type: "phone", verified: false},
+                                        company: parseInt(req.user.company),
+                                        tenant: parseInt(req.user.tenant),
+                                        user_meta: {role: userRole},
+                                        auth_mechanism: "ad",
+                                        verified: true,
+                                        created_at: Date.now(),
+                                        updated_at: Date.now()
+                                    });
+
+                                    user.save(function(err, user) {
+                                        if (err) {
+                                            jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+                                            res.end(jsonString);
+                                        }else{
+
+                                            limitObj.currentAccess.push(user.username);
+                                            Org.findOneAndUpdate({id: company, tenant: tenant},org, function(err, rOrg) {
+                                                if (err) {
+                                                    user.remove(function (err) {});
+                                                    jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
+                                                }else{
+
+
+
+                                                    jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                    res.end(jsonString);
+
+                                                }
+
+                                            });
+                                        }
+                                    });
+                                }else{
+                                    jsonString = messageFormatter.FormatMessage(err, "User already in deactivate state", false, undefined);
+                                    res.end(jsonString);
+                                }
+
+                            });
+
+                        }else{
+                            jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
+                            res.end(jsonString);
+                        }
+                    }else{
+                        jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
+                        res.end(jsonString);
+                    }
+                }else{
+                    jsonString = messageFormatter.FormatMessage(err, "No User Role Found", false, undefined);
+                    res.end(jsonString);
+                }
+            }else{
+                jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
+                res.end(jsonString);
+            }
+        }
+    });
+}
+
+
+
 
 module.exports.GetUser = GetUser;
 module.exports.GetUsers = GetUsers;
@@ -3306,5 +3492,7 @@ module.exports.AddFileCategoryToUser = AddFileCategoryToUser;
 module.exports.AddFileCategoryToSpecificUser = AddFileCategoryToSpecificUser;
 module.exports.RemoveFileCategoryFromUser = RemoveFileCategoryFromUser;
 module.exports.RemoveFileCategoryFromSpecificUser = RemoveFileCategoryFromSpecificUser;
+
+module.exports.CreateUserFromAD = CreateUserFromAD;
 /*
  module.exports.AddFileCategoriesToUser = AddFileCategoriesToUser;*/
