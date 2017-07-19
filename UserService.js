@@ -3437,6 +3437,7 @@ function GetMyLanguages(req, res){
                     if(errOrg)
                     {
                         jsonString = messageFormatter.FormatMessage(errOrg, "Get organisation details failed", false, undefined);
+                        res.end(jsonString);
                     }
                     else
                     {
@@ -3448,17 +3449,19 @@ function GetMyLanguages(req, res){
                         {
                             jsonString = messageFormatter.FormatMessage(undefined, "Get organisation details failed", false, undefined);
                         }
+                        res.end(jsonString);
                     }
 
                 });
             }else{
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
+                res.end(jsonString);
             }
 
         }
 
-        res.end(jsonString);
+
     });
 
 }
