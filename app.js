@@ -224,6 +224,7 @@ app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({r
 
 app.get('/DVP/API/:version/Myprofile',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"read"}),userService.GetMyrProfile);
 app.get('/DVP/API/:version/Mylocation',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),userService.SetMyLocation);
+app.get('/DVP/API/:version/Mylanguages',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),userService.getMyLanguages);
 
 
 

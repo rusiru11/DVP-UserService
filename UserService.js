@@ -3417,6 +3417,56 @@ function CreateUserFromAD(req, res){
 }
 
 
+function GetMyLanguages(req, res){
+
+
+    logger.debug("DVP-UserService.GetUsers Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.user.iss;
+    var jsonString;
+    User.findOne({username: user,company: company, tenant: tenant}, function(err, user) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
+
+        }else{
+
+            if(user) {
+
+                Org.findOne({id:user.company,tenant:user.tenant},function (errOrg,resOrg) {
+
+                    if(errOrg)
+                    {
+                        jsonString = messageFormatter.FormatMessage(errOrg, "Get organisation details failed", false, undefined);
+                    }
+                    else
+                    {
+                        if(resOrg)
+                        {
+                            jsonString = messageFormatter.FormatMessage(undefined, "Organization details found", true, resOrg.languages);
+                        }
+                        else
+                        {
+                            jsonString = messageFormatter.FormatMessage(undefined, "Get organisation details failed", false, undefined);
+                        }
+                    }
+
+                });
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
+            }
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+
 
 
 module.exports.GetUser = GetUser;
@@ -3494,5 +3544,6 @@ module.exports.RemoveFileCategoryFromUser = RemoveFileCategoryFromUser;
 module.exports.RemoveFileCategoryFromSpecificUser = RemoveFileCategoryFromSpecificUser;
 
 module.exports.CreateUserFromAD = CreateUserFromAD;
+module.exports.GetMyLanguages = GetMyLanguages;
 /*
  module.exports.AddFileCategoriesToUser = AddFileCategoriesToUser;*/
