@@ -2242,9 +2242,9 @@ function GetUserMeta(req, res){
 
             if(users) {
 
-                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.user_meta);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users.user_meta);
             }else{
-                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, undefined);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
 
             }
 
@@ -2252,9 +2252,6 @@ function GetUserMeta(req, res){
 
         res.end(jsonString);
     });
-
-
-
 
 
 
@@ -2279,7 +2276,7 @@ function GetAppMeta(req, res){
 
             if(users){
 
-                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.app_meta);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users.app_meta);
             }
             else{
 
