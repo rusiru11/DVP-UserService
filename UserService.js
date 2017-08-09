@@ -2242,9 +2242,9 @@ function GetUserMeta(req, res){
 
             if(users) {
 
-                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.user_meta);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users.user_meta);
             }else{
-                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, undefined);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
 
             }
 
@@ -2252,9 +2252,6 @@ function GetUserMeta(req, res){
 
         res.end(jsonString);
     });
-
-
-
 
 
 
@@ -2279,7 +2276,7 @@ function GetAppMeta(req, res){
 
             if(users){
 
-                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.app_meta);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users.app_meta);
             }
             else{
 
@@ -3417,6 +3414,88 @@ function CreateUserFromAD(req, res){
 }
 
 
+function GetMyLanguages(req, res){
+
+
+    logger.debug("DVP-UserService.GetUsers Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var user = req.user.iss;
+    var jsonString;
+    User.findOne({username: user,company: company, tenant: tenant}, function(err, user) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
+
+        }else{
+
+            if(user) {
+
+                Org.findOne({id:user.company,tenant:user.tenant},function (errOrg,resOrg) {
+
+                    if(errOrg)
+                    {
+                        jsonString = messageFormatter.FormatMessage(errOrg, "Get organisation details failed", false, undefined);
+                        res.end(jsonString);
+                    }
+                    else
+                    {
+                        if(resOrg)
+                        {
+                            jsonString = messageFormatter.FormatMessage(undefined, "Organization details found", true, resOrg.languages);
+                        }
+                        else
+                        {
+                            jsonString = messageFormatter.FormatMessage(undefined, "Get organisation details failed", false, undefined);
+                        }
+                        res.end(jsonString);
+                    }
+
+                });
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
+                res.end(jsonString);
+            }
+
+        }
+
+
+    });
+
+}
+
+function userIsAllowToOutbound(req, res) {
+
+    logger.debug("DVP-UserService.userIsAllowToOutbound Internal method ");
+    var jsonString;
+    if (req.params.Action === "OutboundMode") {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+
+        var query = {username: req.params.name, company: company, tenant: tenant};
+
+        User.findOne(query)
+            .select("-password")
+            .exec(function (err, users) {
+                if (err) {
+
+                    jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, null);
+
+                } else {
+
+                    jsonString = messageFormatter.FormatMessage(err, "Get User Successful", users?(users.allowoutbound == true):false, null);
+                }
+
+                res.end(jsonString);
+            });
+    } else {
+        jsonString = messageFormatter.FormatMessage(null, "Invalid Operations", false, null);
+    }
+
+
+}
 
 
 module.exports.GetUser = GetUser;
@@ -3494,5 +3573,7 @@ module.exports.RemoveFileCategoryFromUser = RemoveFileCategoryFromUser;
 module.exports.RemoveFileCategoryFromSpecificUser = RemoveFileCategoryFromSpecificUser;
 
 module.exports.CreateUserFromAD = CreateUserFromAD;
+module.exports.GetMyLanguages = GetMyLanguages;
+module.exports.UserIsAllowToOutbound = userIsAllowToOutbound;
 /*
  module.exports.AddFileCategoriesToUser = AddFileCategoriesToUser;*/
