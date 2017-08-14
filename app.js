@@ -210,10 +210,10 @@ app.put('/DVP/API/:version/User/ReActivate/:username', jwt({secret: secret.Secre
 app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateUser);
 app.put('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.UpdateUser);
 app.put('/DVP/API/:version/User/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.AddFileCategoryToUser);
-app.put('/DVP/API/:version/User/:user/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.AddFileCategoryToSpecificUser);
+app.put('/DVP/API/:version/User/:user/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"write"}), userService.AddFileCategoryToSpecificUser);
 /*app.put('/DVP/API/:version/User/Allow/FileCategories', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.AddFileCategoriesToUser);*/
-app.del('/DVP/API/:version/User/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.RemoveFileCategoryFromUser);
-app.del('/DVP/API/:version/User/:user/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.RemoveFileCategoryFromSpecificUser);
+app.del('/DVP/API/:version/User/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"delete"}), userService.RemoveFileCategoryFromUser);
+app.del('/DVP/API/:version/User/:user/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"delete"}), userService.RemoveFileCategoryFromSpecificUser);
 
 
 
