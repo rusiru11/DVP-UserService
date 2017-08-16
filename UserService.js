@@ -3295,7 +3295,38 @@ function RemoveFileCategoryFromSpecificUser(req, res){
 
 }
 
+function GetFileCategories(req, res){
 
+
+
+    logger.debug("DVP-UserService.GetFileCategories Internal method ");
+
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+
+
+    DbConn.FileCategory.findAll({where:[{Visible:true}]}).then(function (resCat) {
+
+        if (resCat) {
+            jsonString = messageFormatter.FormatMessage(undefined, "File categories found", true, resCat);
+            res.end(jsonString);
+        }
+        else
+        {
+            jsonString = messageFormatter.FormatMessage(new Error('No fule categories found'), "No fule categories found ", false, undefined);
+            res.end(jsonString);
+        }
+
+    }).catch(function (errCat) {
+        jsonString = messageFormatter.FormatMessage(errCat, "Error in searching file categories", false, undefined);
+        res.end(jsonString);
+    });
+
+
+
+
+}
 
 //----------------------------ActiveDirectory------------------------------------
 
@@ -3575,5 +3606,9 @@ module.exports.RemoveFileCategoryFromSpecificUser = RemoveFileCategoryFromSpecif
 module.exports.CreateUserFromAD = CreateUserFromAD;
 module.exports.GetMyLanguages = GetMyLanguages;
 module.exports.UserIsAllowToOutbound = userIsAllowToOutbound;
+
+
+
+module.exports.GetFileCategories = GetFileCategories;
 /*
  module.exports.AddFileCategoriesToUser = AddFileCategoriesToUser;*/
