@@ -2088,7 +2088,7 @@ function AddUserAppScopes(req, res){
                                                 if(consoleScope){
                                                     var menuItem = FilterObjFromArray(consoleScope.menus,"menuItem",req.body.menuItem);
                                                     if(menuItem){
-                                                        for(var j=0; j<menuItem.menuAction.lenth; j++){
+                                                        for(var j=0; j<menuItem.menuAction.length; j++){
                                                             var menuAction = FilterObjFromArray(menuItem.menuAction, "scope", menuItem.menuAction[j].scope);
                                                             if(menuAction){
                                                                 menuAction.read = (!req.body.menuAction[j].read)? false: req.body.menuAction[j].read;
@@ -2108,9 +2108,9 @@ function AddUserAppScopes(req, res){
                                                 for(var i in req.body.menuAction){
                                                     var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction[i].scope);
                                                     if(userScope){
-                                                        userScope.read = (!req.body.menuAction[j].read)? false: req.body.menuAction[i].read;
-                                                        userScope.write = (!req.body.menuAction[j].write)? false: req.body.menuAction[i].write;
-                                                        userScope.delete = (!req.body.menuAction[j].delete)? false: req.body.menuAction[i].delete;
+                                                        userScope.read = (!req.body.menuAction[i].read)? false: req.body.menuAction[i].read;
+                                                        userScope.write = (!req.body.menuAction[i].write)? false: req.body.menuAction[i].write;
+                                                        userScope.delete = (!req.body.menuAction[i].delete)? false: req.body.menuAction[i].delete;
                                                     }else{
                                                         assignUser.user_scopes.push(req.body.menuAction[i]);
                                                     }
