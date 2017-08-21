@@ -106,11 +106,21 @@ function GetUsers(req, res){
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
+
+    var filterActive = req.query.active;
     var jsonString;
+    var queryString;
+
+    if(filterActive === 'all'){
+        queryString = {company: company, tenant: tenant, systemuser: true};
+    }else if(filterActive === 'false'){
+        queryString = {company: company, tenant: tenant, systemuser: true, Active: false};
+    }else{
+        queryString = {company: company, tenant: tenant, systemuser: true, Active: true};
+    }
 
 
-
-    User.find({company: company, tenant: tenant, systemuser: true, Active: true})
+    User.find(queryString)
         .select("-password")
         .exec( function(err, users) {
             if (err) {
