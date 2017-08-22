@@ -197,6 +197,7 @@ app.get('/DVP/API/:version/Owner/:name/exists', userService.OwnerExists);
 
 app.get('/DVP/API/:version/Users', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsers);
 app.get('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUser);
+app.get('/DVP/API/:version/User/:name/Operations/:Action', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserIsAllowToOutbound);
 app.get('/DVP/API/:version/UsersByIds', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsersByIDs);
 app.get('/DVP/API/:version/UsersByRole/:role', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsersByRole);
 app.post('/DVP/API/:version/UsersByRoles', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsersByRoles);
@@ -209,11 +210,11 @@ app.put('/DVP/API/:version/User/ReActivate/:username', jwt({secret: secret.Secre
 app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateUser);
 app.put('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.UpdateUser);
 app.put('/DVP/API/:version/User/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.AddFileCategoryToUser);
-app.put('/DVP/API/:version/User/:user/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.AddFileCategoryToSpecificUser);
+app.put('/DVP/API/:version/User/:user/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"write"}), userService.AddFileCategoryToSpecificUser);
 /*app.put('/DVP/API/:version/User/Allow/FileCategories', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.AddFileCategoriesToUser);*/
-app.del('/DVP/API/:version/User/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.RemoveFileCategoryFromUser);
-app.del('/DVP/API/:version/User/:user/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.RemoveFileCategoryFromSpecificUser);
-
+app.del('/DVP/API/:version/User/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"delete"}), userService.RemoveFileCategoryFromUser);
+app.del('/DVP/API/:version/User/:user/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"delete"}), userService.RemoveFileCategoryFromSpecificUser);
+app.get('/DVP/API/:version/FileCategories', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"read"}), userService.GetFileCategories);
 
 
 
@@ -224,6 +225,7 @@ app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({r
 
 app.get('/DVP/API/:version/Myprofile',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"read"}),userService.GetMyrProfile);
 app.get('/DVP/API/:version/Mylocation',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),userService.SetMyLocation);
+app.get('/DVP/API/:version/Mylanguages',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),userService.GetMyLanguages);
 
 
 
@@ -330,7 +332,7 @@ app.delete('/DVP/API/:version/User/:username/Console/:consoleName', jwt({secret:
 app.put('/DVP/API/:version/User/:username/Console/:consoleName', jwt({secret: secret.Secret}),authorization({resource:"userAppScope", action:"write"}), userService.AssignConsoleToUser);
 
 app.get('/DVP/API/:version/Users/:name/UserMeta', jwt({secret: secret.Secret}),authorization({resource:"userMeta", action:"read"}), userService.GetUserMeta);
-app.put('/DVP/API/:version/Users/:name/UserMeta', jwt({secret: secret.Secret}),authorization({resource:"userMeta", action:"write"}), userService.UpdateUserMetadata);
+app.put('/DVP/API/:version/Users/:name/UserMeta', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}), userService.UpdateUserMetadata);
 app.delete('/DVP/API/:version/Users/:name/UserMeta/:usermeta', jwt({secret: secret.Secret}),authorization({resource:"userMeta", action:"delete"}), userService.RemoveUserMetadata);
 
 app.get('/DVP/API/:version/Users/:name/AppMeta', jwt({secret: secret.Secret}),authorization({resource:"userAppMeta", action:"read"}), userService.GetAppMeta);
@@ -381,7 +383,7 @@ app.put('/DVP/API/:version/ExternalUser/:id/FormSubmission',jwt({secret: secret.
 
 
 app.post('/DVP/API/:version/UserGroup',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), userGroupService.CreateUserGroup);
-app.get('/DVP/API/:version/UserGroups',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetUserGroups);
+app.get('/DVP/API/:version/UserGroups',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetGroupsAndUsers);
 app.get('/DVP/API/:version/UserGroup/:id',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetUserGroup);
 app.get('/DVP/API/:version/UserGroup/:id/members',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetGroupMembers);
 app.get('/DVP/API/:version/UserGroupByName/:name',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetUserGroupByName);

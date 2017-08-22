@@ -8,6 +8,7 @@ var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJ
 var User = require('dvp-mongomodels/model/User');
 var regex = require('regex');
 var util = require('util');
+var _ = require('lodash');
 //var ObjectId = mongoose.Types.ObjectId;
 
 
@@ -287,6 +288,79 @@ function GetUserGroups(req, res){
     });
 
 }
+
+function GetGroupsAndUsers(req, res){
+
+
+    logger.debug("DVP-UserService.UpdateUserGroup Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    var emptyArr = [];
+
+
+
+    UserGroup.find({company: company, tenant: tenant})
+        .lean()
+        .exec( function(err, groups)
+        {
+            if (err)
+            {
+                jsonString = messageFormatter.FormatMessage(err, "Get Groups Failed", false, emptyArr);
+                res.end(jsonString);
+            }
+            else
+            {
+                if (groups && groups.length > 0) {
+
+                    var grpIdArr = _.map(groups, function(grp)
+                    {
+                        return grp._id.toString();
+                    });
+                    User.find({company: company, tenant: tenant, group: {$in: grpIdArr}})
+                        .lean()
+                        .exec( function(err, users)
+                        {
+                            if(err)
+                            {
+                                jsonString = messageFormatter.FormatMessage(err, "Get Groups Failed", false, emptyArr);
+                                res.end(jsonString);
+                            }
+                            else
+                            {
+                                groups.forEach(function(grp)
+                                {
+                                    var grpUsers = _.filter(users, function(usr)
+                                    {
+                                        return usr.group.toString() === grp._id.toString()
+                                    });
+
+                                    grp.users = grpUsers;
+                                });
+
+                                jsonString = messageFormatter.FormatMessage(null, "Get Groups Successful", true, groups);
+                                res.end(jsonString);
+                            }
+
+
+                        });
+
+                }
+                else
+                {
+
+                    jsonString = messageFormatter.FormatMessage(null, "No groups found", true, emptyArr);
+                    res.end(jsonString);
+
+                }
+            }
+
+
+        });
+
+}
+
 function GetUserGroup(req, res){
 
 
@@ -577,6 +651,7 @@ module.exports.GetGroupMembers = GetGroupMembers;
 module.exports.UpdateUserGroupMembers = UpdateUserGroupMembers;
 module.exports.RemoveUserGroupMembers = RemoveUserGroupMembers;
 module.exports.FindUserGroupsByMember = FindUserGroupsByMember;
+module.exports.GetGroupsAndUsers = GetGroupsAndUsers;
 
 
 
