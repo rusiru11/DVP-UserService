@@ -473,7 +473,7 @@ function UpdateExternalUserProfileContact(req, res) {
     var jsonString;
 
     req.body.updated_at = Date.now();
-    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { $addToSet :{contacts : {contact:req.params.contact, type:req.body.type, verified: false}}}, function (err, users) {
+    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { $addToSet :{contacts : {contact:req.params.contact, type:req.body.type, raw:req.body.raw_contact, verified: false}}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update External user contact Failed", false, undefined);
