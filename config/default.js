@@ -47,7 +47,8 @@ module.exports = {
     signup_verification: true,
     recaptcha_key: "6LezaAsUAAAAAFbtiyMzOlMmqEwzMwmMYszmO_Ve",
 
-    ui_host: 'http://localhost:3000/'
+    ui_host: 'http://localhost:3000/',
+    agent_host: 'http://localhost:3000/'
 
   },
 

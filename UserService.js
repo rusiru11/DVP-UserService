@@ -554,6 +554,11 @@ function CreateUser(req, res){
 
                                                     var url = config.auth.ui_host + '#/activate/' + token;
 
+                                                    if(userRole == "agent"){
+
+                                                        url = config.auth.agent_host + '#/activate/' + token;
+                                                    }
+
                                                     redisClient.set("activate"+":"+token,user._id ,function (err, val) {
                                                         if (err) {
 
