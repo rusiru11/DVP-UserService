@@ -86,7 +86,8 @@ module.exports = {
         signup_verification: 'SIGNUP_VERIFICATION_REQUIRE',
         recaptcha_key: 'GOOGLE_RECAPTCHA_KEY',
 
-        ui_host: 'SYS_APP_UI_HOST'
+        ui_host: 'SYS_APP_UI_HOST',
+        agent_host: 'SYS_APP_AGENT_UI_HOST'
 
     },
 
