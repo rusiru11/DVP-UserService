@@ -114,8 +114,8 @@ function GetAllConsolesByUserRole(req, res){
                 if (org.packageDetails.length > 0) {
                     var availableNavigationTypes = [];
                     org.packageDetails.forEach(function (pkg) {
-                        if(availableNavigationTypes.indexOf(pkg.navigationType) === -1) {
-                            availableNavigationTypes.push(pkg.navigationType);
+                        if(availableNavigationTypes.indexOf(pkg.veeryPackage.navigationType) === -1) {
+                            availableNavigationTypes.push(pkg.veeryPackage.navigationType);
                         }
                     });
 
