@@ -7,6 +7,7 @@ var Navigation = require('dvp-mongomodels/model/Navigation');
 var Console = require('dvp-mongomodels/model/Console');
 var EventEmitter = require('events').EventEmitter;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
+var Org = require('dvp-mongomodels/model/Organisation');
 
 function UniqueObjectArray(array, field) {
     var processed = [];
@@ -95,43 +96,109 @@ function GetAllConsolesByUserRole(req, res){
     logger.debug("DVP-UserService.GetAllConsolesByUserRole Internal method ");
 
     var jsonString;
-    Console.find({consoleUserRoles:req.params.roleType}, function(err, allConsole) {
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+
+
+    Org.findOne({tenant: tenant, id: company}).populate({path: 'packageDetails.veeryPackage',populate : {path: 'Package'}}).exec( function (err, org) {
+
         if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Failed", false, undefined);
-        }else{
-            var newConsoles =[];
-            if(allConsole) {
-                for (var a = 0; a < allConsole.length; a++) {
-                    var console1 = allConsole[a];
-                    var newResult = {consoleName: console1.consoleName, consoleNavigation: []};
-                    if(console1.consoleNavigation) {
-                        for (var i = 0; i < console1.consoleNavigation.length; i++) {
-                            var navigation = console1.consoleNavigation[i];
-                            var newNavigation = {
-                                navigationName: navigation.navigationName,
-                                navigationStatus: navigation.navigationStatus
-                            };
-                            var newResourceScopes = [];
-                            if(navigation.resources) {
-                                for (var j = 0; j < navigation.resources.length; j++) {
-                                    var resource = navigation.resources[j];
-                                    for (var k = 0; k < resource.scopes.length; k++) {
-                                        var scope = resource.scopes[k];
-                                        newResourceScopes.push(scope);
-                                    }
-                                }
-                                newNavigation.resources = newResourceScopes;//UniqueObjectArray(newResourceScopes,"scopes");
-                            }
-                            newResult.consoleNavigation.push(newNavigation);
+
+            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+            res.end(jsonString);
+
+        } else {
+
+            if (org) {
+
+                if (org.packageDetails.length > 0) {
+                    var availableNavigationTypes = [];
+                    org.packageDetails.forEach(function (pkg) {
+                        if(availableNavigationTypes.indexOf(pkg.navigationType) === -1) {
+                            availableNavigationTypes.push(pkg.navigationType);
                         }
-                        newConsoles.push(newResult);
+                    });
+
+                    Console.find({consoleUserRoles:req.params.roleType}, { "$in": { "consoleNavigation.navigationTypes": availableNavigationTypes } }, function(err, allConsole) {
+                    if (err) {
+                        jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Failed", false, undefined);
+                    }else{
+                        var newConsoles =[];
+                        if(allConsole) {
+                            for (var a = 0; a < allConsole.length; a++) {
+                                var console1 = allConsole[a];
+                                var newResult = {consoleName: console1.consoleName, consoleNavigation: []};
+                                if(console1.consoleNavigation) {
+                                    for (var i = 0; i < console1.consoleNavigation.length; i++) {
+                                        var navigation = console1.consoleNavigation[i];
+                                        var newNavigation = {
+                                            navigationName: navigation.navigationName,
+                                            navigationStatus: navigation.navigationStatus
+                                        };
+                                        var newResourceScopes = [];
+                                        if(navigation.resources) {
+                                            for (var j = 0; j < navigation.resources.length; j++) {
+                                                var resource = navigation.resources[j];
+                                                for (var k = 0; k < resource.scopes.length; k++) {
+                                                    var scope = resource.scopes[k];
+                                                    newResourceScopes.push(scope);
+                                                }
+                                            }
+                                            newNavigation.resources = newResourceScopes;//UniqueObjectArray(newResourceScopes,"scopes");
+                                        }
+                                        newResult.consoleNavigation.push(newNavigation);
+                                    }
+                                    newConsoles.push(newResult);
+                                }
+                            }
+                        }
+                        jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, newConsoles);
                     }
+                    res.end(jsonString);
+                });
+
+                } else {
+
+                    jsonString = messageFormatter.FormatMessage(err, "No Assigned Package Found", false, undefined);
+                    res.end(jsonString);
+
                 }
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(err, "No Organisation Found", false, undefined);
+                res.end(jsonString);
+
             }
-            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, newConsoles);
+
         }
-        res.end(jsonString);
+
     });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 function GetConsole(req, res){
