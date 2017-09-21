@@ -119,7 +119,7 @@ function GetAllConsolesByUserRole(req, res){
                         }
                     });
 
-                    Console.find({consoleUserRoles:req.params.roleType}, { "$in": { "consoleNavigation.navigationTypes": availableNavigationTypes } }, function(err, allConsole) {
+                    Console.find({consoleUserRoles:req.params.roleType, "consoleNavigation.navigationTypes": {$in:availableNavigationTypes}}, function(err, allConsole) {
                     if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Failed", false, undefined);
                     }else{
