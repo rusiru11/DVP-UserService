@@ -1341,6 +1341,7 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
                             });
                             var usr = {};
                             usr.company = cid;
+                            usr.Active = true;
                             usr.updated_at = Date.now();
                             org.save(function (err, org) {
                                 if (err) {

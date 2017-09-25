@@ -106,11 +106,21 @@ function GetUsers(req, res){
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
+
+    var filterActive = req.query.active;
     var jsonString;
+    var queryString;
+
+    if(filterActive === 'all'){
+        queryString = {company: company, tenant: tenant, systemuser: true};
+    }else if(filterActive === 'false'){
+        queryString = {company: company, tenant: tenant, systemuser: true, Active: false};
+    }else{
+        queryString = {company: company, tenant: tenant, systemuser: true, Active: true};
+    }
 
 
-
-    User.find({company: company, tenant: tenant, systemuser: true, Active: true})
+    User.find(queryString)
         .select("-password")
         .exec( function(err, users) {
             if (err) {
@@ -543,6 +553,11 @@ function CreateUser(req, res){
                                                     var token = buf.toString('hex');
 
                                                     var url = config.auth.ui_host + '#/activate/' + token;
+
+                                                    if(userRole == "agent"){
+
+                                                        url = config.auth.agent_host + '#/activate/' + token;
+                                                    }
 
                                                     redisClient.set("activate"+":"+token,user._id ,function (err, val) {
                                                         if (err) {
@@ -2088,12 +2103,12 @@ function AddUserAppScopes(req, res){
                                                 if(consoleScope){
                                                     var menuItem = FilterObjFromArray(consoleScope.menus,"menuItem",req.body.menuItem);
                                                     if(menuItem){
-                                                        for(var j=0; j<menuItem.menuAction.lenth; j++){
-                                                            var menuAction = FilterObjFromArray(menuItem.menuAction, "scope", menuItem.menuAction[j].scope);
+                                                        for(var j=0; j<menuItem.menuAction.length; j++){
+                                                            var menuAction = FilterObjFromArray(menuItem.menuAction, "scope", req.body.menuAction[j].scope);
                                                             if(menuAction){
-                                                                menuAction.read = req.body.menuAction[j].read;
-                                                                menuAction.write = req.body.menuAction[j].write;
-                                                                menuAction.delete = req.body.menuAction[j].delete;
+                                                                menuAction.read = (!req.body.menuAction[j].read)? false: req.body.menuAction[j].read;
+                                                                menuAction.write = (!req.body.menuAction[j].write)? false: req.body.menuAction[j].write;
+                                                                menuAction.delete = (!req.body.menuAction[j].delete)? false: req.body.menuAction[j].delete;
                                                             }else{
                                                                 assignUser.user_scopes.push(req.body.menuAction);
                                                             }
@@ -2108,9 +2123,9 @@ function AddUserAppScopes(req, res){
                                                 for(var i in req.body.menuAction){
                                                     var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction[i].scope);
                                                     if(userScope){
-                                                        userScope.read = req.body.menuAction[i].read;
-                                                        userScope.write = req.body.menuAction[i].write;
-                                                        userScope.delete = req.body.menuAction[i].delete;
+                                                        userScope.read = (!req.body.menuAction[i].read)? false: req.body.menuAction[i].read;
+                                                        userScope.write = (!req.body.menuAction[i].write)? false: req.body.menuAction[i].write;
+                                                        userScope.delete = (!req.body.menuAction[i].delete)? false: req.body.menuAction[i].delete;
                                                     }else{
                                                         assignUser.user_scopes.push(req.body.menuAction[i]);
                                                     }
@@ -3295,7 +3310,38 @@ function RemoveFileCategoryFromSpecificUser(req, res){
 
 }
 
+function GetFileCategories(req, res){
 
+
+
+    logger.debug("DVP-UserService.GetFileCategories Internal method ");
+
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+
+
+    DbConn.FileCategory.findAll({where:[{Visible:true}]}).then(function (resCat) {
+
+        if (resCat) {
+            jsonString = messageFormatter.FormatMessage(undefined, "File categories found", true, resCat);
+            res.end(jsonString);
+        }
+        else
+        {
+            jsonString = messageFormatter.FormatMessage(new Error('No fule categories found'), "No fule categories found ", false, undefined);
+            res.end(jsonString);
+        }
+
+    }).catch(function (errCat) {
+        jsonString = messageFormatter.FormatMessage(errCat, "Error in searching file categories", false, undefined);
+        res.end(jsonString);
+    });
+
+
+
+
+}
 
 //----------------------------ActiveDirectory------------------------------------
 
@@ -3575,5 +3621,9 @@ module.exports.RemoveFileCategoryFromSpecificUser = RemoveFileCategoryFromSpecif
 module.exports.CreateUserFromAD = CreateUserFromAD;
 module.exports.GetMyLanguages = GetMyLanguages;
 module.exports.UserIsAllowToOutbound = userIsAllowToOutbound;
+
+
+
+module.exports.GetFileCategories = GetFileCategories;
 /*
  module.exports.AddFileCategoriesToUser = AddFileCategoriesToUser;*/
