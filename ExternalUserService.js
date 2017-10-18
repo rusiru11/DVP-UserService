@@ -7,7 +7,7 @@ var ExternalUser = require('dvp-mongomodels/model/ExternalUser');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var regex = require('regex');
 var FormSubmission = require('dvp-mongomodels/model/FormMaster').FormSubmission;
-
+var config = require('config');
 var util = require('util');
 
 

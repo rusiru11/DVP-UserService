@@ -15,6 +15,7 @@ var bcrypt = require('bcryptjs');
 var DbConn = require('dvp-dbmodels');
 
 
+
 var redisip = config.Redis.ip;
 var redisport = config.Redis.port;
 var redispass = config.Redis.password;
