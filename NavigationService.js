@@ -21,6 +21,11 @@ function UniqueObjectArray(array, field) {
     return array;
 }
 
+function CompareArray(array1, array2){
+    var first = [];
+
+}
+
 function GetResources(resources) {
     var e = new EventEmitter();
     process.nextTick(function () {
@@ -52,44 +57,103 @@ function GetAllConsoles(req, res) {
     logger.debug("DVP-UserService.GetAllConsoles Internal method ");
 
     var jsonString;
-    Console.find({}, function (err, allConsole) {
-        if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Failed", false, undefined);
-        } else {
-            var newConsoles = [];
-            if (allConsole) {
-                for (var a = 0; a < allConsole.length; a++) {
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
 
-                    var console1 = allConsole[a];
-                    var newResult = {consoleName: console1.consoleName, consoleNavigation: []};
-                    if (console1.consoleNavigation) {
-                        for (var i = 0; i < console1.consoleNavigation.length; i++) {
-                            var navigation = console1.consoleNavigation[i];
-                            var newNavigation = {
-                                navigationName: navigation.navigationName,
-                                navigationStatus: navigation.navigationStatus
-                            };
-                            var newResourceScopes = [];
-                            if (navigation.resources) {
-                                for (var j = 0; j < navigation.resources.length; j++) {
-                                    var resource = navigation.resources[j];
-                                    for (var k in resource.scopes) {
-                                        var scope = resource.scopes[k];
-                                        newResourceScopes.push(scope);
+
+    Org.findOne({tenant: tenant, id: company}).populate({
+        path: 'packageDetails.veeryPackage',
+        populate: {path: 'Package'}
+    }).exec(function (err, org) {
+
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+            res.end(jsonString);
+
+        } else {
+
+            if (org) {
+
+                if (org.packageDetails.length > 0) {
+                    var availableNavigationTypes = [];
+                    org.packageDetails.forEach(function (pkg) {
+                        if (availableNavigationTypes.indexOf(pkg.veeryPackage.navigationType) === -1) {
+                            availableNavigationTypes.push(pkg.veeryPackage.navigationType);
+                        }
+                    });
+
+
+                    Console.find({}, function (err, allConsole) {
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Failed", false, undefined);
+                        } else {
+                            var newConsoles = [];
+                            if (allConsole) {
+                                for (var a = 0; a < allConsole.length; a++) {
+
+                                    var console1 = allConsole[a];
+                                    var newResult = {consoleName: console1.consoleName, consoleNavigation: []};
+                                    if (console1.consoleNavigation) {
+                                        console1.consoleNavigation.forEach(function (navigation) {
+                                            var addNavigation = false;
+                                            availableNavigationTypes.forEach(function (navType) {
+                                                if(navigation.navigationTypes.indexOf(navType) > -1){
+                                                    addNavigation = true;
+                                                }
+                                            });
+                                            if (addNavigation) {
+                                                var newNavigation = {
+                                                    navigationName: navigation.navigationName,
+                                                    navigationStatus: navigation.navigationStatus
+                                                };
+                                                var newResourceScopes = [];
+                                                if (navigation.resources) {
+                                                    for (var j = 0; j < navigation.resources.length; j++) {
+                                                        var resource = navigation.resources[j];
+                                                        for (var k = 0; k < resource.scopes.length; k++) {
+                                                            var scope = resource.scopes[k];
+                                                            newResourceScopes.push(scope);
+                                                        }
+                                                    }
+                                                    newNavigation.resources = newResourceScopes;//UniqueObjectArray(newResourceScopes,"scopes");
+                                                }
+                                                newResult.consoleNavigation.push(newNavigation);
+                                            } else {
+                                                console.log(false);
+                                            }
+
+
+                                        });
+
+                                        newConsoles.push(newResult);
                                     }
                                 }
-                                newNavigation.resources = newResourceScopes;//UniqueObjectArray(newResourceScopes,"scopes");
                             }
-                            newResult.consoleNavigation.push(newNavigation);
+                            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, newConsoles);
                         }
-                        newConsoles.push(newResult);
-                    }
+                        res.end(jsonString);
+                    });
+
+                } else {
+
+                    jsonString = messageFormatter.FormatMessage(err, "No Assigned Package Found", false, undefined);
+                    res.end(jsonString);
+
                 }
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(err, "No Organisation Found", false, undefined);
+                res.end(jsonString);
+
             }
-            jsonString = messageFormatter.FormatMessage(err, "Get All Navigation Successful", true, newConsoles);
+
         }
-        res.end(jsonString);
+
     });
+
+
 }
 
 function GetAllConsolesByUserRole(req, res) {
@@ -134,10 +198,13 @@ function GetAllConsolesByUserRole(req, res) {
                                     if (console1.consoleNavigation) {
 
                                         console1.consoleNavigation.forEach(function (navigation) {
-                                            if (availableNavigationTypes.every(function (u, i) {
-                                                    return u === navigation.navigationTypes[i];
-                                                })
-                                            ) {
+                                            var addNavigation = false;
+                                            availableNavigationTypes.forEach(function (navType) {
+                                                if(navigation.navigationTypes.indexOf(navType) > -1){
+                                                    addNavigation = true;
+                                                }
+                                            });
+                                            if (addNavigation) {
                                                 var newNavigation = {
                                                     navigationName: navigation.navigationName,
                                                     navigationStatus: navigation.navigationStatus
@@ -194,35 +261,112 @@ function GetAllConsolesByUserRole(req, res) {
 function GetConsole(req, res) {
     logger.debug("DVP-UserService.GetConsole Internal method ");
     var jsonString;
-    Console.findOne({consoleName: req.params.consoleName}, function (err, console) {
-        if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
-        } else {
-            var newResult = {consoleName: console.consoleName, consoleNavigation: []};
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
 
-            if (console && console.consoleNavigation) {
-                for (var i = 0; i < console.consoleNavigation.length; i++) {
-                    var navigation = console.consoleNavigation[i];
-                    var newNavigation = {
-                        navigationName: navigation.navigationName,
-                        navigationStatus: navigation.navigationStatus
-                    };
-                    var newResourceScopes = [];
-                    for (var j = 0; j < navigation.resources.length; j++) {
-                        var resource = navigation.resources[j];
-                        for (var k = 0; k < resource.scopes.length; k++) {
-                            var scope = resource.scopes[k];
-                            newResourceScopes.push(scope);
+
+    Org.findOne({tenant: tenant, id: company}).populate({
+        path: 'packageDetails.veeryPackage',
+        populate: {path: 'Package'}
+    }).exec(function (err, org) {
+
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Find Organisation Failed", false, undefined);
+            res.end(jsonString);
+
+        } else {
+
+            if (org) {
+
+                if (org.packageDetails.length > 0) {
+                    var availableNavigationTypes = [];
+                    org.packageDetails.forEach(function (pkg) {
+                        if (availableNavigationTypes.indexOf(pkg.veeryPackage.navigationType) === -1) {
+                            availableNavigationTypes.push(pkg.veeryPackage.navigationType);
                         }
-                    }
-                    newNavigation.resources = newResourceScopes;//UniqueObjectArray(newResourceScopes,"scopes");
-                    newResult.consoleNavigation.push(newNavigation);
+                    });
+
+                    Console.findOne({consoleName: req.params.consoleName}, function (err, console) {
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "Get Console Failed", false, undefined);
+                        } else {
+                            var newResult = {consoleName: console.consoleName, consoleNavigation: []};
+
+                            if (console && console.consoleNavigation) {
+                                //for (var i = 0; i < console.consoleNavigation.length; i++) {
+                                //    var navigation = console.consoleNavigation[i];
+                                //    var newNavigation = {
+                                //        navigationName: navigation.navigationName,
+                                //        navigationStatus: navigation.navigationStatus
+                                //    };
+                                //    var newResourceScopes = [];
+                                //    for (var j = 0; j < navigation.resources.length; j++) {
+                                //        var resource = navigation.resources[j];
+                                //        for (var k = 0; k < resource.scopes.length; k++) {
+                                //            var scope = resource.scopes[k];
+                                //            newResourceScopes.push(scope);
+                                //        }
+                                //    }
+                                //    newNavigation.resources = newResourceScopes;//UniqueObjectArray(newResourceScopes,"scopes");
+                                //    newResult.consoleNavigation.push(newNavigation);
+                                //}
+
+                                console.consoleNavigation.forEach(function (navigation) {
+                                    var addNavigation = false;
+                                    availableNavigationTypes.forEach(function (navType) {
+                                        if(navigation.navigationTypes.indexOf(navType) > -1){
+                                            addNavigation = true;
+                                        }
+                                    });
+                                    if (addNavigation) {
+                                        var newNavigation = {
+                                            navigationName: navigation.navigationName,
+                                            navigationStatus: navigation.navigationStatus
+                                        };
+                                        var newResourceScopes = [];
+                                        if (navigation.resources) {
+                                            for (var j = 0; j < navigation.resources.length; j++) {
+                                                var resource = navigation.resources[j];
+                                                for (var k = 0; k < resource.scopes.length; k++) {
+                                                    var scope = resource.scopes[k];
+                                                    newResourceScopes.push(scope);
+                                                }
+                                            }
+                                            newNavigation.resources = newResourceScopes;//UniqueObjectArray(newResourceScopes,"scopes");
+                                        }
+                                        newResult.consoleNavigation.push(newNavigation);
+                                    }
+
+
+                                });
+
+                                //newConsoles.push(newResult);
+                            }
+                            jsonString = messageFormatter.FormatMessage(err, "Get Console Successful", true, newResult);
+                        }
+                        res.end(jsonString);
+                    });
+
+                } else {
+
+                    jsonString = messageFormatter.FormatMessage(err, "No Assigned Package Found", false, undefined);
+                    res.end(jsonString);
+
                 }
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(err, "No Organisation Found", false, undefined);
+                res.end(jsonString);
+
             }
-            jsonString = messageFormatter.FormatMessage(err, "Get Console Successful", true, newResult);
+
         }
-        res.end(jsonString);
+
     });
+
+
 }
 
 function DeleteConsole(req, res) {
