@@ -94,10 +94,12 @@ module.exports = {
 
     "Host":
     {
+        "profilesearch":"EXTERNAL_PROFILE_SEARCH",
         "vdomain": "LB_FRONTEND",
         "domain": "HOST_NAME",
         "port": "HOST_USERSERVICE_PORT",
         "version": "HOST_VERSION"
+
     },
 
     "LBServer" : {

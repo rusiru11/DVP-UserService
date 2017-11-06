@@ -7,7 +7,7 @@ var ExternalUser = require('dvp-mongomodels/model/ExternalUser');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var regex = require('regex');
 var FormSubmission = require('dvp-mongomodels/model/FormMaster').FormSubmission;
-
+var config = require('config');
 var util = require('util');
 
 
@@ -365,15 +365,94 @@ function GetExternalUserProfileByContact(req, res){
 
     //////////////////////////////////////////older version///////////////////////////////////////////////////////
 
-     var queryObject = {company: company, tenant: tenant};
-     queryObject[category] = contact;
+    var orArray = [];
 
-    // var otherQuery = {company: company, tenant: tenant, "contacts.type":category ,"contacts.contact": contact};
-     var otherQuery = {company: company, tenant: tenant, "contacts.type":category ,"contacts.contact" : { "$regex" : contact, "$options" : "-i" }};
+    var otherQuery;
+    var queryObject;
 
-     var orQuery = {$or:[queryObject, otherQuery]};
+    if(category == 'call' || category == 'sms' ){
+
+        otherQuery = {company: company, tenant: tenant, "contacts.type": "phone", "contacts.contact": contact};
 
 
+        queryObject = {company: company, tenant: tenant};
+        queryObject["landnumber"] = contact;
+
+        orArray.push(queryObject);
+
+
+        queryObject = {company: company, tenant: tenant};
+        queryObject["phone"] = contact;
+
+        orArray.push(queryObject);
+
+
+
+    } else if(category == 'facebook-post' || category == 'facebook-chat'){
+
+        otherQuery = {company: company, tenant: tenant, "contacts.type": "facebook", "contacts.contact": contact};
+
+        queryObject = {company: company, tenant: tenant};
+        queryObject["facebook"] = contact;
+
+        orArray.push(queryObject);
+
+    }else if(category == 'chat'){
+
+        otherQuery = {company: company, tenant: tenant, "contacts.type": "email", "contacts.contact": contact};
+
+
+        queryObject = {company: company, tenant: tenant};
+        queryObject["email"] = contact;
+
+        orArray.push(queryObject);
+
+    }else if(category == 'skype'){
+
+        otherQuery = {company: company, tenant: tenant, "contacts.type": "skype", "contacts.contact": contact};
+
+
+        queryObject = {company: company, tenant: tenant};
+        queryObject["skype"] = contact;
+
+        orArray.push(queryObject);
+
+    }else{
+
+        otherQuery = {company: company, tenant: tenant, "contacts.type": category, "contacts.contact": contact};
+
+
+        queryObject = {company: company, tenant: tenant};
+        queryObject[category] = contact;
+
+        orArray.push(queryObject);
+    }
+
+
+    var orQuery = {$or: orArray};
+
+    if(config.Host.profilesearch == "primary"){
+
+        orQuery = queryObject;
+
+    }else if(config.Host.profilesearch == "secondary"){
+
+        orArray.push(otherQuery);
+        orQuery = {$or: orArray};
+
+    }else if(config.Host.profilesearch == "secondaryonly"){
+
+        orQuery = otherQuery;
+
+    }else{
+
+        orArray.push(otherQuery);
+        orQuery = {$or: orArray};
+        logger.info("Selected default method, which may take longer .........");
+    }
+
+
+    logger.info(orQuery);
 
     ExternalUser.find(orQuery).populate( {path: 'form_submission',populate : {path: 'form'}}).exec( function(err, users) {
         if (err) {

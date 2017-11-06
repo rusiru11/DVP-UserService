@@ -15,6 +15,7 @@ var bcrypt = require('bcryptjs');
 var DbConn = require('dvp-dbmodels');
 
 
+
 var redisip = config.Redis.ip;
 var redisport = config.Redis.port;
 var redispass = config.Redis.password;
@@ -41,7 +42,7 @@ var redisSetting =  {
 
 if(redismode == 'sentinel'){
 
-    if(config.Redis.sentinels && config.Redis.sentinels.hosts && config.Redis.sentinels.port, config.Redis.sentinels.name){
+    if(config.Redis.sentinels && config.Redis.sentinels.hosts && config.Redis.sentinels.port && config.Redis.sentinels.name){
         var sentinelHosts = config.Redis.sentinels.hosts.split(',');
         if(Array.isArray(sentinelHosts) && sentinelHosts.length > 2){
             var sentinelConnections = [];
