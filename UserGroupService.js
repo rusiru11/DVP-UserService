@@ -450,6 +450,7 @@ function CreateUserGroup(req, res) {
     var company = parseInt(req.user.company);
 
     if(req.body && req.body.name ) {
+
         var userGroup = UserGroup({
             name: req.body.name,
             company: parseInt(req.user.company),
@@ -458,6 +459,10 @@ function CreateUserGroup(req, res) {
             updated_at: Date.now()
         });
 
+        if(req.body.businessUnit)
+        {
+            userGroup.businessUnit=req.body.businessUnit;
+        }
 
         userGroup.save(function (err, usergroup) {
             if (err) {
