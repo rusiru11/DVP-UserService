@@ -987,7 +987,7 @@ function GetMyrProfile(req, res){
     var jsonString;
 
     try {
-        User.findOne({username: req.user.iss, company: company, tenant: tenant}).select("-password")
+        User.findOne({username: req.user.iss, company: company, tenant: tenant}).populate({path: 'group'}).select("-password")
             .exec(function (err, users) {
                 if (err) {
 
