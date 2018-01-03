@@ -103,9 +103,6 @@ function GetBusinessUnits(req,res) {
         var jsonString;
 
 
-
-
-
         BusinessUnit.find({company:company, tenant:tenant},function (errUnits,resUnits) {
             if(errUnits)
             {
