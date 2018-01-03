@@ -17,53 +17,76 @@ function AddBusinessUnit(req,res) {
         var username = req.user.iss;
         var jsonString;
 
-
-        if(username)
+        if(req.body && req.body.unitName )
         {
-            User.findOne({company:company,tenant:tenant,username:username},function (errUser,resUser) {
-
-                if(errUser)
+            if(req.body.unitName.toLowerCase()!="default")
+            {
+                if(username)
                 {
-                    jsonString = messageFormatter.FormatMessage(errUser, "Error in searching user", false, undefined);
+                    User.findOne({company:company,tenant:tenant,username:username},function (errUser,resUser) {
+
+                        if(errUser)
+                        {
+                            jsonString = messageFormatter.FormatMessage(errUser, "Error in searching user", false, undefined);
+                        }
+                        else
+                        {
+                            var BzUnit = BusinessUnit({
+                                owner: resUser,
+                                unitName: req.body.unitName,
+                                description: req.body.description,
+                                created_at: Date.now(),
+                                company: company,
+                                tenant: tenant
+                            });
+
+                            BzUnit.save(function (errUnit, resUnit) {
+
+                                if (errUnit) {
+                                    jsonString = messageFormatter.FormatMessage(errUnit, "Error in saving new Business Unit ", false, undefined);
+                                }
+                                else {
+                                    if(resUnit)
+                                    {
+                                        jsonString = messageFormatter.FormatMessage(undefined, "Business Unit Successfully Saved ", true, resUnit);
+                                    }
+                                    else
+                                    {
+                                        jsonString = messageFormatter.FormatMessage(undefined, "Business Unit saving failed ", false, resUnit);
+                                    }
+
+                                }
+
+                                res.end(jsonString);
+                            });
+
+                        }
+                    });
                 }
                 else
                 {
-                    if (req.body && req.body.unitName) {
-                        var BzUnit = BusinessUnit({
-                            owner: resUser,
-                            unitName: req.body.unitName,
-                            description: req.body.description,
-                            created_at: Date.now(),
-                            company: company,
-                            tenant: tenant
-                        });
-
-                        BzUnit.save(function (errUnit, resUnit) {
-
-                            if (errUnit) {
-                                jsonString = messageFormatter.FormatMessage(errUnit, "Error in saving new Business Unit ", false, undefined);
-                            }
-                            else {
-                                if(resUnit)
-                                {
-                                    jsonString = messageFormatter.FormatMessage(undefined, "Business Unit Successfully Saved ", true, resUnit);
-                                }
-                                else
-                                {
-                                    jsonString = messageFormatter.FormatMessage(undefined, "Business Unit saving failed ", false, resUnit);
-                                }
-
-                            }
-
-                            res.end(jsonString);
-                        });
-                    }
+                    jsonString = messageFormatter.FormatMessage(new Error("No authorized user for the request"), "No authorized user for the request", false, undefined);
+                    res.end(jsonString);
                 }
-            });
+            }
+            else
+            {
+                jsonString = messageFormatter.FormatMessage(new Error("Cannot use "+req.body.unitName+" as a Business Unit Name"), "Cannot use "+req.body.unitName+" as a Business Unit Name", false, undefined);
+                res.end(jsonString);
+            }
+
+        }
+        else
+        {
+            jsonString = messageFormatter.FormatMessage(new Error("Insufficient data found to create a business unit"), "Insufficient data found to create a business unit", false, undefined);
+            res.end(jsonString);
         }
 
 
-    } catch (e) {
+
+    }
+    catch (e)
+    {
         jsonString = messageFormatter.FormatMessage(e, "Exception in operation : AddBusinessUnit ", false, undefined);
         res.end(jsonString);
     }
