@@ -19,7 +19,7 @@
     "deepcopy": "^0.6.3",
     "dvp-common": "^1.1.0",
     "dvp-dbmodels": "2.1.0",
-    "dvp-mongomodels": "^4.9.8",
+    "dvp-mongomodels": "4.9.9",
     "ejs": "^2.4.2",
     "errorhandler": "^1.4.3",
     "express": "^4.13.4",
