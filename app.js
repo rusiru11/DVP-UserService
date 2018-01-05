@@ -455,6 +455,7 @@ app.post('/DVP/API/:version/ActiveDirectory/FaceTone/User', jwt({secret: secret.
 
 
 app.post('/DVP/API/:version/BusinessUnit', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.AddBusinessUnit);
+app.put('/DVP/API/:version/BusinessUnit/:unitname', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.UpdateBusinessUnit);
 app.get('/DVP/API/:version/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnits);
 app.get('/DVP/API/:version/BusinessUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnit);
 

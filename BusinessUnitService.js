@@ -7,6 +7,7 @@ var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJ
 var BusinessUnit = require('dvp-mongomodels/model/BusinessUnit').BusinessUnit;
 var User = require('dvp-mongomodels/model/User');
 var unique = require('array-unique');
+var util = require('util');
 
 
 function AddBusinessUnit(req,res) {
@@ -24,7 +25,7 @@ function AddBusinessUnit(req,res) {
             {
                 if(username)
                 {
-                    User.findOne({company:company,tenant:tenant,username:username},function (errUser,resUser) {
+                    User.findOne({company:company,tenant:tenant,username:username,$or:[{'user_meta.role':'admin'},{'user_meta.role':'supervisor'}]},function (errUser,resUser) {
 
                         if(errUser)
                         {
@@ -32,14 +33,22 @@ function AddBusinessUnit(req,res) {
                         }
                         else
                         {
-                            var BzUnit = BusinessUnit({
-                                owner: resUser,
-                                unitName: req.body.unitName,
-                                description: req.body.description,
-                                created_at: Date.now(),
-                                company: company,
-                                tenant: tenant
-                            });
+                            var unitObj =
+                                {
+                                    owner: resUser,
+                                    unitName: req.body.unitName,
+                                    description: req.body.description,
+                                    created_at: Date.now(),
+                                    company: company,
+                                    tenant: tenant
+                                };
+
+                            if(req.body.headUsers && util.isArray(req.body.headUsers))
+                            {
+                                unitObj.heads=req.body.headUsers;
+                            }
+
+                            var BzUnit = BusinessUnit(unitObj);
 
                             BzUnit.save(function (errUnit, resUnit) {
 
@@ -95,6 +104,59 @@ function AddBusinessUnit(req,res) {
 
 
 };
+function UpdateBusinessUnit(req,res) {
+
+    try {
+        logger.debug("DVP-BusinessUnitService.UpdateBusinessUnit Internal method ");
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+        if(req.body && req.params.unitname )
+        {
+            var updateObj = {
+                description:req.body.description
+            }
+            if(req.body.heads && util.isArray(req.body.heads))
+            {
+                updateObj.heads=req.body.heads;
+
+
+            }
+
+            BusinessUnit.findOneAndUpdate({company:company, tenant:tenant,unitName:req.params.unitname},updateObj,function (errUpdate,resUpdate) {
+
+                if(errUpdate)
+                {
+                    jsonString = messageFormatter.FormatMessage(errUpdate, "Error in updating Business Unit ", false, undefined);
+                }
+                else
+                {
+                    jsonString = messageFormatter.FormatMessage(undefined, "Updating Business Unit succeeded ", true, resUpdate);
+                }
+                res.end(jsonString);
+            });
+
+
+        }
+        else
+        {
+            jsonString = messageFormatter.FormatMessage(new Error("Insufficient data found to create a business unit"), "Insufficient data found to create a business unit", false, undefined);
+            res.end(jsonString);
+        }
+
+
+
+    }
+    catch (e)
+    {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in operation : AddBusinessUnit ", false, undefined);
+        res.end(jsonString);
+    }
+
+
+
+};
 function GetBusinessUnits(req,res) {
 
     try {
@@ -104,7 +166,7 @@ function GetBusinessUnits(req,res) {
         var jsonString;
 
 
-        BusinessUnit.find({company:company, tenant:tenant},function (errUnits,resUnits) {
+        BusinessUnit.find({company:company, tenant:tenant}).populate('heads').exec(function (errUnits,resUnits) {
             if(errUnits)
             {
                 jsonString = messageFormatter.FormatMessage(errUnits, "Error in searching BusinessUnits ", false, undefined);
@@ -335,23 +397,23 @@ function AddHeadsToBusinessUnit(req, res){
                 {
 
 
-                        BusinessUnit.findOneAndUpdate({
-                            unitName: req.params.name,
-                            company: company,
-                            tenant: tenant
-                        }, {$push: {heads: resUser}}).exec(function (errAttach,resAttach) {
-                            if(errAttach)
-                            {
-                                logger.error("DVP-UserService.AddHeadsToBusinessUnit :  Error in Attaching Head to Business Unit ",errAttach);
-                                jsonString = messageFormatter.FormatMessage(errAttach, "Error in Attaching Head to Business Unit", false, undefined);
-                            }
-                            else
-                            {
-                                jsonString = messageFormatter.FormatMessage(undefined, "Head attached to Business Units successfully", true, resAttach);
-                                logger.debug("DVP-UserService.AddHeadsToBusinessUnit :  Head attached to Business Units successfully ");
-                            }
-                            res.end(jsonString);
-                        });
+                    BusinessUnit.findOneAndUpdate({
+                        unitName: req.params.name,
+                        company: company,
+                        tenant: tenant
+                    }, {$push: {heads: resUser}}).exec(function (errAttach,resAttach) {
+                        if(errAttach)
+                        {
+                            logger.error("DVP-UserService.AddHeadsToBusinessUnit :  Error in Attaching Head to Business Unit ",errAttach);
+                            jsonString = messageFormatter.FormatMessage(errAttach, "Error in Attaching Head to Business Unit", false, undefined);
+                        }
+                        else
+                        {
+                            jsonString = messageFormatter.FormatMessage(undefined, "Head attached to Business Units successfully", true, resAttach);
+                            logger.debug("DVP-UserService.AddHeadsToBusinessUnit :  Head attached to Business Units successfully ");
+                        }
+                        res.end(jsonString);
+                    });
 
 
 
@@ -383,3 +445,4 @@ module.exports.GetBusinessUnit=GetBusinessUnit;
 module.exports.GetSupervisorBusinessUnits=GetSupervisorBusinessUnits;
 module.exports.AddHeadToBusinessUnits=AddHeadToBusinessUnits;
 module.exports.AddHeadsToBusinessUnit=AddHeadsToBusinessUnit;
+module.exports.UpdateBusinessUnit=UpdateBusinessUnit;
