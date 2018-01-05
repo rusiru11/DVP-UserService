@@ -189,7 +189,7 @@ function GetUser(req, res){
 
     var query = {username: req.params.name,company: company, tenant: tenant};
 
-    User.findOne(query)
+    User.findOne(query).populate({path: 'group'})
         .select("-password")
         .exec( function(err, users) {
             if (err) {
@@ -987,7 +987,7 @@ function GetMyrProfile(req, res){
     var jsonString;
 
     try {
-        User.findOne({username: req.user.iss, company: company, tenant: tenant}).select("-password")
+        User.findOne({username: req.user.iss, company: company, tenant: tenant}).populate({path: 'group'}).select("-password")
             .exec(function (err, users) {
                 if (err) {
 

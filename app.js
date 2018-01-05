@@ -40,6 +40,7 @@ var ActiveDirectory = require('./ActiveDirectoryService');
 
 // tenant operations
 var tenantService=require("./TenantService");
+var businessUnitService=require("./BusinessUnitService");
 
 
 //var mongoip=config.Mongo.ip;
@@ -69,18 +70,18 @@ var connectionstring = '';
 mongoip = mongoip.split(',');
 
 if(util.isArray(mongoip)){
- if(mongoip.length > 1){    
-    mongoip.forEach(function(item){
-        connectionstring += util.format('%s:%d,',item,mongoport)
-    });
+    if(mongoip.length > 1){
+        mongoip.forEach(function(item){
+            connectionstring += util.format('%s:%d,',item,mongoport)
+        });
 
-    connectionstring = connectionstring.substring(0, connectionstring.length - 1);
-    connectionstring = util.format('mongodb://%s:%s@%s/%s',mongouser,mongopass,connectionstring,mongodb);
+        connectionstring = connectionstring.substring(0, connectionstring.length - 1);
+        connectionstring = util.format('mongodb://%s:%s@%s/%s',mongouser,mongopass,connectionstring,mongodb);
 
-    if(mongoreplicaset){
-        connectionstring = util.format('%s?replicaSet=%s',connectionstring,mongoreplicaset) ;
+        if(mongoreplicaset){
+            connectionstring = util.format('%s?replicaSet=%s',connectionstring,mongoreplicaset) ;
+        }
     }
- }
     else
     {
         connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip[0],mongoport,mongodb);
@@ -138,15 +139,16 @@ var host = config.Host.vdomain || 'localhost';
 app.set('view engine', 'ejs');
 
 
+
 //var router = express.Router();
 
 /*
-router.use(function (req, res, next) {
-    var url_parts = url.parse(req.url, true);
-    req.query = url_parts.query;
-    next();
-});
-*/
+ router.use(function (req, res, next) {
+ var url_parts = url.parse(req.url, true);
+ req.query = url_parts.query;
+ next();
+ });
+ */
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -391,7 +393,10 @@ app.delete('/DVP/API/:version/UserGroup/:id',jwt({secret: secret.Secret}), autho
 app.put('/DVP/API/:version/UserGroup/:id',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), userGroupService.UpdateUserGroup);
 app.put('/DVP/API/:version/UserGroup/:id/User/:user',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), userGroupService.UpdateUserGroupMembers);
 app.delete('/DVP/API/:version/UserGroup/:id/User/:user',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"delete"}), userGroupService.RemoveUserGroupMembers);
-app.get('/DVP/API/:version/UserGroup/User/:user',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"get"}), userGroupService.FindUserGroupsByMember);
+app.post('/DVP/API/:version/UserGroup/User/:user',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"get"}), userGroupService.FindUserGroupsByMember);
+
+app.put('/DVP/API/:version/UserGroup/:id/Supervisor/:user',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), userGroupService.UpdateUserGroupSupervisors);
+app.get('/DVP/API/:version/UserGroup/:id/Supervisors',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), userGroupService.GetUserGroupSupervisors);
 
 
 app.post('/DVP/API/:version/Tenant',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), tenantService.CreateTenant);
@@ -448,6 +453,18 @@ app.get('/DVP/API/:version/ActiveDirectory/Group/Users',jwt({secret: secret.Secr
 app.post('/DVP/API/:version/ActiveDirectory/FaceTone/User', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateUserFromAD);
 
 
+
+app.post('/DVP/API/:version/BusinessUnit', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.AddBusinessUnit);
+app.get('/DVP/API/:version/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnits);
+app.get('/DVP/API/:version/BusinessUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnit);
+
+app.get('/DVP/API/:version/Supervisor/:sid/Groups', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), userGroupService.GetSupervisorUserGroups);
+app.put('/DVP/API/:version/BusinessUnit/:name/Head/:hid', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadToBusinessUnits);
+app.put('/DVP/API/:version/BusinessUnit/:name/Heads', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadsToBusinessUnit);
+app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetSupervisorBusinessUnits);
+
+
+
 app.listen(port, function () {
 
     logger.info("DVP-UserService.main Server listening at %d", port);
@@ -482,58 +499,58 @@ app.listen(port, function () {
 /*
 
 
-var server = restify.createServer({
-    name: "DVP User Service"
-});
+ var server = restify.createServer({
+ name: "DVP User Service"
+ });
 
-server.pre(restify.pre.userAgentConnection());
-server.use(restify.bodyParser({ mapParams: false }));
-restify.CORS.ALLOW_HEADERS.push('authorization');
-server.use(restify.CORS());
-server.use(restify.fullResponse());
-server.use(jwt({secret: secret.Secret}));
-
-
-//////////////////////////////Cloud API/////////////////////////////////////////////////////
-
-server.get('/DVP/API/:version/Users', authorization({resource:"user", action:"read"}), userService.GetUsers);
-server.get('/DVP/API/:version/User/:name', authorization({resource:"user", action:"read"}), userService.GetUser);
-server.del('/DVP/API/:version/User/:name', authorization({resource:"user", action:"delete"}), userService.DeleteUser);
-server.post('/DVP/API/:version/User', authorization({resource:"user", action:"write"}), userService.CreateUser);
-server.put('/DVP/API/:version/User/:name', authorization({resource:"user", action:"write"}), userService.UpdateUser);
-
-//////////////////////////////Organisation API/////////////////////////////////////////////////////
-server.get('/DVP/API/:version/User/:name/profile', authorization({resource:"userProfile", action:"read"}), userService.GetUserProfile);
-server.put('/DVP/API/:version/User/:name/profile', authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfile);
-
-server.get('/DVP/API/:version/Organisations', authorization({resource:"user", action:"read"}), organisationService.GetOrganisations);
-server.get('/DVP/API/:version/Organisation', authorization({resource:"user", action:"read"}), organisationService.GetOrganisation);
-server.del('/DVP/API/:version/Organisation', authorization({resource:"user", action:"delete"}), organisationService.DeleteOrganisation);
-server.post('/DVP/API/:version/Organisation', authorization({resource:"user", action:"write"}), organisationService.CreateOrganisation);
-server.patch('/DVP/API/:version/Organisation', authorization({resource:"user", action:"write"}), organisationService.UpdateOrganisation);
-
-server.get('/DVP/API/:version/Users/:name/Scope', authorization({resource:"userScope", action:"write"}), userService.GetUserScopes);
-server.put('/DVP/API/:version/Users/:name/Scope', authorization({resource:"userScope", action:"write"}), userService.AddUserScopes);
-server.del('/DVP/API/:version/User/:name/Scope/:scope', authorization({resource:"userScope", action:"delete"}), userService.DeleteUser);
-
-server.get('/DVP/API/:version/Users/:name/Scope', authorization({resource:"userAppScope", action:"write"}), userService.GetAppScopes);
-server.put('/DVP/API/:version/Users/:name/AppScope', authorization({resource:"userAppScope", action:"write"}), userService.AddUserAppScopes);
-server.del('/DVP/API/:version/User/:name/AppScope/:scope', authorization({resource:"userAppScope", action:"delete"}), userService.RemoveUserAppScopes);
+ server.pre(restify.pre.userAgentConnection());
+ server.use(restify.bodyParser({ mapParams: false }));
+ restify.CORS.ALLOW_HEADERS.push('authorization');
+ server.use(restify.CORS());
+ server.use(restify.fullResponse());
+ server.use(jwt({secret: secret.Secret}));
 
 
-server.get('/DVP/API/:version/Users/:name/UserMeta', authorization({resource:"userMeta", action:"read"}), userService.GetUserMeta);
-server.put('/DVP/API/:version/Users/:name/UserMeta', authorization({resource:"userMeta", action:"write"}), userService.UpdateUserMetadata);
+ //////////////////////////////Cloud API/////////////////////////////////////////////////////
 
-server.get('/DVP/API/:version/Users/:name/AppMeta', authorization({resource:"userAppMeta", action:"read"}), userService.GetAppMeta);
-server.put('/DVP/API/:version/Users/:name/AppMeta', authorization({resource:"userAppMeta", action:"write"}), userService.UpdateAppMetadata);
+ server.get('/DVP/API/:version/Users', authorization({resource:"user", action:"read"}), userService.GetUsers);
+ server.get('/DVP/API/:version/User/:name', authorization({resource:"user", action:"read"}), userService.GetUser);
+ server.del('/DVP/API/:version/User/:name', authorization({resource:"user", action:"delete"}), userService.DeleteUser);
+ server.post('/DVP/API/:version/User', authorization({resource:"user", action:"write"}), userService.CreateUser);
+ server.put('/DVP/API/:version/User/:name', authorization({resource:"user", action:"write"}), userService.UpdateUser);
+
+ //////////////////////////////Organisation API/////////////////////////////////////////////////////
+ server.get('/DVP/API/:version/User/:name/profile', authorization({resource:"userProfile", action:"read"}), userService.GetUserProfile);
+ server.put('/DVP/API/:version/User/:name/profile', authorization({resource:"userProfile", action:"write"}), userService.UpdateUserProfile);
+
+ server.get('/DVP/API/:version/Organisations', authorization({resource:"user", action:"read"}), organisationService.GetOrganisations);
+ server.get('/DVP/API/:version/Organisation', authorization({resource:"user", action:"read"}), organisationService.GetOrganisation);
+ server.del('/DVP/API/:version/Organisation', authorization({resource:"user", action:"delete"}), organisationService.DeleteOrganisation);
+ server.post('/DVP/API/:version/Organisation', authorization({resource:"user", action:"write"}), organisationService.CreateOrganisation);
+ server.patch('/DVP/API/:version/Organisation', authorization({resource:"user", action:"write"}), organisationService.UpdateOrganisation);
+
+ server.get('/DVP/API/:version/Users/:name/Scope', authorization({resource:"userScope", action:"write"}), userService.GetUserScopes);
+ server.put('/DVP/API/:version/Users/:name/Scope', authorization({resource:"userScope", action:"write"}), userService.AddUserScopes);
+ server.del('/DVP/API/:version/User/:name/Scope/:scope', authorization({resource:"userScope", action:"delete"}), userService.DeleteUser);
+
+ server.get('/DVP/API/:version/Users/:name/Scope', authorization({resource:"userAppScope", action:"write"}), userService.GetAppScopes);
+ server.put('/DVP/API/:version/Users/:name/AppScope', authorization({resource:"userAppScope", action:"write"}), userService.AddUserAppScopes);
+ server.del('/DVP/API/:version/User/:name/AppScope/:scope', authorization({resource:"userAppScope", action:"delete"}), userService.RemoveUserAppScopes);
+
+
+ server.get('/DVP/API/:version/Users/:name/UserMeta', authorization({resource:"userMeta", action:"read"}), userService.GetUserMeta);
+ server.put('/DVP/API/:version/Users/:name/UserMeta', authorization({resource:"userMeta", action:"write"}), userService.UpdateUserMetadata);
+
+ server.get('/DVP/API/:version/Users/:name/AppMeta', authorization({resource:"userAppMeta", action:"read"}), userService.GetAppMeta);
+ server.put('/DVP/API/:version/Users/:name/AppMeta', authorization({resource:"userAppMeta", action:"write"}), userService.UpdateAppMetadata);
 
 
 
 
-server.listen(port, function () {
+ server.listen(port, function () {
 
-    logger.info("DVP-UserService.main Server %s listening at %s", server.name, server.url);
+ logger.info("DVP-UserService.main Server %s listening at %s", server.name, server.url);
 
-});
+ });
 
-    */
+ */
