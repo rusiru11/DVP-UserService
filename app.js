@@ -137,7 +137,7 @@ var host = config.Host.vdomain || 'localhost';
 
 
 app.set('view engine', 'ejs');
-mongoose.set('debug', true);
+
 
 
 //var router = express.Router();
@@ -460,11 +460,8 @@ app.get('/DVP/API/:version/BusinessUnit/:unitName', jwt({secret: secret.Secret})
 
 app.get('/DVP/API/:version/Supervisor/:sid/Groups', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), userGroupService.GetSupervisorUserGroups);
 app.put('/DVP/API/:version/BusinessUnit/:name/Head/:hid', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadToBusinessUnits);
+app.put('/DVP/API/:version/BusinessUnit/:name/Heads', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadsToBusinessUnit);
 app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetSupervisorBusinessUnits);
-
-
-
-
 
 
 
