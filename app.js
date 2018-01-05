@@ -137,6 +137,7 @@ var host = config.Host.vdomain || 'localhost';
 
 
 app.set('view engine', 'ejs');
+mongoose.set('debug', true);
 
 
 //var router = express.Router();
@@ -457,7 +458,11 @@ app.post('/DVP/API/:version/BusinessUnit', jwt({secret: secret.Secret}),authoriz
 app.get('/DVP/API/:version/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnits);
 app.get('/DVP/API/:version/BusinessUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnit);
 
-app.get('/DVP/API/:version/Supervisor/:sid/Groups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userGroupService.GetSupervisorUserGroups);
+app.get('/DVP/API/:version/Supervisor/:sid/Groups', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), userGroupService.GetSupervisorUserGroups);
+app.put('/DVP/API/:version/BusinessUnit/:name/Head/:hid', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadToBusinessUnits);
+app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetSupervisorBusinessUnits);
+
+
 
 
 

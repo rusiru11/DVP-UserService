@@ -743,28 +743,40 @@ function GetSupervisorUserGroups(req, res){
         var tenant = parseInt(req.user.tenant);
         var jsonString;
 
+        if(req.params.sid)
+        {
+            UserGroup.find({
+                company: company,
+                tenant: tenant,
+                supervisors: {$in: [req.params.sid]}
+            }).populate('supervisors', '-password -user_meta -app_meta -user_scopes -client_scopes').exec(function (errUsers, resUsers) {
 
-
-        UserGroup.find({
-            company: company,
-            tenant: tenant,
-            supervisors: {$in: [req.params.sid]}
-        }).populate('supervisors', '-password -user_meta -app_meta -user_scopes -client_scopes').exec(function (errUsers, resUsers) {
-
-            if (errUsers) {
-                jsonString = messageFormatter.FormatMessage(errUsers, "Error in searching supervisors", false, undefined);
-            }
-            else {
-                if (resUsers) {
-                    jsonString = messageFormatter.FormatMessage(undefined, "Supervisors found", true, resUsers);
+                if (errUsers) {
+                    logger.error("DVP-UserService.GetSupervisorUserGroups :  Error in searching supervisors ",errUsers);
+                    jsonString = messageFormatter.FormatMessage(errUsers, "Error in searching supervisors", false, undefined);
                 }
                 else {
-                    jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+                    if (resUsers) {
+                        jsonString = messageFormatter.FormatMessage(undefined, "Supervisors found", true, resUsers);
+                        logger.debug("DVP-UserService.GetSupervisorUserGroups :  Supervisors found ");
+                    }
+                    else {
+                        jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+                        logger.error("DVP-UserService.GetSupervisorUserGroups :  Get Users Failed ");
+                    }
                 }
-            }
 
+                res.end(jsonString);
+            });
+        }
+        else
+        {
+            logger.error("DVP-UserService.GetSupervisorUserGroups :  No supervisor ID found ");
+            jsonString = messageFormatter.FormatMessage(new Error("No supervisor ID found"), "No supervisor ID found", false, undefined);
             res.end(jsonString);
-        });
+        }
+
+
     } catch (e) {
         jsonString = messageFormatter.FormatMessage(e, "Exception in serching users", false, undefined);
         res.end(jsonString);
@@ -772,6 +784,10 @@ function GetSupervisorUserGroups(req, res){
 
 
 }
+
+
+
+
 
 
 

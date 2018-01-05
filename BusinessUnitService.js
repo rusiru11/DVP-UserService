@@ -6,6 +6,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var BusinessUnit = require('dvp-mongomodels/model/BusinessUnit').BusinessUnit;
 var User = require('dvp-mongomodels/model/User');
+var unique = require('array-unique');
 
 
 function AddBusinessUnit(req,res) {
@@ -135,25 +136,25 @@ function GetBusinessUnit(req,res) {
 
 
 
-if(req.params.unitName)
-{
-    BusinessUnit.find({company:company, tenant:tenant, unitName:req.params.unitName},function (errUnit,resUnit) {
-        if(errUnit)
+        if(req.params.unitName)
         {
-            jsonString = messageFormatter.FormatMessage(errUnit, "Error in searching BusinessUnit ", false, undefined);
+            BusinessUnit.find({company:company, tenant:tenant, unitName:req.params.unitName},function (errUnit,resUnit) {
+                if(errUnit)
+                {
+                    jsonString = messageFormatter.FormatMessage(errUnit, "Error in searching BusinessUnit ", false, undefined);
+                }
+                else
+                {
+                    jsonString = messageFormatter.FormatMessage(undefined, "BusinessUnit Found : "+req.params.unitName, true, resUnit);
+                }
+                res.end(jsonString);
+            });
         }
         else
         {
-            jsonString = messageFormatter.FormatMessage(undefined, "BusinessUnit Found : "+req.params.unitName, true, resUnit);
+            jsonString = messageFormatter.FormatMessage(new Error("No UnitName received"), "No UnitName received ", false, undefined);
+            res.end(jsonString);
         }
-        res.end(jsonString);
-    });
-}
-else
-{
-    jsonString = messageFormatter.FormatMessage(new Error("No UnitName received"), "No UnitName received ", false, undefined);
-    res.end(jsonString);
-}
 
 
 
@@ -167,7 +168,132 @@ else
 
 
 };
+function GetSupervisorBusinessUnits(req, res){
+
+
+    logger.debug("DVP-UserService.GetSupervisorBusinessUnits Internal method ");
+
+    try {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+        if(req.params.sid)
+        {
+            BusinessUnit.find({
+                company: company,
+                tenant: tenant,
+                heads: {$in: [req.params.sid]}
+            }).exec(function (errUsers, resUsers) {
+
+                if (errUsers) {
+                    logger.error("DVP-UserService.GetSupervisorBusinessUnits :  Error in searching supervisors ",errUsers);
+                    jsonString = messageFormatter.FormatMessage(errUsers, "Error in searching Business Units", false, undefined);
+                }
+                else {
+                    if (resUsers) {
+
+                        jsonString = messageFormatter.FormatMessage(undefined, "Business Units found", true, unique(resUsers));
+                        logger.debug("DVP-UserService.GetSupervisorBusinessUnits :  Business Units found ");
+                    }
+                    else {
+                        jsonString = messageFormatter.FormatMessage(undefined, "Business Units Failed", false, undefined);
+                        logger.error("DVP-UserService.GetSupervisorBusinessUnits :  Business Units Failed ");
+                    }
+                }
+
+                res.end(jsonString);
+            });
+        }
+        else
+        {
+            logger.error("DVP-UserService.GetSupervisorBusinessUnits :  No supervisor ID found ");
+            jsonString = messageFormatter.FormatMessage(new Error("No supervisor ID found"), "No supervisor ID found", false, undefined);
+            res.end(jsonString);
+        }
+
+
+    } catch (e) {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in searching Business Units", false, undefined);
+        res.end(jsonString);
+    }
+
+
+}
+function AddHeadToBusinessUnits(req, res){
+
+
+    logger.debug("DVP-UserService.AddHeadToBusinessUnits Internal method ");
+
+    try {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+        if(req.params && req.params.hid && req.params.name)
+        {
+            User.findOne({_id:req.params.hid, company:company, tenant:tenant}).exec(function (errUser,resUser) {
+
+                if(errUser)
+                {
+                    logger.error("DVP-UserService.AddHeadToBusinessUnits :  Error in searching User data ",errUser);
+                    jsonString = messageFormatter.FormatMessage(errUser, "Error in searching User data", false, undefined);
+                    res.end(jsonString);
+                }
+                else
+                {
+
+                    if (resUser.user_meta && (resUser.user_meta.role == "admin" || resUser.user_meta.role == "supervisor")) {
+                        BusinessUnit.findOneAndUpdate({
+                            unitName: req.params.name,
+                            company: company,
+                            tenant: tenant
+                        }, {$push: {heads: resUser}}).exec(function (errAttach,resAttach) {
+                            if(errAttach)
+                            {
+                                logger.error("DVP-UserService.AddHeadToBusinessUnits :  Error in Attaching Head to Business Unit ",errAttach);
+                                jsonString = messageFormatter.FormatMessage(errAttach, "Error in Attaching Head to Business Unit", false, undefined);
+                            }
+                            else
+                            {
+                                jsonString = messageFormatter.FormatMessage(undefined, "Head attached to Business Units successfully", true, resAttach);
+                                logger.debug("DVP-UserService.AddHeadToBusinessUnits :  Head attached to Business Units successfully ");
+                            }
+                            res.end(jsonString);
+                        });
+
+
+                    }
+                    else
+                    {
+                        logger.error("DVP-UserService.AddHeadToBusinessUnits :  User does not have supervisor or admin privilege to be a Head ");
+                        jsonString = messageFormatter.FormatMessage(new Error("User does not have supervisor or admin privilege to be a Head"), "Error in searching User data", false, undefined);
+                        res.end(jsonString);
+                    }
+                }
+
+            });
+
+
+        }
+        else
+        {
+            logger.error("DVP-UserService.AddHeadToBusinessUnits :  No supervisor ID or BusinessUnit name found ");
+            jsonString = messageFormatter.FormatMessage(new Error("No supervisor ID or BusinessUnit name found "), "No supervisor ID or BusinessUnit name found ", false, undefined);
+            res.end(jsonString);
+        }
+
+
+    } catch (e) {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in attaching Head to Business Unit", false, undefined);
+        res.end(jsonString);
+    }
+
+
+}
 
 module.exports.AddBusinessUnit=AddBusinessUnit;
 module.exports.GetBusinessUnits=GetBusinessUnits;
 module.exports.GetBusinessUnit=GetBusinessUnit;
+module.exports.GetSupervisorBusinessUnits=GetSupervisorBusinessUnits;
+module.exports.AddHeadToBusinessUnits=AddHeadToBusinessUnits;
