@@ -457,6 +457,8 @@ app.post('/DVP/API/:version/BusinessUnit', jwt({secret: secret.Secret}),authoriz
 app.get('/DVP/API/:version/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnits);
 app.get('/DVP/API/:version/BusinessUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnit);
 
+app.get('/DVP/API/:version/Supervisor/:sid/Groups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userGroupService.GetSupervisorUserGroups);
+
 
 
 

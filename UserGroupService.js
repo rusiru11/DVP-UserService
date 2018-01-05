@@ -631,7 +631,7 @@ function UpdateUserGroupSupervisors(req, res) {
 function GetUserGroupSupervisors(req, res){
 
 
-    logger.debug("DVP-UserService.UpdateUserGroup Internal method ");
+    logger.debug("DVP-UserService.GetUserGroupSupervisors Internal method ");
 
     try {
         var company = parseInt(req.user.company);
@@ -733,6 +733,45 @@ function FindUserGroupsByMember(req, res) {
     });
 }
 
+function GetSupervisorUserGroups(req, res){
+
+
+    logger.debug("DVP-UserService.GetSupervisorUserGroups Internal method ");
+
+    try {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+
+
+        UserGroup.find({
+            company: company,
+            tenant: tenant,
+            supervisors: {$in: [req.params.sid]}
+        }).populate('supervisors', '-password -user_meta -app_meta -user_scopes -client_scopes').exec(function (errUsers, resUsers) {
+
+            if (errUsers) {
+                jsonString = messageFormatter.FormatMessage(errUsers, "Error in searching supervisors", false, undefined);
+            }
+            else {
+                if (resUsers) {
+                    jsonString = messageFormatter.FormatMessage(undefined, "Supervisors found", true, resUsers);
+                }
+                else {
+                    jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+                }
+            }
+
+            res.end(jsonString);
+        });
+    } catch (e) {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in serching users", false, undefined);
+        res.end(jsonString);
+    }
+
+
+}
 
 
 
@@ -753,6 +792,7 @@ module.exports.FindUserGroupsByMember = FindUserGroupsByMember;
 module.exports.GetGroupsAndUsers = GetGroupsAndUsers;
 module.exports.UpdateUserGroupSupervisors = UpdateUserGroupSupervisors;
 module.exports.GetUserGroupSupervisors = GetUserGroupSupervisors;
+module.exports.GetSupervisorUserGroups = GetSupervisorUserGroups;
 
 
 
