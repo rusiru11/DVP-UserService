@@ -21,7 +21,7 @@ function AddBusinessUnit(req,res) {
 
         if(req.body && req.body.unitName )
         {
-            if(req.body.unitName.toLowerCase()!="default")
+            if(req.body.unitName.toLowerCase()!="default" || req.body.unitName.toLowerCase()!="all")
             {
                 if(username)
                 {
