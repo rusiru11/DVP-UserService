@@ -463,6 +463,7 @@ app.get('/DVP/API/:version/Supervisor/:sid/Groups', jwt({secret: secret.Secret})
 app.put('/DVP/API/:version/BusinessUnit/:name/Head/:hid', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadToBusinessUnits);
 app.put('/DVP/API/:version/BusinessUnit/:name/Heads', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadsToBusinessUnit);
 app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetSupervisorBusinessUnits);
+app.get('/DVP/API/:version/BusinessUnit/:name/Users', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetUsersOfBusinessUnits);
 
 
 

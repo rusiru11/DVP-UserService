@@ -8,6 +8,8 @@ var BusinessUnit = require('dvp-mongomodels/model/BusinessUnit').BusinessUnit;
 var User = require('dvp-mongomodels/model/User');
 var unique = require('array-unique');
 var util = require('util');
+var UserGroup = require('dvp-mongomodels/model/UserGroup').UserGroup;
+
 
 
 function AddBusinessUnit(req,res) {
@@ -439,6 +441,113 @@ function AddHeadsToBusinessUnit(req, res){
 
 }
 
+
+
+function GetUsersOfBusinessUnits(req, res){
+
+
+    logger.debug("DVP-UserService.GetUsersOfBusinessUnits Internal method ");
+
+    try {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+        if(req.params.name)
+        {
+            UserGroup.find({
+                company: company,
+                tenant: tenant,
+                businessUnit:req.params.name}).exec(function (errGroups, resGroups) {
+
+                if (errGroups) {
+                    logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Error in searching supervisors ",errGroups);
+                    jsonString = messageFormatter.FormatMessage(errGroups, "Error in searching Business Units", false, undefined);
+                    res.end(jsonString);
+                }
+                else {
+                    if (resGroups) {
+
+                        var grouiIds=[];
+                        resGroups.forEach(function (item) {
+
+                            grouiIds.push(item._id);
+
+                        });
+
+                        User.find({
+                            company: company,
+                            tenant: tenant,
+                            group:{$in:grouiIds}}).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).exec(function (errUsers,resUsers) {
+
+                            if(errUsers)
+                            {
+                                jsonString = messageFormatter.FormatMessage(errUsers, "User searching Failed", false, undefined);
+                                logger.error("DVP-UserService.GetUsersOfBusinessUnits :  User searching Failed ");
+                                res.end(jsonString);
+                            }
+                            else
+                            {
+                                jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, resUsers);
+                                logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  User searching Succeeded ");
+                                res.end(jsonString);
+                            }
+                        });
+
+                    }
+                    else {
+                        jsonString = messageFormatter.FormatMessage(undefined, "Business Units searching Failed", false, undefined);
+                        logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Business Units searching Failed ");
+                        res.end(jsonString);
+                    }
+                }
+
+
+            });
+
+            /*User.find({
+             company: company,
+             tenant: tenant
+             }).populate({
+             path:'group',
+             match:{businessUnit:{$eq:req.params.name}}
+             }).exec(function (errUsers, resUsers) {
+
+             if (errUsers) {
+             logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Error in searching supervisors ",errUsers);
+             jsonString = messageFormatter.FormatMessage(errUsers, "Error in searching Business Units", false, undefined);
+             }
+             else {
+             if (resUsers) {
+
+             jsonString = messageFormatter.FormatMessage(undefined, "Business Units found", true, unique(resUsers));
+             logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  Business Units found ");
+             }
+             else {
+             jsonString = messageFormatter.FormatMessage(undefined, "Business Units Failed", false, undefined);
+             logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Business Units Failed ");
+             }
+             }
+
+             res.end(jsonString);
+             });*/
+        }
+        else
+        {
+            logger.error("DVP-UserService.GetUsersOfBusinessUnits :  No Business Unit name received ");
+            jsonString = messageFormatter.FormatMessage(new Error(" No Business Unit name received "), " No Business Unit name received ", false, undefined);
+            res.end(jsonString);
+        }
+
+
+    } catch (e) {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in searching Business Units", false, undefined);
+        res.end(jsonString);
+    }
+
+
+}
+
 module.exports.AddBusinessUnit=AddBusinessUnit;
 module.exports.GetBusinessUnits=GetBusinessUnits;
 module.exports.GetBusinessUnit=GetBusinessUnit;
@@ -446,3 +555,4 @@ module.exports.GetSupervisorBusinessUnits=GetSupervisorBusinessUnits;
 module.exports.AddHeadToBusinessUnits=AddHeadToBusinessUnits;
 module.exports.AddHeadsToBusinessUnit=AddHeadsToBusinessUnit;
 module.exports.UpdateBusinessUnit=UpdateBusinessUnit;
+module.exports.GetUsersOfBusinessUnits=GetUsersOfBusinessUnits;
