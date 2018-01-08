@@ -455,55 +455,85 @@ function GetUsersOfBusinessUnits(req, res){
 
         if(req.params.name)
         {
-            UserGroup.find({
-                company: company,
-                tenant: tenant,
-                businessUnit:req.params.name}).exec(function (errGroups, resGroups) {
 
-                if (errGroups) {
-                    logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Error in searching supervisors ",errGroups);
-                    jsonString = messageFormatter.FormatMessage(errGroups, "Error in searching Business Units", false, undefined);
-                    res.end(jsonString);
-                }
-                else {
-                    if (resGroups) {
-
-                        var grouiIds=[];
-                        resGroups.forEach(function (item) {
-
-                            grouiIds.push(item._id);
-
-                        });
-
-                        User.find({
-                            company: company,
-                            tenant: tenant,
-                            group:{$in:grouiIds}}).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).exec(function (errUsers,resUsers) {
-
-                            if(errUsers)
-                            {
-                                jsonString = messageFormatter.FormatMessage(errUsers, "User searching Failed", false, undefined);
-                                logger.error("DVP-UserService.GetUsersOfBusinessUnits :  User searching Failed ");
-                                res.end(jsonString);
-                            }
-                            else
-                            {
-                                jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, resUsers);
-                                logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  User searching Succeeded ");
-                                res.end(jsonString);
-                            }
-                        });
-
+            if(req.params.name.toLowerCase() =="all")
+            {
+                User.find(
+                    {
+                        company: company,
+                        tenant: tenant,
+                        Active:true
                     }
-                    else {
-                        jsonString = messageFormatter.FormatMessage(undefined, "Business Units searching Failed", false, undefined);
-                        logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Business Units searching Failed ");
+                ).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).exec(function (errUsers,resUsers) {
+
+                    if(errUsers)
+                    {
+                        jsonString = messageFormatter.FormatMessage(errUsers, "User searching Failed", false, undefined);
+                        logger.error("DVP-UserService.GetUsersOfBusinessUnits :  User searching Failed ");
                         res.end(jsonString);
                     }
-                }
+                    else
+                    {
+                        jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, resUsers);
+                        logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  User searching Succeeded ");
+                        res.end(jsonString);
+                    }
+                });
+            }
+            else
+            {
+                UserGroup.find({
+                    company: company,
+                    tenant: tenant,
+                    businessUnit:req.params.name}).exec(function (errGroups, resGroups) {
+
+                    if (errGroups) {
+                        logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Error in searching supervisors ",errGroups);
+                        jsonString = messageFormatter.FormatMessage(errGroups, "Error in searching Business Units", false, undefined);
+                        res.end(jsonString);
+                    }
+                    else {
+                        if (resGroups) {
+
+                            var grouiIds=[];
+                            resGroups.forEach(function (item) {
+
+                                grouiIds.push(item._id);
+
+                            });
+
+                            User.find({
+                                company: company,
+                                tenant: tenant,
+                                Active:true,
+                                group:{$in:grouiIds}}).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).exec(function (errUsers,resUsers) {
+
+                                if(errUsers)
+                                {
+                                    jsonString = messageFormatter.FormatMessage(errUsers, "User searching Failed", false, undefined);
+                                    logger.error("DVP-UserService.GetUsersOfBusinessUnits :  User searching Failed ");
+                                    res.end(jsonString);
+                                }
+                                else
+                                {
+                                    jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, resUsers);
+                                    logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  User searching Succeeded ");
+                                    res.end(jsonString);
+                                }
+                            });
+
+                        }
+                        else {
+                            jsonString = messageFormatter.FormatMessage(undefined, "Business Units searching Failed", false, undefined);
+                            logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Business Units searching Failed ");
+                            res.end(jsonString);
+                        }
+                    }
 
 
-            });
+                });
+            }
+
 
             /*User.find({
              company: company,
