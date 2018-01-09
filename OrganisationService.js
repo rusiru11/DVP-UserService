@@ -16,6 +16,7 @@ var restClientHandler = require('./RestClient.js');
 var validator = require('validator');
 var Tenant = require('dvp-mongomodels/model/Tenant').Tenant;
 var dbConn = require('dvp-dbmodels');
+var UserAccount = require('dvp-mongomodels/model/UserAccount');
 
 
 var redisip = config.Redis.ip;
@@ -418,7 +419,7 @@ function CreateOwner(req, res){
     });
 }
 
-var AssignPackageToOrganisationLib = function(company, tenant, packageName, requestedUser, callback){
+var AssignPackageToOrganisationLib = function(company, tenant, packageName, requestedUser, userAccount, callback){
     logger.debug("DVP-UserService.AssignPackageToOrganisation Internal method ");
     logger.debug(packageName);
 
@@ -488,7 +489,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                             typeExist.veeryPackage = vPackage._id;
                                                             typeExist.buyDate = Date.now();
 
-                                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function (jsonResponse) {
+                                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, function (jsonResponse) {
                                                                 callback(jsonResponse);
                                                             });
                                                         } else {
@@ -521,7 +522,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                 } else {
                                                     if (response) {
                                                         if (response.IsSuccess) {
-                                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function (jsonResponse) {
+                                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, function (jsonResponse) {
                                                                 callback(jsonResponse);
                                                             });
                                                         } else {
@@ -535,7 +536,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                 }
                                             });
                                         } else {
-                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, function (jsonResponse) {
+                                            SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, function (jsonResponse) {
                                                 callback(jsonResponse);
                                             });
                                         }
@@ -563,123 +564,123 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
     });
 };
 
-function CreateOrganisation(req, res){
-    logger.debug("DVP-UserService.CreateOrganisation Internal method ");
-    var jsonString;
-    GetNewCompanyId(function(cid){
-        if(cid && cid > 0) {
-
-            User.findOne({username: req.user.username}).select("-password").exec(function(err, user) {
-                if (err) {
-                    jsonString = messageFormatter.FormatMessage(err, "Invalid User", false, undefined);
-                    res.end(jsonString);
-                }else{
-                    if(user.company == 0){
-
-                        Tenant.findOne({id: config.Tenant.activeTenant},function(err, Tenants) {
-                            if (err) {
-
-                                jsonString = messageFormatter.FormatMessage(err, "Get Tenant Failed", false, undefined);
-
-                            }else {
-
-                                if (Tenants) {
-
-
-                                    var org = Org({
-                                        ownerId: req.user.username,
-                                        companyName: req.body.organisationName,
-                                        companyEnabled: true,
-                                        id: cid,
-                                        tenant: Tenants.id,
-                                        packages:[],
-                                        packageDetails: [],
-                                        unitDetails: [],
-                                        consoleAccessLimits:[],
-                                        resourceAccessLimits:[],
-                                        spaceLimit: [],
-                                        tenantRef:Tenants._id,
-                                        ownerRef: user._id,
-                                        created_at: Date.now(),
-                                        updated_at: Date.now(),
-                                        timeZone: req.body.timeZone
-                                    });
-                                    user.user_meta = {role: "admin"};
-                                    user.user_scopes =[
-                                        {scope: "organisation", read: true, write: true},
-                                        {scope: "resource", read: true},
-                                        {scope: "package", read: true},
-                                        {scope: "console", read: true},
-                                        {"scope": "myNavigation", "read": true},
-                                        {"scope": "myUserProfile", "read": true}
-                                    ];
-                                    user.company = cid;
-                                    user.updated_at = Date.now();
-                                    org.save(function (err, org) {
-                                        if (err) {
-                                            jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
-                                            res.end(jsonString);
-                                        } else {
-                                            User.findOneAndUpdate({username: req.user.username}, user, function (err, rUser) {
-                                                if (err) {
-                                                    org.remove(function (err) {
-                                                    });
-                                                    rUser.company = cid;
-                                                    AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", rUser, function(jsonString){
-                                                        console.log(jsonString);
-                                                    });
-
-                                                    jsonString = messageFormatter.FormatMessage(err, "Update Admin User Failed", false, undefined);
-                                                    res.end(jsonString);
-                                                } else {
-                                                    jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
-                                                    res.end(jsonString);
-                                                }
-                                            });
-                                        }
-                                    });
-
-                                }else{
-
-                                    jsonString = messageFormatter.FormatMessage(undefined, "No Tenant Found", false, undefined);
-                                    res.end(jsonString);
-
-                                }
-                            }
-
-
-                        });
-
-                    }else{
-                        jsonString = messageFormatter.FormatMessage(err, "User Already Assign To an Organisation", false, undefined);
-                        res.end(jsonString);
-                    }
-                }
-            });
-
-            //user.save(function (err, user) {
-            //    if (err) {
-            //        jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
-            //        res.end(jsonString);
-            //    } else {
-            //        org.save(function (err, org) {
-            //            if (err) {
-            //                user.remove(function (err) {
-            //                });
-            //                jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
-            //            } else {
-            //                jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
-            //            }
-            //            res.end(jsonString);
-            //        });
-            //    }
-            //});
-        }else{
-            jsonString = messageFormatter.FormatMessage(undefined, "Create new organisation id failed", false, undefined);
-            res.end(jsonString);
-        }
-    });
-}
+// function CreateOrganisation(req, res){
+//     logger.debug("DVP-UserService.CreateOrganisation Internal method ");
+//     var jsonString;
+//     GetNewCompanyId(function(cid){
+//         if(cid && cid > 0) {
+//
+//             User.findOne({username: req.user.username}).select("-password").exec(function(err, user) {
+//                 if (err) {
+//                     jsonString = messageFormatter.FormatMessage(err, "Invalid User", false, undefined);
+//                     res.end(jsonString);
+//                 }else{
+//                     if(user.company == 0){
+//
+//                         Tenant.findOne({id: config.Tenant.activeTenant},function(err, Tenants) {
+//                             if (err) {
+//
+//                                 jsonString = messageFormatter.FormatMessage(err, "Get Tenant Failed", false, undefined);
+//
+//                             }else {
+//
+//                                 if (Tenants) {
+//
+//
+//                                     var org = Org({
+//                                         ownerId: req.user.username,
+//                                         companyName: req.body.organisationName,
+//                                         companyEnabled: true,
+//                                         id: cid,
+//                                         tenant: Tenants.id,
+//                                         packages:[],
+//                                         packageDetails: [],
+//                                         unitDetails: [],
+//                                         consoleAccessLimits:[],
+//                                         resourceAccessLimits:[],
+//                                         spaceLimit: [],
+//                                         tenantRef:Tenants._id,
+//                                         ownerRef: user._id,
+//                                         created_at: Date.now(),
+//                                         updated_at: Date.now(),
+//                                         timeZone: req.body.timeZone
+//                                     });
+//                                     user.user_meta = {role: "admin"};
+//                                     user.user_scopes =[
+//                                         {scope: "organisation", read: true, write: true},
+//                                         {scope: "resource", read: true},
+//                                         {scope: "package", read: true},
+//                                         {scope: "console", read: true},
+//                                         {"scope": "myNavigation", "read": true},
+//                                         {"scope": "myUserProfile", "read": true}
+//                                     ];
+//                                     user.company = cid;
+//                                     user.updated_at = Date.now();
+//                                     org.save(function (err, org) {
+//                                         if (err) {
+//                                             jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
+//                                             res.end(jsonString);
+//                                         } else {
+//                                             User.findOneAndUpdate({username: req.user.username}, user, function (err, rUser) {
+//                                                 if (err) {
+//                                                     org.remove(function (err) {
+//                                                     });
+//                                                     rUser.company = cid;
+//                                                     AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", rUser, function(jsonString){
+//                                                         console.log(jsonString);
+//                                                     });
+//
+//                                                     jsonString = messageFormatter.FormatMessage(err, "Update Admin User Failed", false, undefined);
+//                                                     res.end(jsonString);
+//                                                 } else {
+//                                                     jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
+//                                                     res.end(jsonString);
+//                                                 }
+//                                             });
+//                                         }
+//                                     });
+//
+//                                 }else{
+//
+//                                     jsonString = messageFormatter.FormatMessage(undefined, "No Tenant Found", false, undefined);
+//                                     res.end(jsonString);
+//
+//                                 }
+//                             }
+//
+//
+//                         });
+//
+//                     }else{
+//                         jsonString = messageFormatter.FormatMessage(err, "User Already Assign To an Organisation", false, undefined);
+//                         res.end(jsonString);
+//                     }
+//                 }
+//             });
+//
+//             //user.save(function (err, user) {
+//             //    if (err) {
+//             //        jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+//             //        res.end(jsonString);
+//             //    } else {
+//             //        org.save(function (err, org) {
+//             //            if (err) {
+//             //                user.remove(function (err) {
+//             //                });
+//             //                jsonString = messageFormatter.FormatMessage(err, "Organisation save failed", false, undefined);
+//             //            } else {
+//             //                jsonString = messageFormatter.FormatMessage(undefined, "Organisation saved successfully", true, org);
+//             //            }
+//             //            res.end(jsonString);
+//             //        });
+//             //    }
+//             //});
+//         }else{
+//             jsonString = messageFormatter.FormatMessage(undefined, "Create new organisation id failed", false, undefined);
+//             res.end(jsonString);
+//         }
+//     });
+// }
 
 function UpdateOrganisation(req, res){
     logger.debug("DVP-UserService.UpdateOrganisation Internal method ");
@@ -725,7 +726,7 @@ function ActivateOrganisation(req, res){
     });
 }
 
-var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, org, callback){
+var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, org, userAccountId, callback){
     var jsonString;
 
     if(vPackage.spaceLimit && vPackage.spaceLimit.length >0){
@@ -810,7 +811,8 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
             if (err) {
                 jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
             } else {
-                UpdateUser(org.ownerId, vPackage);
+                // UpdateUser(org.ownerId, vPackage);
+                UpdateUser(userAccountId, vPackage);
                 AssignTaskToOrganisation(company, tenant, vPackage.veeryTask);
                 AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
                 jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
@@ -1181,11 +1183,11 @@ function ExtractConsoles(consoles, navigationType){
     return (e);
 }
 
-function UpdateUser(ownerId, vPackage){
+function UpdateUser(userAccountId, vPackage){
     var jsonString;
-    User.findOne({username: ownerId}, function(err, user) {
+    UserAccount.findOne({_id: userAccountId}, function(err, userAccount) {
         if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Find Owner Failed", false, undefined);
+            jsonString = messageFormatter.FormatMessage(err, "Find User Account Failed", false, undefined);
             return jsonString;
         } else {
             var fixUserScopes = [
@@ -1208,7 +1210,7 @@ function UpdateUser(ownerId, vPackage){
                 var uScopes = UniqueObjectArray(userScopes,"scope");
                 if(uScopes) {
                     for (var i = 0; i < uScopes.length; i++) {
-                        var eUserScope = FilterObjFromArray(user.user_scopes, "scope", uScopes[i]);
+                        var eUserScope = FilterObjFromArray(userAccount.user_scopes, "scope", uScopes[i]);
                         if (eUserScope) {
                             if (uScopes[i].read && (!eUserScope.read || eUserScope.read == false)) {
                                 eUserScope.read = uScopes[i].read;
@@ -1220,7 +1222,7 @@ function UpdateUser(ownerId, vPackage){
                                 eUserScope.delete = uScopes[i].read;
                             }
                         } else {
-                            user.user_scopes.push(uScopes[i]);
+                            userAccount.user_scopes.push(uScopes[i]);
                         }
                     }
                 }
@@ -1228,8 +1230,8 @@ function UpdateUser(ownerId, vPackage){
                 ec.on('endExtractConsoles', function(clientScopes){
                     if(clientScopes) {
                         for (var j = 0; j < clientScopes.length; j++) {
-                            if(user.client_scopes && user.client_scopes.length > 0) {
-                                var existingClientScope = FilterObjFromArray(user.client_scopes, "consoleName", clientScopes[j].consoleName);
+                            if(userAccount.client_scopes && userAccount.client_scopes.length > 0) {
+                                var existingClientScope = FilterObjFromArray(userAccount.client_scopes, "consoleName", clientScopes[j].consoleName);
 
                                 if(existingClientScope){
                                     clientScopes[j].menus.forEach(function (cScopeMenu) {
@@ -1239,25 +1241,25 @@ function UpdateUser(ownerId, vPackage){
                                         }
                                     });
                                 }else{
-                                    user.client_scopes.push(clientScopes[j]);
+                                    userAccount.client_scopes.push(clientScopes[j]);
                                 }
                             }else {
-                                user.client_scopes.push(clientScopes[j]);
+                                userAccount.client_scopes.push(clientScopes[j]);
                             }
                         }
                     }
 
-                    user.client_scopes = UniqueObjectArray(user.client_scopes,"consoleName");
-                    if(user.client_scopes) {
-                        for (var k = 0; k < user.client_scopes.length; k++) {
-                            var ucs = user.client_scopes[k];
+                    userAccount.client_scopes = UniqueObjectArray(userAccount.client_scopes,"consoleName");
+                    if(userAccount.client_scopes) {
+                        for (var k = 0; k < userAccount.client_scopes.length; k++) {
+                            var ucs = userAccount.client_scopes[k];
                             ucs.menus = UniqueObjectArray(ucs.menus, "menuItem");
                             if(ucs.menus) {
                                 for (var l = 0; l < ucs.menus.length; l++) {
                                     var menu1 = ucs.menus[l];
                                     if(menu1) {
                                         for (var m = 0; m < menu1.menuAction.length; m++) {
-                                            var menuAction = FilterObjFromArray(user.user_scopes, "scope", menu1.menuAction[m].scope);
+                                            var menuAction = FilterObjFromArray(userAccount.user_scopes, "scope", menu1.menuAction[m].scope);
                                             if (menuAction) {
                                                 if (menu1.menuAction[m].read) {
                                                     menuAction.read = menu1.menuAction[m].read;
@@ -1279,7 +1281,7 @@ function UpdateUser(ownerId, vPackage){
                                                 if (menu1.menuAction[m].delete) {
                                                     mAction.delete = menu1.menuAction[m].delete;
                                                 }
-                                                user.user_scopes.push(mAction);
+                                                userAccount.user_scopes.push(mAction);
                                             }
                                         }
                                     }
@@ -1287,12 +1289,12 @@ function UpdateUser(ownerId, vPackage){
                             }
                         }
                     }
-                    user.user_scopes = UniqueObjectArray(user.user_scopes,"scope");
-                    User.findOneAndUpdate({username: ownerId}, user, function (err, rUser) {
+                    userAccount.user_scopes = UniqueObjectArray(userAccount.user_scopes,"scope");
+                    UserAccount.findOneAndUpdate({_id: userAccountId}, userAccount, function (err, rUser) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "Update User Scopes Failed", false, undefined);
                         } else {
-                            jsonString = messageFormatter.FormatMessage(err, "Update User Scopes Successful", true, user);
+                            jsonString = messageFormatter.FormatMessage(err, "Update User Scopes Successful", true, userAccount);
                         }
                         return jsonString;
                     });
@@ -1309,7 +1311,7 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
         if (cid && cid > 0) {
 
 
-            if (user.company == 0) {
+            if (user.company === 0) {
                 logger.info("DVP-UserService.CreateOrganisationStanAlone Active Tenant: "+ config.Tenant.activeTenant);
                 Tenant.findOne({id: config.Tenant.activeTenant}, function (err, Tenants) {
                     if (err) {
@@ -1339,28 +1341,65 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
                                 updated_at: Date.now(),
                                 timeZone: timezone
                             });
-                            var usr = {};
-                            usr.company = cid;
-                            usr.Active = true;
-                            usr.updated_at = Date.now();
+                            // var usr = {};
+                            // usr.company = cid;
+                            // usr.Active = true;
+                            // usr.updated_at = Date.now();
+
                             org.save(function (err, org) {
                                 if (err) {
                                     callback(err, undefined);
                                 } else {
 
-                                        User.findOneAndUpdate({username: user.username}, usr, function (err, rUser) {
-                                            if (err) {
-                                                org.remove(function (err) {
-                                                });
-                                                callback(err, undefined);
-                                            } else {
-                                                rUser.company = cid;
-                                                AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", rUser,function(jsonString){
-                                                    console.log(jsonString);
-                                                });
-                                                callback(undefined, rUser);
-                                            }
-                                        });
+                                    var userAccount = UserAccount({
+                                        active: true,
+                                        verified: true,
+                                        joined: Date.now(),
+                                        user: user.username,
+                                        tenant: org.tenant,
+                                        company: org.id,
+                                        user_meta: {role: "admin"},
+                                        app_meta: {},
+                                        user_scopes: [
+                                            {scope: "organisation", read: true, write: true},
+                                            {scope: "resource", read: true},
+                                            {scope: "package", read: true},
+                                            {scope: "console", read: true},
+                                            {"scope": "myNavigation", "read": true},
+                                            {"scope": "myUserProfile", "read": true}
+                                        ],
+                                        created_at: Date.now(),
+                                        updated_at: Date.now(),
+                                        multi_login: false
+                                    });
+
+                                    userAccount.save(function (err, account) {
+                                        if (err) {
+                                            org.remove(function (err) {
+                                            });
+                                            callback(err, undefined);
+                                        } else {
+                                            //rUser.company = cid;
+                                            AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", user, account,function(jsonString){
+                                                console.log(jsonString);
+                                            });
+                                            callback(undefined, user);
+                                        }
+                                    });
+
+                                        // User.findOneAndUpdate({username: user.username}, usr, function (err, rUser) {
+                                        //     if (err) {
+                                        //         org.remove(function (err) {
+                                        //         });
+                                        //         callback(err, undefined);
+                                        //     } else {
+                                        //         rUser.company = cid;
+                                        //         AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", rUser,function(jsonString){
+                                        //             console.log(jsonString);
+                                        //         });
+                                        //         callback(undefined, rUser);
+                                        //     }
+                                        // });
                                 }
                             });
 
@@ -1924,7 +1963,7 @@ function GetSpaceLimitForTenant(req, res){
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
 module.exports.DeleteOrganisation = DeleteOrganisation;
-module.exports.CreateOrganisation = CreateOrganisation;
+//module.exports.CreateOrganisation = CreateOrganisation;
 module.exports.UpdateOrganisation = UpdateOrganisation;
 module.exports.AssignPackageToOrganisation = AssignPackageToOrganisation;
 module.exports.RemovePackageFromOrganisation = RemovePackageFromOrganisation;

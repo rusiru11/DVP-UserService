@@ -270,7 +270,7 @@ app.delete('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),author
 app.put('/DVP/API/:version/Organisation/Activate/:state', jwt({secret: secret.Secret}),authorization({resource:"organisationManage", action:"write"}), organisationService.ActivateOrganisation);
 
 
-app.post('/DVP/API/:version/Organisation', passport.authenticate('local', { session: false }), organisationService.CreateOrganisation);
+//app.post('/DVP/API/:version/Organisation', passport.authenticate('local', { session: false }), organisationService.CreateOrganisation);
 
 
 

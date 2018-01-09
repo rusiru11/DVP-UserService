@@ -13,6 +13,7 @@ var config = require('config');
 var redis = require('ioredis');
 var bcrypt = require('bcryptjs');
 var DbConn = require('dvp-dbmodels');
+var UserAccount = require('dvp-mongomodels/model/UserAccount');
 
 
 
@@ -2520,7 +2521,7 @@ function GetMyAppScopesByConsole(req, res){
     ////client_scopes:{$elemMatch: {consoleName: console}}
 
 
-    User.findOne({username: user,company: company, tenant: tenant, }, function(err, users) {
+    UserAccount.findOne({user: user,company: company, tenant: tenant}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
