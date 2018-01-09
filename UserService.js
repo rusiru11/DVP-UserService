@@ -826,7 +826,6 @@ function UpdateUser(req, res){
 
 }
 
-
 function UpdateUserProfilePassword(req, res) {
 
     logger.debug("DVP-UserService.UpdateUserProfilePassword Internal method ");
@@ -3059,7 +3058,6 @@ function AddFileCategoryToUser(req, res){
 
 }
 
-
 function AddFileCategoryToSpecificUser(req, res){
 
 
@@ -3477,7 +3475,6 @@ function CreateUserFromAD(req, res){
         }
     });
 }
-
 
 function GetMyLanguages(req, res){
 
