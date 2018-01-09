@@ -466,6 +466,12 @@ app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.S
 app.get('/DVP/API/:version/BusinessUnit/:name/Users', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetUsersOfBusinessUnits);
 
 
+app.get('/DVP/API/:version/ExternalUserAccessFields', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetExternalUserAccessibleFields);
+app.put('/DVP/API/:version/ExternalUserAccessField', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserAccessibleFields);
+app.post('/DVP/API/:version/ExternalUserAccessField', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.AddExternalUserAccessibleFields);
+
+
+
 
 app.listen(port, function () {
 
