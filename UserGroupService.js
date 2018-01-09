@@ -301,7 +301,8 @@ function GetGroupsAndUsers(req, res){
 
 
 
-    UserGroup.find({company: company, tenant: tenant})
+    UserGroup.find({company: company, tenant: tenant}).populate('supervisors')
+        .select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0})
         .lean()
         .exec( function(err, groups)
         {
