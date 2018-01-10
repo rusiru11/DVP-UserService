@@ -336,13 +336,13 @@ function DeleteOrganisation(req,res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.find({tenant: tenant, id: company}, function(err, users) {
+    UserAccount.find({tenant: tenant, id: company}, function(err, users) {
         if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+            jsonString = messageFormatter.FormatMessage(err, "Get User Accounts Failed", false, undefined);
             res.end(jsonString);
         }else{
             if(users.length>0){
-                jsonString = messageFormatter.FormatMessage(undefined, "Users are Available, Denied Remove Organisation", false, undefined);
+                jsonString = messageFormatter.FormatMessage(undefined, "User Accounts are Available, Denied Remove Organisation", false, undefined);
                 res.end(jsonString);
             }else {
                 Org.findOne({tenant: tenant, id: company}, function (err, org) {
@@ -370,54 +370,54 @@ function DeleteOrganisation(req,res){
     });
 }
 
-function CreateOwner(req, res){
-    var jsonString;
-    Tenant.findOne({id: config.Tenant.activeTenant}, function (err, Tenants) {
-        if (err) {
-
-            jsonString = messageFormatter.FormatMessage(err, "Find tenant failed", false, undefined);
-            res.end(jsonString);
-
-        } else {
-
-            if (Tenants) {
-                var user = User({
-                    name: req.body.username,
-                    firstname: req.body.firstname,
-                    lastname: req.body.lastname,
-                    username: req.body.username,
-                    password: req.body.password,
-                    Active: true,
-                    phoneNumber: {contact: req.body.phone, type: "phone", verified: false},
-                    email: {contact: req.body.mail, type: "phone", verified: false},
-                    user_meta: {role: "admin"},
-                    systemuser: true,
-                    user_scopes: [{
-                        "scope": "package",
-                        "read": true
-                    }],
-                    company: 0,
-                    tenant: Tenants.id,
-                    created_at: Date.now(),
-                    updated_at: Date.now()
-
-                });
-                user.save(function (err, rUser) {
-                    if (err) {
-                        jsonString = messageFormatter.FormatMessage(err, "Create Owner failed", false, undefined);
-                        res.end(jsonString);
-                    } else {
-                        jsonString = messageFormatter.FormatMessage(undefined, "Create Owner successfully", true, rUser);
-                        res.end(jsonString);
-                    }
-                });
-            } else {
-                jsonString = messageFormatter.FormatMessage(undefined, "No tenants found", false, undefined);
-                res.end(jsonString);
-            }
-        }
-    });
-}
+// function CreateOwner(req, res){
+//     var jsonString;
+//     Tenant.findOne({id: config.Tenant.activeTenant}, function (err, Tenants) {
+//         if (err) {
+//
+//             jsonString = messageFormatter.FormatMessage(err, "Find tenant failed", false, undefined);
+//             res.end(jsonString);
+//
+//         } else {
+//
+//             if (Tenants) {
+//                 var user = User({
+//                     name: req.body.username,
+//                     firstname: req.body.firstname,
+//                     lastname: req.body.lastname,
+//                     username: req.body.username,
+//                     password: req.body.password,
+//                     Active: true,
+//                     phoneNumber: {contact: req.body.phone, type: "phone", verified: false},
+//                     email: {contact: req.body.mail, type: "phone", verified: false},
+//                     user_meta: {role: "admin"},
+//                     systemuser: true,
+//                     user_scopes: [{
+//                         "scope": "package",
+//                         "read": true
+//                     }],
+//                     company: 0,
+//                     tenant: Tenants.id,
+//                     created_at: Date.now(),
+//                     updated_at: Date.now()
+//
+//                 });
+//                 user.save(function (err, rUser) {
+//                     if (err) {
+//                         jsonString = messageFormatter.FormatMessage(err, "Create Owner failed", false, undefined);
+//                         res.end(jsonString);
+//                     } else {
+//                         jsonString = messageFormatter.FormatMessage(undefined, "Create Owner successfully", true, rUser);
+//                         res.end(jsonString);
+//                     }
+//                 });
+//             } else {
+//                 jsonString = messageFormatter.FormatMessage(undefined, "No tenants found", false, undefined);
+//                 res.end(jsonString);
+//             }
+//         }
+//     });
+// }
 
 var AssignPackageToOrganisationLib = function(company, tenant, packageName, requestedUser, userAccount, callback){
     logger.debug("DVP-UserService.AssignPackageToOrganisation Internal method ");
@@ -836,13 +836,13 @@ function AssignPackageToOrganisation(req,res){
 
     var jsonString;
 
-    User.findOne({tenant: tenant, company: company, username: req.user.iss}).select("-password").exec(function (err, rUser) {
+    UserAccount.findOne({tenant: tenant, company: company, user: req.user.iss}).populate('userref' , '-password').exec(function (err, userAccount) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Error in User Search", false, undefined);
             res.end(jsonString);
         } else {
-            if(rUser) {
-                AssignPackageToOrganisationLib(orgId, tenant, req.params.packageName, rUser, function (jsonString) {
+            if(userAccount) {
+                AssignPackageToOrganisationLib(orgId, tenant, req.params.packageName, userAccount.userref, userAccount, function (jsonString) {
                     res.end(jsonString);
                 });
             }else{
@@ -1356,6 +1356,7 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
                                         verified: true,
                                         joined: Date.now(),
                                         user: user.username,
+                                        userref: user._id,
                                         tenant: org.tenant,
                                         company: org.id,
                                         user_meta: {role: "admin"},
@@ -1444,12 +1445,12 @@ function AssignPackageUnitToOrganisation(req,res){
     var jsonString;
 
     if(topUpCount > 0) {
-        User.findOne({tenant: tenant, company: company, username: req.user.iss}).select("-password").exec(function (err, rUser) {
+        UserAccount.findOne({tenant: tenant, company: company, user: req.user.iss}).populate('userref' , '-password').exec(function (err, userAccount) {
             if (err) {
                 jsonString = messageFormatter.FormatMessage(err, "Error in User Search", false, undefined);
                 res.end(jsonString);
             } else {
-                if(rUser) {
+                if(userAccount) {
                     VPackage.findOne({packageName: req.params.packageName}, function (err, vPackage) {
 
                         if (err) {
@@ -1486,7 +1487,7 @@ function AssignPackageUnitToOrganisation(req,res){
                                                                 topUpCount = 1;
                                                             }
                                                             var billingObj = {
-                                                                userInfo: rUser,
+                                                                userInfo: userAccount.userref,
                                                                 companyInfo: org,
                                                                 name: packageUnit.unitName,
                                                                 type: packageUnit.unitType,
@@ -1666,7 +1667,7 @@ function AssignPackageUnitToOrganisation(req,res){
                     });
 
                 }else{
-                    jsonString = messageFormatter.FormatMessage(undefined, "No User Found.", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(undefined, "No User Account Found.", false, undefined);
                     res.end(jsonString);
                 }
             }
@@ -1967,7 +1968,7 @@ module.exports.DeleteOrganisation = DeleteOrganisation;
 module.exports.UpdateOrganisation = UpdateOrganisation;
 module.exports.AssignPackageToOrganisation = AssignPackageToOrganisation;
 module.exports.RemovePackageFromOrganisation = RemovePackageFromOrganisation;
-module.exports.CreateOwner = CreateOwner;
+//module.exports.CreateOwner = CreateOwner;
 module.exports.GetOrganisationPackages = GetOrganisationPackages;
 module.exports.GetOrganisationPackagesWithDetails = GetOrganisationPackagesWithDetails;
 module.exports.GetOrganisationName = GetOrganisationName;
