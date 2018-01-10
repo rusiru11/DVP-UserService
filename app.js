@@ -474,8 +474,8 @@ app.get('/DVP/API/:version/ReceivedInvitations',jwt({secret: secret.Secret}),aut
 app.get('/DVP/API/:version/SendInvitations',jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}),UserInvitationService.GetMySendInvitations);
 app.post('/DVP/API/:version/Invitation/to/:to',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.CreateInvitation);
 app.get('/DVP/API/:version/Invitation/:id',jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}),UserInvitationService.GetInvitation);
-app.put('/DVP/API/:version/Invitation/Accept/:id/company/:company/tenant/:tenant',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.AcceptUserInvitation);
-app.put('/DVP/API/:version/Invitation/Reject/:id/company/:company/tenant/:tenant',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.RejectUserInvitation);
+app.put('/DVP/API/:version/Invitation/Accept/:id/company/:company/tenant/:tenant',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),UserInvitationService.AcceptUserInvitation);
+app.put('/DVP/API/:version/Invitation/Reject/:id/company/:company/tenant/:tenant',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),UserInvitationService.RejectUserInvitation);
 app.put('/DVP/API/:version/Invitation/Cancel/:id',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.CancelUserInvitation);
 
 
