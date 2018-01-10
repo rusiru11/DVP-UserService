@@ -9,6 +9,7 @@ var User = require('dvp-mongomodels/model/User');
 var regex = require('regex');
 var util = require('util');
 var _ = require('lodash');
+var UserAccount = require('dvp-mongomodels/model/User');
 //var ObjectId = mongoose.Types.ObjectId;
 
 
@@ -318,9 +319,9 @@ function GetGroupsAndUsers(req, res){
                     {
                         return grp._id.toString();
                     });
-                    User.find({company: company, tenant: tenant, group: {$in: grpIdArr}})
+                    UserAccount.find({company: company, tenant: tenant, group: {$in: grpIdArr}}).populate('userref' , '-password')
                         .lean()
-                        .exec( function(err, users)
+                        .exec( function(err, userAccounts)
                         {
                             if(err)
                             {
@@ -331,12 +332,23 @@ function GetGroupsAndUsers(req, res){
                             {
                                 groups.forEach(function(grp)
                                 {
-                                    var grpUsers = _.filter(users, function(usr)
+                                    grp.users = _.filter(userAccounts, function(usrAcc)
                                     {
-                                        return usr.group.toString() === grp._id.toString()
+                                        if(usrAcc.group.toString() === grp._id.toString()){
+                                            var user = usrAcc.userref;
+
+                                            user.group = usrAcc.group;
+                                            user.active = usrAcc.active;
+                                            user.joined = usrAcc.joined;
+                                            user.resource_id = usrAcc.resource_id;
+                                            user.veeryaccount = usrAcc.veeryaccount;
+                                            user.multi_login = usrAcc.multi_login;
+
+                                            return user;
+                                        }
                                     });
 
-                                    grp.users = grpUsers;
+                                    //grp.users = grpUsers;
                                 });
 
                                 jsonString = messageFormatter.FormatMessage(null, "Get Groups Successful", true, groups);
@@ -518,18 +530,35 @@ function GetGroupMembers(req, res){
     var jsonString;
 
 
-
-    User.find({company: company, tenant: tenant, group: req.params.id})
+    /*
+    UserAccount.find({company: company, tenant: tenant, group: req.params.id})
         .select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0})
         .exec( function(err, users) {
+        */
+
+    UserAccount.find({company: company, tenant: tenant, group: req.params.id}).populate('userref' , '-password')
+        .exec( function(err, userAccounts) {
             if (err) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
             }else {
 
-                if (users) {
+                if (userAccounts) {
 
+                    var users = userAccounts.map(function (userAccount) {
+                        var user = userAccount.userref;
+
+                        user.group = userAccount.group;
+                        user.active = userAccount.active;
+                        user.joined = userAccount.joined;
+                        user.resource_id = userAccount.resource_id;
+                        user.veeryaccount = userAccount.veeryaccount;
+                        user.multi_login = userAccount.multi_login;
+
+                        return user;
+
+                    });
                     jsonString = messageFormatter.FormatMessage(undefined, "Get Users Successful", true, users);
 
                 }else{
@@ -557,7 +586,7 @@ function UpdateUserGroupMembers(req, res) {
         }else{
 
             if(group) {
-                User.findOneAndUpdate({_id: req.params.user,company: company, tenant: tenant}, {group : group._id}, function (err, user) {
+                UserAccount.findOneAndUpdate({userref: req.params.user,company: company, tenant: tenant}, {group : group._id}, function (err, userAcount) {
                     if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Update User Group Member Failed", false, undefined);
                     } else {
@@ -584,15 +613,15 @@ function UpdateUserGroupSupervisors(req, res) {
         var jsonString;
         req.body.updated_at = Date.now();
 
-        User.findOne({_id: req.params.user, company: company, tenant: tenant}).exec(function (errUser, resUser) {
+        UserAccount.findOne({userref: req.params.user, company: company, tenant: tenant}).exec(function (errUser, resUserAccount) {
 
             if (errUser) {
-                jsonString = messageFormatter.FormatMessage(errUser, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(errUser, "Get User Account Failed", false, undefined);
                 res.end(jsonString);
             }
             else {
-                if (resUser) {
-                    if (resUser.user_meta && (resUser.user_meta.role == "admin" || resUser.user_meta.role == "supervisor")) {
+                if (resUserAccount) {
+                    if (resUserAccount.user_meta && (resUserAccount.user_meta.role == "admin" || resUserAccount.user_meta.role == "supervisor")) {
                         UserGroup.findOneAndUpdate({
                             _id: req.params.id,
                             company: company,
@@ -678,7 +707,7 @@ function RemoveUserGroupMembers(req, res){
 
     //User.update({_id: user._id}, {$unset: {field: 1 }}, callback);
 
-    User.findOneAndUpdate({_id: req.params.user,company: company, tenant: tenant}, {$unset: {group: 1 }}, function(err, users) {
+    UserAccount.findOneAndUpdate({userref: req.params.user,company: company, tenant: tenant}, {$unset: {group: 1 }}, function(err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Remove User Group Member Failed", false, undefined);
@@ -706,7 +735,7 @@ function FindUserGroupsByMember(req, res) {
     var jsonString;
     req.body.updated_at = Date.now();
 
-    User.findOne({company: company, tenant: tenant, _id: req.params.user}, function(err, user) {
+    UserAccount.findOne({company: company, tenant: tenant, userref: req.params.user}, function(err, userAccount) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
@@ -714,8 +743,8 @@ function FindUserGroupsByMember(req, res) {
 
         }else {
 
-            if (user) {
-                UserGroup.find({company: company, tenant: tenant,_id: user.group}, function (err, usergroups) {
+            if (userAccount) {
+                UserGroup.find({company: company, tenant: tenant,_id: userAccount.group}, function (err, usergroups) {
                     if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Get User Group By Member Failed", false, undefined);
                     } else {

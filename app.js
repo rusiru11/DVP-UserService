@@ -220,7 +220,7 @@ app.get('/DVP/API/:version/FileCategories', jwt({secret: secret.Secret}),authori
 
 
 
-app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({resource:"externaluser", action:"write"}), userService.CreateExternalUser);
+//app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({resource:"externaluser", action:"write"}), userService.CreateExternalUser);
 
 
 //////////////////////////////Organisation API/////////////////////////////////////////////////////
@@ -276,7 +276,7 @@ app.put('/DVP/API/:version/Organisation/Activate/:state', jwt({secret: secret.Se
 
 app.get('/DVP/API/:version/Organization/:company/exists', organisationService.IsOrganizationExists);
 
-app.post('/DVP/API/:version/Organisation/Owner', organisationService.CreateOwner);
+//app.post('/DVP/API/:version/Organisation/Owner', organisationService.CreateOwner);
 app.put('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.UpdateOrganisation);
 app.put('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.AssignPackageToOrganisation);
 app.delete('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.RemovePackageFromOrganisation);
