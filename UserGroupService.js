@@ -406,6 +406,7 @@ function GetUserGroup(req, res){
     });
 
 }
+
 function GetUserGroupByName(req, res){
 
 
@@ -437,6 +438,7 @@ function GetUserGroupByName(req, res){
     });
 
 }
+
 function DeleteUserGroup(req,res){
 
 
@@ -454,6 +456,7 @@ function DeleteUserGroup(req,res){
         res.end(jsonString);
     });
 }
+
 function CreateUserGroup(req, res) {
 
     logger.debug("DVP-UserService.CreateUserGroup Internal method ");
@@ -495,6 +498,7 @@ function CreateUserGroup(req, res) {
 
     }
 }
+
 function UpdateUserGroup(req, res){
 
 
@@ -520,6 +524,7 @@ function UpdateUserGroup(req, res){
     });
 
 }
+
 function GetGroupMembers(req, res){
 
 
@@ -572,6 +577,7 @@ function GetGroupMembers(req, res){
         });
 
 }
+
 function UpdateUserGroupMembers(req, res) {
 
     logger.debug("DVP-UserService.UpdateUserGroupMembers Internal method ");
@@ -657,6 +663,7 @@ function UpdateUserGroupSupervisors(req, res) {
     }
 
 }
+
 function GetUserGroupSupervisors(req, res){
 
 
@@ -696,7 +703,6 @@ function GetUserGroupSupervisors(req, res){
 
 }
 
-
 function RemoveUserGroupMembers(req, res){
 
     logger.debug("DVP-UserService.RemoveUserGroupMembers Internal method ");
@@ -726,6 +732,7 @@ function RemoveUserGroupMembers(req, res){
 
 
 }
+
 function FindUserGroupsByMember(req, res) {
 
     logger.debug("DVP-UserService.FindUserGroupsByMember Internal method ");
