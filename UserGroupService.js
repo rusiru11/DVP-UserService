@@ -561,12 +561,18 @@ function GetGroupMembers(req, res){
                     var users = userAccounts.map(function (userAccount) {
                         var user = userAccount.userref;
 
-                        user.group = userAccount.group;
-                        user.active = userAccount.active;
-                        user.joined = userAccount.joined;
-                        user.resource_id = userAccount.resource_id;
-                        user.veeryaccount = userAccount.veeryaccount;
-                        user.multi_login = userAccount.multi_login;
+                        if(user && user._doc && user._doc.group)
+                            user._doc.group = usrAcc.group;
+                        if(user && user._doc && user._doc.active)
+                            user._doc.active = usrAcc.active;
+                        if(user && user._doc && user._doc.joined)
+                            user._doc.joined = usrAcc.joined;
+                        if(user && user._doc && user._doc.resource_id)
+                            user._doc.resource_id = usrAcc.resource_id;
+                        if(user && user._doc && user._doc.veeryaccount)
+                            user._doc.veeryaccount = usrAcc.veeryaccount;
+                        if(user && user._doc && user._doc.multi_login)
+                            user._doc.multi_login = usrAcc.multi_login;
 
                         return user;
 
