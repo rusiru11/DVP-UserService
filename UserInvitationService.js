@@ -129,14 +129,17 @@ function CreateInvitation(req, res) {
     var from = req.user.iss;
     var to = req.params.to;
     var message = "";
+    var role = "agent";
     if(req.body && req.body.message){
         message = req.body.message;
     }
 
+    if(req.body && req.body.role){
+        role = req.body.role;
+    }
+
     User.findOne({
-        username: to,
-        company: company,
-        tenant: tenant
+        username: to
     }, function (err, user) {
 
         if(err){
@@ -172,6 +175,7 @@ function CreateInvitation(req, res) {
                             active: true,
                             verified: false,
                             userref: user._id,
+                            user_meta: {role: role},
                             user: to,
                             tenant: tenant,
                             company: company,
