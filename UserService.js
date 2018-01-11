@@ -221,6 +221,12 @@ function GetUser(req, res) {
                     user._doc.multi_login = userAccount.multi_login;
                     user._doc.allowoutbound = userAccount.allowoutbound;
                     user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                    user._doc.user_meta = userAccount.user_meta;
+                    user._doc.app_meta = userAccount.app_meta;
+                    user._doc.user_scopes = userAccount.user_scopes;
+                    user._doc.client_scopes = userAccount.client_scopes;
 
 
                 //});
