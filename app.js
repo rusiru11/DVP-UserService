@@ -466,9 +466,10 @@ app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.S
 app.get('/DVP/API/:version/BusinessUnit/:name/Users', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetUsersOfBusinessUnits);
 
 
-app.get('/DVP/API/:version/ExternalUserAccessFields', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetExternalUserAccessibleFields);
-app.put('/DVP/API/:version/ExternalUserAccessField', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateExternalUserAccessibleFields);
-app.post('/DVP/API/:version/ExternalUserAccessField', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.AddExternalUserAccessibleFields);
+app.get('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetAccessibleFieldConfig);
+app.put('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateAccessibleFieldConfig);
+app.post('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.AddAccessibleFieldConfig);
+app.get('/DVP/API/:version/ExternalUserConfig/DefaultKeys', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetDefaultAccessibleFieldConfig);
 
 
 
