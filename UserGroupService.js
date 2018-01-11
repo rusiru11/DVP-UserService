@@ -338,11 +338,17 @@ function GetGroupsAndUsers(req, res){
                                         if(usrAcc.group.toString() === grp._id.toString()){
                                             var user = usrAcc.userref;
 
+                                            if(user._doc.group)
                                             user._doc.group = usrAcc.group;
+                                            if(user._doc.active)
                                             user._doc.active = usrAcc.active;
+                                            if(user._doc.joined)
                                             user._doc.joined = usrAcc.joined;
+                                            if(user._doc.resource_id)
                                             user._doc.resource_id = usrAcc.resource_id;
+                                            if(user._doc.veeryaccount)
                                             user._doc.veeryaccount = usrAcc.veeryaccount;
+                                            if(user._doc.multi_login)
                                             user._doc.multi_login = usrAcc.multi_login;
 
                                             return user;
