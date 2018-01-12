@@ -945,6 +945,7 @@ module.exports.SignUP = function(req, res) {
                     //     {"scope": "myUserProfile", "read": true}
                     // ],
                     verified: false,
+                    Active: true,
                     company: 0,
                     tenant: 1,
                     created_at: Date.now(),
