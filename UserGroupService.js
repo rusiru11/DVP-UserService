@@ -9,7 +9,7 @@ var User = require('dvp-mongomodels/model/User');
 var regex = require('regex');
 var util = require('util');
 var _ = require('lodash');
-var UserAccount = require('dvp-mongomodels/model/User');
+var UserAccount = require('dvp-mongomodels/model/UserAccount');
 //var ObjectId = mongoose.Types.ObjectId;
 
 
