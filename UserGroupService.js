@@ -559,20 +559,24 @@ function GetGroupMembers(req, res){
                 if (userAccounts) {
 
                     var users = userAccounts.map(function (userAccount) {
-                        var user = userAccount.userref;
+                        var user = undefined;
 
-                        if(user && user._doc && user._doc.group)
-                            user._doc.group = usrAcc.group;
-                        if(user && user._doc && user._doc.active)
-                            user._doc.active = usrAcc.active;
-                        if(user && user._doc && user._doc.joined)
-                            user._doc.joined = usrAcc.joined;
-                        if(user && user._doc && user._doc.resource_id)
-                            user._doc.resource_id = usrAcc.resource_id;
-                        if(user && user._doc && user._doc.veeryaccount)
-                            user._doc.veeryaccount = usrAcc.veeryaccount;
-                        if(user && user._doc && user._doc.multi_login)
-                            user._doc.multi_login = usrAcc.multi_login;
+                        if(userAccount.userref) {
+                            user = userAccount.userref.toObject();
+
+                            //if(user && user._doc && user._doc.group)
+                            user.group = userAccount.group;
+                            //if(user && user._doc && user._doc.active)
+                            user.active = userAccount.active;
+                            //if(user && user._doc && user._doc.joined)
+                            user.joined = userAccount.joined;
+                            //if(user && user._doc && user._doc.resource_id)
+                            user.resource_id = userAccount.resource_id;
+                            //if(user && user._doc && user._doc.veeryaccount)
+                            user.veeryaccount = userAccount.veeryaccount;
+                            //if(user && user._doc && user._doc.multi_login)
+                            user.multi_login = userAccount.multi_login;
+                        }
 
                         return user;
 
