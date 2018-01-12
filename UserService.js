@@ -221,8 +221,6 @@ function GetUser(req, res) {
                     user._doc.multi_login = userAccount.multi_login;
                     user._doc.allowoutbound = userAccount.allowoutbound;
                     user._doc.allowed_file_categories = userAccount.allowed_file_categories;
-                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
-                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
                     user._doc.user_meta = userAccount.user_meta;
                     user._doc.app_meta = userAccount.app_meta;
                     user._doc.user_scopes = userAccount.user_scopes;
@@ -1327,14 +1325,14 @@ function GetUserProfileByContact(req, res) {
             userAccounts.forEach(function (account) {
                 if (account.userref[category + ".contact"] === contact) {
                     var user = account.userref;
-                    user._doc.group = userAccount.group;
-                    user._doc.active = userAccount.active;
-                    user._doc.joined = userAccount.joined;
-                    user._doc.resourceid = userAccount.resource_id;
-                    user._doc.veeryaccount = userAccount.veeryaccount;
-                    user._doc.multi_login = userAccount.multi_login;
-                    user._doc.allowoutbound = userAccount.allowoutbound;
-                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                    user._doc.group = account.group;
+                    user._doc.active = account.active;
+                    user._doc.joined = account.joined;
+                    user._doc.resourceid = account.resource_id;
+                    user._doc.veeryaccount = account.veeryaccount;
+                    user._doc.multi_login = account.multi_login;
+                    user._doc.allowoutbound = account.allowoutbound;
+                    user._doc.allowed_file_categories = account.allowed_file_categories;
 
                     users.push(user);
                 }
@@ -3384,12 +3382,13 @@ function GetSuperUsers(req, res) {
                     var users = userAccounts.map(function (userAcc) {
                         var user = userAcc.userref;
 
-                        user.group = userAcc.group;
-                        user.active = userAcc.active;
-                        user.joined = userAcc.joined;
-                        user.resourceid = userAcc.resource_id;
-                        user.veeryaccount = userAcc.veeryaccount;
-                        user.multi_login = userAcc.multi_login;
+                        user._doc.group = userAcc.group;
+                        user._doc.active = userAcc.active;
+                        user._doc.joined = userAcc.joined;
+                        user._doc.resourceid = userAcc.resource_id;
+                        user._doc.veeryaccount = userAcc.veeryaccount;
+                        user._doc.multi_login = userAcc.multi_login;
+                        user._doc.allowed_file_categories = userAcc.allowed_file_categories;
 
                         return user;
                     });
