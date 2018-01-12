@@ -1684,18 +1684,18 @@ function GetMyARDSFriendlyContactObject(req, res) {
 
 
             ////////////////////////////////////////////
-            var users = userAccount.userref;
-            if (users && users.contacts) {
+            //var users = userAccount.userref;
+            if (userAccount && userAccount[contact]) {
 
 
-                var contactinfo = users[contact];
+                var contactinfo = userAccount[contact];
 
-                contactObj.Profile = users.username;
+                contactObj.Profile = userAccount.user;
 
                 if (!contactinfo) {
 
 
-                    contactinfo = users.contacts.filter(function (item) {
+                    contactinfo = userAccount.userref.contacts.filter(function (item) {
                         return item.contact == contact;
                     });
 
