@@ -1177,12 +1177,15 @@ function GetMyrProfile(req, res) {
 
                         } else {
 
+                            users = users.toObject();
                             users.group = userAccount.group;
                             users.active = userAccount.active;
                             users.joined = userAccount.joined;
                             users.resourceid = userAccount.resource_id;
                             users.veeryaccount = userAccount.veeryaccount;
                             users.multi_login = userAccount.multi_login;
+                            users.allowed_file_categories = userAccount.allowed_file_categories;
+
                             jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
                         }
