@@ -335,8 +335,8 @@ function GetGroupsAndUsers(req, res){
                                 {
                                     grp.users = _.filter(userAccounts, function(usrAcc)
                                     {
-                                        if(usrAcc.group.toString() === grp._id.toString()){
-                                            var user = usrAcc.userref.toObject();
+                                        if(usrAcc.group.toString() === grp._id.toString() && usrAcc.userref){
+                                            var user = usrAcc.userref;
 
                                             //if(user && user._doc && user._doc.group)
                                             user.group = usrAcc.group;
