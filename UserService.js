@@ -131,16 +131,16 @@ function GetUsers(req, res) {
                 if (userAccounts) {
 
                     var users = userAccounts.map(function (userAccount) {
-                        var user = userAccount.userref;
+                        var user = userAccount.userref.toObject();
 
-                        user._doc.group = userAccount.group;
-                        user._doc.active = userAccount.active;
-                        user._doc.joined = userAccount.joined;
-                        user._doc.resourceid = userAccount.resource_id;
-                        user._doc.veeryaccount = userAccount.veeryaccount;
-                        user._doc.multi_login = userAccount.multi_login;
-                        user._doc.allowoutbound = userAccount.allowoutbound;
-                        user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                        user.group = userAccount.group;
+                        user.active = userAccount.active;
+                        user.joined = userAccount.joined;
+                        user.resourceid = userAccount.resource_id;
+                        user.veeryaccount = userAccount.veeryaccount;
+                        user.multi_login = userAccount.multi_login;
+                        user.allowoutbound = userAccount.allowoutbound;
+                        user.allowed_file_categories = userAccount.allowed_file_categories;
 
                         return user;
 
@@ -211,22 +211,20 @@ function GetUser(req, res) {
             } else {
 
                 //var users = userAccounts.map(function (userAccount) {
-                    var user = userAccount.userref;
+                    var user = userAccount.userref.toObject();
 
-                    user._doc.group = userAccount.group;
-                    user._doc.active = userAccount.active;
-                    user._doc.joined = userAccount.joined;
-                    user._doc.resourceid = userAccount.resource_id;
-                    user._doc.veeryaccount = userAccount.veeryaccount;
-                    user._doc.multi_login = userAccount.multi_login;
-                    user._doc.allowoutbound = userAccount.allowoutbound;
-                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
-                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
-                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
-                    user._doc.user_meta = userAccount.user_meta;
-                    user._doc.app_meta = userAccount.app_meta;
-                    user._doc.user_scopes = userAccount.user_scopes;
-                    user._doc.client_scopes = userAccount.client_scopes;
+                    user.group = userAccount.group;
+                    user.active = userAccount.active;
+                    user.joined = userAccount.joined;
+                    user.resourceid = userAccount.resource_id;
+                    user.veeryaccount = userAccount.veeryaccount;
+                    user.multi_login = userAccount.multi_login;
+                    user.allowoutbound = userAccount.allowoutbound;
+                    user.allowed_file_categories = userAccount.allowed_file_categories;
+                    user.user_meta = userAccount.user_meta;
+                    user.app_meta = userAccount.app_meta;
+                    user.user_scopes = userAccount.user_scopes;
+                    user.client_scopes = userAccount.client_scopes;
 
 
                 //});
@@ -265,16 +263,16 @@ function GetUsersByIDs(req, res) {
             } else {
 
                 var users = userAccounts.map(function (userAccount) {
-                    var user = userAccount.userref;
+                    var user = userAccount.userref.toObject();
 
-                    user._doc.group = userAccount.group;
-                    user._doc.active = userAccount.active;
-                    user._doc.joined = userAccount.joined;
-                    user._doc.resourceid = userAccount.resource_id;
-                    user._doc.veeryaccount = userAccount.veeryaccount;
-                    user._doc.multi_login = userAccount.multi_login;
-                    user._doc.allowoutbound = userAccount.allowoutbound;
-                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                    user.group = userAccount.group;
+                    user.active = userAccount.active;
+                    user.joined = userAccount.joined;
+                    user.resourceid = userAccount.resource_id;
+                    user.veeryaccount = userAccount.veeryaccount;
+                    user.multi_login = userAccount.multi_login;
+                    user.allowoutbound = userAccount.allowoutbound;
+                    user.allowed_file_categories = userAccount.allowed_file_categories;
 
                     return user;
 
@@ -317,16 +315,16 @@ function GetUsersByRole(req, res) {
             } else {
 
                 var users = userAccounts.map(function (userAccount) {
-                    var user = userAccount.userref;
+                    var user = userAccount.userref.toObject();
 
-                    user._doc.group = userAccount.group;
-                    user._doc.active = userAccount.active;
-                    user._doc.joined = userAccount.joined;
-                    user._doc.resourceid = userAccount.resource_id;
-                    user._doc.veeryaccount = userAccount.veeryaccount;
-                    user._doc.multi_login = userAccount.multi_login;
-                    user._doc.allowoutbound = userAccount.allowoutbound;
-                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                    user.group = userAccount.group;
+                    user.active = userAccount.active;
+                    user.joined = userAccount.joined;
+                    user.resourceid = userAccount.resource_id;
+                    user.veeryaccount = userAccount.veeryaccount;
+                    user.multi_login = userAccount.multi_login;
+                    user.allowoutbound = userAccount.allowoutbound;
+                    user.allowed_file_categories = userAccount.allowed_file_categories;
 
                     return user;
 
@@ -372,16 +370,16 @@ function GetUsersByRoles(req, res) {
             } else {
 
                 var users = userAccounts.map(function (userAccount) {
-                    var user = userAccount.userref;
+                    var user = userAccount.userref.toObject();
 
-                    user._doc.group = userAccount.group;
-                    user._doc.active = userAccount.active;
-                    user._doc.joined = userAccount.joined;
-                    user._doc.resourceid = userAccount.resource_id;
-                    user._doc.veeryaccount = userAccount.veeryaccount;
-                    user._doc.multi_login = userAccount.multi_login;
-                    user._doc.allowoutbound = userAccount.allowoutbound;
-                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                    user.group = userAccount.group;
+                    user.active = userAccount.active;
+                    user.joined = userAccount.joined;
+                    user.resourceid = userAccount.resource_id;
+                    user.veeryaccount = userAccount.veeryaccount;
+                    user.multi_login = userAccount.multi_login;
+                    user.allowoutbound = userAccount.allowoutbound;
+                    user.allowed_file_categories = userAccount.allowed_file_categories;
 
                     return user;
 
@@ -951,6 +949,7 @@ function UpdateUser(req, res) {
 
             } else {
                 if (user) {
+                    user = user.toObject();
                     UserAccount.findOneAndUpdate({
                         user: req.params.name,
                         company: company,
@@ -961,15 +960,15 @@ function UpdateUser(req, res) {
                             jsonString = messageFormatter.FormatMessage(err, "Update User Account Failed", false, undefined);
 
                         } else {
-                            if (user) {
-                                user._doc.group = userAccount.group;
-                                user._doc.active = userAccount.active;
-                                user._doc.joined = userAccount.joined;
-                                user._doc.resourceid = userAccount.resource_id;
-                                user._doc.veeryaccount = userAccount.veeryaccount;
-                                user._doc.multi_login = userAccount.multi_login;
-                                user._doc.allowoutbound = userAccount.allowoutbound;
-                                user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                            if (userAccount) {
+                                user.group = userAccount.group;
+                                user.active = userAccount.active;
+                                user.joined = userAccount.joined;
+                                user.resourceid = userAccount.resource_id;
+                                user.veeryaccount = userAccount.veeryaccount;
+                                user.multi_login = userAccount.multi_login;
+                                user.allowoutbound = userAccount.allowoutbound;
+                                user.allowed_file_categories = userAccount.allowed_file_categories;
 
                                 jsonString = messageFormatter.FormatMessage(err, "Update User Account Successful", true, user);
                             }
@@ -1178,12 +1177,15 @@ function GetMyrProfile(req, res) {
 
                         } else {
 
+                            users = users.toObject();
                             users.group = userAccount.group;
                             users.active = userAccount.active;
                             users.joined = userAccount.joined;
                             users.resourceid = userAccount.resource_id;
                             users.veeryaccount = userAccount.veeryaccount;
                             users.multi_login = userAccount.multi_login;
+                            users.allowed_file_categories = userAccount.allowed_file_categories;
+
                             jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
                         }
@@ -1279,15 +1281,15 @@ function GetUserProfileByResourceId(req, res) {
 
             } else {
 
-                var user = userAccount.userref;
-                user._doc.group = userAccount.group;
-                user._doc.active = userAccount.active;
-                user._doc.joined = userAccount.joined;
-                user._doc.resourceid = userAccount.resource_id;
-                user._doc.veeryaccount = userAccount.veeryaccount;
-                user._doc.multi_login = userAccount.multi_login;
-                user._doc.allowoutbound = userAccount.allowoutbound;
-                user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                var user = userAccount.userref.toObject();
+                user.group = userAccount.group;
+                user.active = userAccount.active;
+                user.joined = userAccount.joined;
+                user.resourceid = userAccount.resource_id;
+                user.veeryaccount = userAccount.veeryaccount;
+                user.multi_login = userAccount.multi_login;
+                user.allowoutbound = userAccount.allowoutbound;
+                user.allowed_file_categories = userAccount.allowed_file_categories;
 
                 jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, user);
 
@@ -1326,15 +1328,15 @@ function GetUserProfileByContact(req, res) {
             var users = [];
             userAccounts.forEach(function (account) {
                 if (account.userref[category + ".contact"] === contact) {
-                    var user = account.userref;
-                    user._doc.group = userAccount.group;
-                    user._doc.active = userAccount.active;
-                    user._doc.joined = userAccount.joined;
-                    user._doc.resourceid = userAccount.resource_id;
-                    user._doc.veeryaccount = userAccount.veeryaccount;
-                    user._doc.multi_login = userAccount.multi_login;
-                    user._doc.allowoutbound = userAccount.allowoutbound;
-                    user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                    var user = account.userref.toObject();
+                    user.group = account.group;
+                    user.active = account.active;
+                    user.joined = account.joined;
+                    user.resourceid = account.resource_id;
+                    user.veeryaccount = account.veeryaccount;
+                    user.multi_login = account.multi_login;
+                    user.allowoutbound = account.allowoutbound;
+                    user.allowed_file_categories = account.allowed_file_categories;
 
                     users.push(user);
                 }
@@ -1405,16 +1407,16 @@ function GetUserProfile(req, res) {
 
             } else {
 
-                var user = userAccount.userref;
+                var user = userAccount.userref.toObject();
 
-                user._doc.group = userAccount.group;
-                user._doc.active = userAccount.active;
-                user._doc.joined = userAccount.joined;
-                user._doc.resourceid = userAccount.resource_id;
-                user._doc.veeryaccount = userAccount.veeryaccount;
-                user._doc.multi_login = userAccount.multi_login;
-                user._doc.allowoutbound = userAccount.allowoutbound;
-                user._doc.allowed_file_categories = userAccount.allowed_file_categories;
+                user.group = userAccount.group;
+                user.active = userAccount.active;
+                user.joined = userAccount.joined;
+                user.resourceid = userAccount.resource_id;
+                user.veeryaccount = userAccount.veeryaccount;
+                user.multi_login = userAccount.multi_login;
+                user.allowoutbound = userAccount.allowoutbound;
+                user.allowed_file_categories = userAccount.allowed_file_categories;
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, user);
 
@@ -1682,18 +1684,18 @@ function GetMyARDSFriendlyContactObject(req, res) {
 
 
             ////////////////////////////////////////////
-            var users = userAccount.userref;
-            if (users && users.contacts) {
+            //var users = userAccount.userref;
+            if (userAccount && userAccount[contact]) {
 
 
-                var contactinfo = users[contact];
+                var contactinfo = userAccount[contact];
 
-                contactObj.Profile = users.username;
+                contactObj.Profile = userAccount.user;
 
                 if (!contactinfo) {
 
 
-                    contactinfo = users.contacts.filter(function (item) {
+                    contactinfo = userAccount.userref.contacts.filter(function (item) {
                         return item.contact == contact;
                     });
 
@@ -3382,7 +3384,7 @@ function GetSuperUsers(req, res) {
                 if (userAccounts) {
 
                     var users = userAccounts.map(function (userAcc) {
-                        var user = userAcc.userref;
+                        var user = userAcc.userref.toObject();
 
                         user.group = userAcc.group;
                         user.active = userAcc.active;
@@ -3390,6 +3392,8 @@ function GetSuperUsers(req, res) {
                         user.resourceid = userAcc.resource_id;
                         user.veeryaccount = userAcc.veeryaccount;
                         user.multi_login = userAcc.multi_login;
+                        user.allowoutbound = userAcc.allowoutbound;
+                        user.allowed_file_categories = userAcc.allowed_file_categories;
 
                         return user;
                     });
