@@ -490,7 +490,7 @@ module.exports.Login =  function(req, res) {
             return res.status(401).send({message: 'User account deactivated, Please activate your account before login'});
         }
 
-        Org.findOne({"companyName": req.body.companyName}, function (err, org) {
+        Org.findOne({"companyName": {$regex: req.body.companyName, $options: "i"}}, function (err, org) {
             if(err){
                 return res.status(401).send({message: 'Company verification failed'});
             }

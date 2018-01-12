@@ -1866,9 +1866,7 @@ function UpdateUserProfileEmail(req, res) {
 
     req.body.updated_at = Date.now();
     User.findOneAndUpdate({
-        username: req.params.name,
-        company: company,
-        tenant: tenant
+        username: req.params.name
     }, {email: {contact: req.params.email, type: "email", verified: false}}, function (err, users) {
         if (err) {
 
@@ -1895,9 +1893,7 @@ function UpdateUserProfileContact(req, res) {
 
     req.body.updated_at = Date.now();
     User.findOneAndUpdate({
-        username: req.params.name,
-        company: company,
-        tenant: tenant
+        username: req.params.name
     }, {
         $addToSet: {
             contacts: {
@@ -1931,9 +1927,7 @@ function RemoveMyUserProfileContact(req, res) {
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
     User.findOneAndUpdate({
-        username: userName,
-        company: company,
-        tenant: tenant
+        username: userName
     }, {$pull: {'contacts': {'contact': req.params.contact}}}, function (err, users) {
         if (err) {
 
@@ -1964,9 +1958,7 @@ function UpdateMyUserProfileContact(req, res) {
 
     req.body.updated_at = Date.now();
     User.findOneAndUpdate({
-        username: userName,
-        company: company,
-        tenant: tenant
+        username: userName
     }, {
         $addToSet: {
             contacts: {
@@ -1999,9 +1991,7 @@ function RemoveUserProfileContact(req, res) {
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
     User.findOneAndUpdate({
-        username: req.params.name,
-        company: company,
-        tenant: tenant
+        username: req.params.name
     }, {$pull: {'contacts': {'contact': req.params.contact}}}, function (err, users) {
         if (err) {
 
@@ -2032,9 +2022,7 @@ function UpdateUserProfilePhone(req, res) {
 
     req.body.updated_at = Date.now();
     User.findOneAndUpdate({
-        username: req.params.name,
-        company: company,
-        tenant: tenant
+        username: req.params.name
     }, {phoneNumber: {contact: req.params.email, type: "voice", verified: false}}, function (err, users) {
         if (err) {
 
@@ -3056,7 +3044,7 @@ function SetLocation(req, res) {
     var tenant = parseInt(req.user.tenant);
     var user = req.params.name;
     var jsonString;
-    User.findOne({username: user, company: company, tenant: tenant}, function (err, users) {
+    User.findOne({username: user}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
@@ -3112,7 +3100,7 @@ function SetMyLocation(req, res) {
     var tenant = parseInt(req.user.tenant);
     var user = req.user.iss;
     var jsonString;
-    User.findOne({username: user, company: company, tenant: tenant}, function (err, users) {
+    User.findOne({username: user}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
