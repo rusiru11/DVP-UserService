@@ -6,6 +6,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var BusinessUnit = require('dvp-mongomodels/model/BusinessUnit').BusinessUnit;
 var User = require('dvp-mongomodels/model/User');
+var UserAccount = require('dvp-mongomodels/model/UserAccount');
 var unique = require('array-unique');
 var util = require('util');
 var UserGroup = require('dvp-mongomodels/model/UserGroup').UserGroup;
@@ -27,9 +28,10 @@ function AddBusinessUnit(req,res) {
             {
                 if(username)
                 {
-                    User.findOne({company:company,tenant:tenant,username:username,$or:[{'user_meta.role':'admin'},{'user_meta.role':'supervisor'}]},function (errUser,resUser) {
+                    //company:company,tenant:tenant,
+                    UserAccount.findOne({company:company,tenant:tenant,user:username,$or:[{'user_meta.role':'admin'},{'user_meta.role':'supervisor'}]}).populate('userref', '-password').exec(function (errUser,resUser) {
 
-                        if(errUser)
+                        if(errUser || !resUser)
                         {
                             jsonString = messageFormatter.FormatMessage(errUser, "Error in searching user", false, undefined);
                         }
@@ -37,7 +39,7 @@ function AddBusinessUnit(req,res) {
                         {
                             var unitObj =
                                 {
-                                    owner: resUser,
+                                    owner: resUser.userref,
                                     unitName: req.body.unitName,
                                     description: req.body.description,
                                     created_at: Date.now(),
@@ -296,7 +298,7 @@ function AddHeadToBusinessUnits(req, res){
 
         if(req.params && req.params.hid && req.params.name)
         {
-            User.findOne({_id:req.params.hid, company:company, tenant:tenant}).exec(function (errUser,resUser) {
+            UserAccount.findOne({_id:req.params.hid, company:company, tenant:tenant}).populate('userref', '-password').exec(function (errUser,resUser) {
 
                 if(errUser)
                 {
@@ -312,7 +314,7 @@ function AddHeadToBusinessUnits(req, res){
                             unitName: req.params.name,
                             company: company,
                             tenant: tenant
-                        }, {$push: {heads: resUser}}).exec(function (errAttach,resAttach) {
+                        }, {$push: {heads: resUser.userref}}).exec(function (errAttach,resAttach) {
                             if(errAttach)
                             {
                                 logger.error("DVP-UserService.AddHeadToBusinessUnits :  Error in Attaching Head to Business Unit ",errAttach);
@@ -382,12 +384,12 @@ function AddHeadsToBusinessUnit(req, res){
                     tenant:tenant,
                     $or:[{'user_meta.role':'admin'},{'user_meta.role':'supervisor'}],
                     _id:{$in:headUsers},
-                    Active: true
+                    active: true
                 }
 
 
 
-            User.find(quearyObj).exec(function (errUser,resUser) {
+            UserAccount.find(quearyObj).populate('userref', '-password').exec(function (errUser,resUser) {
 
                 if(errUser)
                 {
@@ -398,12 +400,16 @@ function AddHeadsToBusinessUnit(req, res){
                 else
                 {
 
+                    var users = resUser.map(function(item){
+
+                        return item.userref;
+                    });
 
                     BusinessUnit.findOneAndUpdate({
                         unitName: req.params.name,
                         company: company,
                         tenant: tenant
-                    }, {$push: {heads: resUser}}).exec(function (errAttach,resAttach) {
+                    }, {$push: {heads: users}}).exec(function (errAttach,resAttach) {
                         if(errAttach)
                         {
                             logger.error("DVP-UserService.AddHeadsToBusinessUnit :  Error in Attaching Head to Business Unit ",errAttach);
@@ -440,9 +446,6 @@ function AddHeadsToBusinessUnit(req, res){
 
 
 }
-
-
-
 function GetUsersOfBusinessUnits(req, res){
 
 
@@ -458,13 +461,13 @@ function GetUsersOfBusinessUnits(req, res){
 
             if(req.params.name.toLowerCase() =="all")
             {
-                User.find(
+                UserAccount.find(
                     {
                         company: company,
                         tenant: tenant,
-                        Active:true
+                        active:true
                     }
-                ).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).exec(function (errUsers,resUsers) {
+                ).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).populate('userref', '-password').exec(function (errUsers,resUsers) {
 
                     if(errUsers)
                     {
@@ -474,7 +477,11 @@ function GetUsersOfBusinessUnits(req, res){
                     }
                     else
                     {
-                        jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, resUsers);
+                        var users = resUsers.map(function(item){
+
+                            return item.userref;
+                        });
+                        jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, users);
                         logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  User searching Succeeded ");
                         res.end(jsonString);
                     }
@@ -502,11 +509,11 @@ function GetUsersOfBusinessUnits(req, res){
 
                             });
 
-                            User.find({
+                            UserAccount.find({
                                 company: company,
                                 tenant: tenant,
-                                Active:true,
-                                group:{$in:grouiIds}}).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).exec(function (errUsers,resUsers) {
+                                active:true,
+                                group:{$in:grouiIds}}).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).populate('userref', '-password').exec(function (errUsers,resUsers) {
 
                                 if(errUsers)
                                 {
@@ -516,7 +523,11 @@ function GetUsersOfBusinessUnits(req, res){
                                 }
                                 else
                                 {
-                                    jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, resUsers);
+                                    var users = resUsers.map(function(item){
+
+                                        return item.userref;
+                                    });
+                                    jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, users);
                                     logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  User searching Succeeded ");
                                     res.end(jsonString);
                                 }
