@@ -584,6 +584,8 @@ function CreateUser(req, res) {
                                                 } else {
 
                                                     var user = User({
+                                                        tenant: org.tenant,
+                                                        company: org.id,
                                                         systemuser: true,
                                                         title: req.body.title,
                                                         name: req.body.name,
