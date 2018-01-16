@@ -68,7 +68,7 @@ function GetMyReceivedInvitations(req, res){
 
         }else {
 
-            if (usergroups) {
+            if (invitations) {
 
 
                 jsonString = messageFormatter.FormatMessage(err, "Get My invitations Successful", true, invitations);
