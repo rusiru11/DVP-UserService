@@ -128,7 +128,7 @@ function GetUsers(req, res) {
 
             } else {
 
-                if (userAccounts) {
+                if (userAccounts && userAccount.userref) {
 
                     var users = userAccounts.map(function (userAccount) {
                         var user = userAccount.userref.toObject();
@@ -394,10 +394,119 @@ function GetUsersByRoles(req, res) {
 
 }
 
+///UserInvitable
+
+function UserInvitable(req, res) {
+
+
+    logger.debug("DVP-UserService.UserInvitable Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    User.findOne({
+        username: req.params.name
+        //company: company,
+        //tenant: tenant
+    }).exec(function (err, user) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+            res.end(jsonString);
+
+        } else {
+
+
+            if (user) {
+                //jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
+
+
+
+                UserAccount.findOne({
+                    user: req.params.name,
+                    company: company,
+                    tenant: tenant
+                }).populate('userref', '-password').exec(function (err, userAccount) {
+                    if (err) {
+
+                        jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed", false, undefined);
+
+                    } else {
+
+
+                        if (userAccount) {
+                            jsonString = messageFormatter.FormatMessage(err, "Get User Account Successful", false, undefined);
+
+                        } else {
+
+                            jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed", true, undefined);
+
+                        }
+
+                    }
+
+                    res.end(jsonString);
+                });
+
+
+
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                res.end(jsonString);
+
+            }
+
+        }
+
+
+    });
+
+}
+
+
 function UserExists(req, res) {
 
 
     logger.debug("DVP-UserService.UserExists Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    User.findOne({
+        username: req.params.name
+        //company: company,
+        //tenant: tenant
+    }).exec(function (err, user) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+        } else {
+
+
+            if (user) {
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+            }
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+
+function UserAccountExists(req, res) {
+
+
+    logger.debug("DVP-UserAccountExists.UserExists Internal method ");
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -3987,7 +4096,7 @@ module.exports.UpdateUserProfileEmail = UpdateUserProfileEmail;
 module.exports.UpdateUserProfilePhone = UpdateUserProfilePhone;
 module.exports.UpdateUserProfileContact = UpdateUserProfileContact;
 module.exports.RemoveUserProfileContact = RemoveUserProfileContact;
-
+module.exports.UserInvitable = UserInvitable;
 
 module.exports.GetMyrProfile = GetMyrProfile;
 module.exports.UpdateMyUser = UpdateMyUser;
@@ -4001,6 +4110,7 @@ module.exports.SetUserProfileResourceId = SetUserProfileResourceId;
 module.exports.GetUserProfileByResourceId = GetUserProfileByResourceId;
 module.exports.GetARDSFriendlyContactObject = GetARDSFriendlyContactObject;
 module.exports.UserExists = UserExists;
+module.exports.UserAccountExists = UserAccountExists;
 module.exports.AssignConsoleToUser = AssignConsoleToUser;
 module.exports.RemoveConsoleFromUser = RemoveConsoleFromUser;
 //module.exports.CreateExternalUser = CreateExternalUser;
