@@ -128,7 +128,7 @@ function GetUsers(req, res) {
 
             } else {
 
-                if (userAccounts && userAccount.userref) {
+                if (userAccounts && userAccounts.userref) {
 
                     var users = userAccounts.map(function (userAccount) {
                         var user = userAccount.userref.toObject();
