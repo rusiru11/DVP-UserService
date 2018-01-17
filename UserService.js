@@ -142,6 +142,7 @@ function GetUsers(req, res) {
                             user.multi_login = userAccount.multi_login;
                             user.allowoutbound = userAccount.allowoutbound;
                             user.allowed_file_categories = userAccount.allowed_file_categories;
+                            user.user_meta = userAccount.user_meta;
 
                             return user;
                         }
