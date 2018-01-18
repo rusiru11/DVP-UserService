@@ -61,7 +61,7 @@ function GetMyReceivedInvitations(req, res){
     //
     // });
 
-    UserInvitation.find({company: company, tenant: tenant, to:  user, status: 'pending'}, function(err, invitations) {
+    UserInvitation.find({ to:  user, status: 'pending'}, function(err, invitations) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get My invitations Failed", false, undefined);
@@ -96,7 +96,7 @@ function GetMySendInvitations(req, res){
     var user = req.user.iss;
 
 
-    UserInvitation.find({company: company, tenant: tenant, from:  user}, function(err, invitations) {
+    UserInvitation.find({ from:  user}, function(err, invitations) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get My invitations Failed", false, undefined);

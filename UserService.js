@@ -128,21 +128,24 @@ function GetUsers(req, res) {
 
             } else {
 
-                if (userAccounts && userAccounts.userref) {
+                if (userAccounts && Array.isArray(userAccounts) ) {
 
                     var users = userAccounts.map(function (userAccount) {
-                        var user = userAccount.userref.toObject();
+                        if(userAccount.userref) {
+                            var user = userAccount.userref.toObject();
 
-                        user.group = userAccount.group;
-                        user.active = userAccount.active;
-                        user.joined = userAccount.joined;
-                        user.resourceid = userAccount.resource_id;
-                        user.veeryaccount = userAccount.veeryaccount;
-                        user.multi_login = userAccount.multi_login;
-                        user.allowoutbound = userAccount.allowoutbound;
-                        user.allowed_file_categories = userAccount.allowed_file_categories;
+                            user.group = userAccount.group;
+                            user.active = userAccount.active;
+                            user.joined = userAccount.joined;
+                            user.resourceid = userAccount.resource_id;
+                            user.veeryaccount = userAccount.veeryaccount;
+                            user.multi_login = userAccount.multi_login;
+                            user.allowoutbound = userAccount.allowoutbound;
+                            user.allowed_file_categories = userAccount.allowed_file_categories;
+                            user.user_meta = userAccount.user_meta;
 
-                        return user;
+                            return user;
+                        }
 
                     });
                     jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
