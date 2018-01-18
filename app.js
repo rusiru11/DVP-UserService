@@ -484,6 +484,8 @@ app.put('/DVP/API/:version/Invitation/Reject/:id/company/:company/tenant/:tenant
 app.put('/DVP/API/:version/Invitation/Cancel/:id',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.CancelUserInvitation);
 app.put('/DVP/API/:version/Invitation/Resend/:id',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.ResendUserInvitation);
 
+app.put('/DVP/API/:version/UserAccount/:username/Activation/:state',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),userService.UserAcccountActivation);
+
 
 
 app.listen(port, function () {
