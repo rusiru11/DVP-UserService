@@ -328,7 +328,7 @@ function RejectUserInvitation(req, res){
 function CancelUserInvitation(req, res){
 
 
-    logger.debug("DVP-UserService.AcceptUserInvitation Internal method ");
+    logger.debug("DVP-UserService.CancelUserInvitation Internal method ");
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -337,6 +337,56 @@ function CancelUserInvitation(req, res){
 
     req.body.updated_at = Date.now();
     UserInvitation.findOneAndUpdate({_id: ObjectId(req.params.id),company: company, tenant: tenant, from: from, status: 'pending'}, {status: "canceled", update_at: Date.now()}, function(err, invitation) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Update User Invitation Failed", false, undefined);
+            res.end(jsonString);
+
+        }else{
+
+            if(invitation){
+
+                var to = invitation.to;
+                //jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
+                UserAccount.findOneAndUpdate({ company: company, tenant: tenant, user: to}, {varified:false, active: false, update_at: Date.now()}, function (err, account) {
+                    if(err){
+
+                        jsonString = messageFormatter.FormatMessage(err, "Update User Invitation failed", false, undefined);
+                        res.end(jsonString);
+
+                    }else{
+
+                        jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
+                        res.end(jsonString);
+                    }
+
+                });
+
+            }else{
+
+                jsonString = messageFormatter.FormatMessage(new Error("No invitation found"), "Update User Invitation failed", false, undefined);
+                res.end(jsonString);
+            }
+
+
+        }
+
+    });
+
+}
+
+function ResendUserInvitation(req, res){
+
+
+    logger.debug("DVP-UserService.ResendUserInvitation Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var from = req.user.iss;
+    var jsonString;
+
+    req.body.updated_at = Date.now();
+    UserInvitation.findOneAndUpdate({_id: ObjectId(req.params.id),company: company, tenant: tenant, from: from, status: 'canceled'}, {status: "pending", update_at: Date.now()}, function(err, invitation) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Invitation Failed", false, undefined);
@@ -385,6 +435,7 @@ module.exports.AcceptUserInvitation = AcceptUserInvitation;
 module.exports.RejectUserInvitation = RejectUserInvitation;
 module.exports.CancelUserInvitation = CancelUserInvitation;
 module.exports.GetInvitation = GetInvitation;
+module.exports.ResendUserInvitation = ResendUserInvitation;
 
 
 

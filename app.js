@@ -486,6 +486,7 @@ app.get('/DVP/API/:version/Invitation/:id',jwt({secret: secret.Secret}),authoriz
 app.put('/DVP/API/:version/Invitation/Accept/:id/company/:company/tenant/:tenant',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),UserInvitationService.AcceptUserInvitation);
 app.put('/DVP/API/:version/Invitation/Reject/:id/company/:company/tenant/:tenant',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),UserInvitationService.RejectUserInvitation);
 app.put('/DVP/API/:version/Invitation/Cancel/:id',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.CancelUserInvitation);
+app.put('/DVP/API/:version/Invitation/Resend/:id',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.ResendUserInvitation);
 
 
 
