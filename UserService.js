@@ -4071,6 +4071,54 @@ function userIsAllowToOutbound(req, res) {
 }
 
 
+function UserAcccountActivation(req, res) {
+
+
+    logger.debug("DVP-UserService.UserAcccountActivation Internal method ");
+
+    var company = parseInt(req.params.company);
+    var tenant = parseInt(req.params.tenant);
+   var Active = true;
+
+    var jsonString;
+
+    if(req.params.state)
+    {
+        Active = req.params.state;
+    }
+
+    if(req.params.username)
+    {
+        UserAccount.findOneAndUpdate({company: company, tenant: tenant, user: req.params.username}, {
+            active: Active,
+            update_at: Date.now()
+        }, function (err, rUser) {
+            if (err) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Update User Account Activation failed", false, undefined);
+                res.end(jsonString);
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Update User Account Activation succeeded", true, invitation);
+                res.end(jsonString);
+            }
+
+        });
+    }
+    else
+    {
+        jsonString = messageFormatter.FormatMessage(new Error("No username received"), "No username received", false, undefined);
+        res.end(jsonString);
+
+    }
+
+
+
+
+}
+
+
 module.exports.GetUser = GetUser;
 module.exports.GetUsers = GetUsers;
 module.exports.GetUsersByRole = GetUsersByRole;
@@ -4152,5 +4200,6 @@ module.exports.UserIsAllowToOutbound = userIsAllowToOutbound;
 
 
 module.exports.GetFileCategories = GetFileCategories;
+module.exports.UserAcccountActivation = UserAcccountActivation;
 /*
  module.exports.AddFileCategoriesToUser = AddFileCategoriesToUser;*/
