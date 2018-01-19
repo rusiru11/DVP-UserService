@@ -836,7 +836,7 @@ function AssignPackageToOrganisation(req,res){
 
     var jsonString;
 
-    UserAccount.findOne({tenant: tenant, company: orgId, user: req.user.iss}).populate('userref' , '-password').exec(function (err, userAccount) {
+    UserAccount.findOne({tenant: tenant, company: company, user: req.user.iss}).populate('userref' , '-password').exec(function (err, userAccount) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Error in User Search", false, undefined);
             res.end(jsonString);
