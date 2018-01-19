@@ -836,7 +836,7 @@ function AssignPackageToOrganisation(req,res){
 
     var jsonString;
 
-    UserAccount.findOne({tenant: tenant, company: orgId, user: req.user.iss}).populate('userref' , '-password').exec(function (err, userAccount) {
+    UserAccount.findOne({tenant: tenant, company: company, user: req.user.iss}).populate('userref' , '-password').exec(function (err, userAccount) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Error in User Search", false, undefined);
             res.end(jsonString);
@@ -1712,7 +1712,8 @@ function GetBillingDetails(req, res){
                                 description: pInfo.veeryPackage.description,
                                 date: pInfo.buyDate,
                                 valid: true,
-                                isTrial: false
+                                isTrial: false,
+                                details: pInfo.veeryPackage
                             });
                         }
                     }
@@ -1731,7 +1732,8 @@ function GetBillingDetails(req, res){
                                 description: uInfo.veeryUnit.description,
                                 date: uInfo.buyDate,
                                 valid: true,
-                                isTrial: false
+                                isTrial: false,
+                                details: uInfo.veeryUnit
                             });
                         }
                     }
@@ -1758,7 +1760,8 @@ function GetBillingDetails(req, res){
                                                 description: nInfo.DidNumber,
                                                 date: nInfo.createdAt,
                                                 valid: nInfo.DidEnabled,
-                                                isTrial: false
+                                                isTrial: false,
+                                                details: nInfo
                                             });
                                         }
                                     }
