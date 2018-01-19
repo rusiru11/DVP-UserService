@@ -1712,7 +1712,8 @@ function GetBillingDetails(req, res){
                                 description: pInfo.veeryPackage.description,
                                 date: pInfo.buyDate,
                                 valid: true,
-                                isTrial: false
+                                isTrial: false,
+                                details: pInfo.veeryPackage
                             });
                         }
                     }
@@ -1731,7 +1732,8 @@ function GetBillingDetails(req, res){
                                 description: uInfo.veeryUnit.description,
                                 date: uInfo.buyDate,
                                 valid: true,
-                                isTrial: false
+                                isTrial: false,
+                                details: uInfo.veeryUnit
                             });
                         }
                     }
@@ -1758,7 +1760,8 @@ function GetBillingDetails(req, res){
                                                 description: nInfo.DidNumber,
                                                 date: nInfo.createdAt,
                                                 valid: nInfo.DidEnabled,
-                                                isTrial: false
+                                                isTrial: false,
+                                                details: nInfo
                                             });
                                         }
                                     }
