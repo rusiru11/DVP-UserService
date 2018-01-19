@@ -901,7 +901,7 @@ module.exports.Validation =  function(req, res) {
 module.exports.SignUP = function(req, res) {
 
     logger.info("config.auth.signup_verification  -------->" +  config.auth.signup_verification);
-    if(config.auth.signup_verification == 'true') {
+    if(config.auth.signup_verification == true || config.auth.signup_verification == 'true') {
 
         if(!req.body || req.body['g-recaptcha-response'] === undefined || req.body['g-recaptcha-response'] === '' || req.body['g-recaptcha-response'] === null) {
             return res.status(409).send({message: 'Please select captcha'});
@@ -1044,7 +1044,7 @@ module.exports.SignUP = function(req, res) {
                     //     {"scope": "myNavigation", "read": true},
                     //     {"scope": "myUserProfile", "read": true}
                     // ],
-
+                    Active: true,
                     company: 0,
                     tenant: 1,
                     created_at: Date.now(),
