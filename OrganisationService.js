@@ -733,7 +733,7 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
         var spaceLimitsToAdd = [];
         vPackage.spaceLimit.forEach(function (sLimit) {
             var existingSpaceLimit = org.spaceLimit.filter(function (esl) {
-                return esl.spaceType === sLimit.spaceType;
+                return esl && sLimit &&  esl.spaceType === sLimit.spaceType;
             });
 
             if(existingSpaceLimit && existingSpaceLimit.length > 0){
@@ -836,7 +836,7 @@ function AssignPackageToOrganisation(req,res){
 
     var jsonString;
 
-    UserAccount.findOne({tenant: tenant, company: company, user: req.user.iss}).populate('userref' , '-password').exec(function (err, userAccount) {
+    UserAccount.findOne({tenant: tenant, company: orgId, user: req.user.iss}).populate('userref' , '-password').exec(function (err, userAccount) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Error in User Search", false, undefined);
             res.end(jsonString);
@@ -978,9 +978,9 @@ function RemovePackageFromOrganisation(req,res){
                         jsonString = messageFormatter.FormatMessage(err, "Get Package Failed", false, undefined);
                         console.log(jsonString);
                     } else {
-                        var tempSpaceLimit = vPackage.spaceLimit? vPackage.spaceLimit: 0;
-                        org.spaceLimit = org.spaceLimit - tempSpaceLimit;
-                        org.spaceLimit = org.spaceLimit < 0? 0:org.spaceLimit;
+                        //var tempSpaceLimit = vPackage.spaceLimit? vPackage.spaceLimit: 0;
+                        //org.spaceLimit = org.spaceLimit - tempSpaceLimit;
+                        //org.spaceLimit = org.spaceLimit < 0? 0:org.spaceLimit;
 
 
 
