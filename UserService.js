@@ -1299,6 +1299,7 @@ function GetMyrProfile(req, res) {
                             users.veeryaccount = userAccount.veeryaccount;
                             users.multi_login = userAccount.multi_login;
                             users.allowed_file_categories = userAccount.allowed_file_categories;
+                            users.user_meta = userAccount.user_meta;
 
                             jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
