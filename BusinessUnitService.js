@@ -528,10 +528,55 @@ function AddHeadsToBusinessUnit(req, res){
 
 
 }
+function GetMyBusinessUnit(req, res){
+
+
+    logger.debug("DVP-UserService.GetMyBusinessUnit Internal method ");
+
+    try {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+        UserAccount.findOne({company:company, tenant:tenant, user:req.user.iss}).populate('group').exec(function (errUser,resUser) {
+
+            if(errUser)
+            {
+                jsonString = messageFormatter.FormatMessage(errUser, "User searching Failed", false, undefined);
+                logger.error("DVP-UserService.GetMyBusinessUnit :  User searching Failed ");
+                res.end(jsonString);
+            }
+            else
+            {
+                if(resUser && resUser.group && resUser.group.businessUnit)
+                {
+                    jsonString = messageFormatter.FormatMessage(undefined, "User details found", true, resUser.group.businessUnit);
+                    logger.debug("DVP-UserService.GetMyBusinessUnit :  User details found ");
+                    res.end(jsonString);
+                }
+                else
+                {
+                    jsonString = messageFormatter.FormatMessage(undefined, "User details found / No business Unit found", true, undefined);
+                    logger.debug("DVP-UserService.GetMyBusinessUnit :  User details found / No business Unit found ");
+                    res.end(jsonString);
+                }
+            }
+        });
+
+
+
+    } catch (e) {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in operation GetMyBusinessUnit", false, undefined);
+        res.end(jsonString);
+    }
+
+
+};
+
 function GetUsersOfBusinessUnits(req, res){
 
 
-    logger.debug("DVP-UserService.GetUsersOfBusinessUnits Internal method ");
+    logger.debug("DVP-UserService.GetMyBusinessUnit Internal method ");
 
     try {
         var company = parseInt(req.user.company);
@@ -669,7 +714,7 @@ function GetUsersOfBusinessUnits(req, res){
     }
 
 
-}
+};
 
 module.exports.AddBusinessUnit=AddBusinessUnit;
 module.exports.GetBusinessUnits=GetBusinessUnits;
@@ -680,3 +725,4 @@ module.exports.AddHeadsToBusinessUnit=AddHeadsToBusinessUnit;
 module.exports.UpdateBusinessUnit=UpdateBusinessUnit;
 module.exports.GetUsersOfBusinessUnits=GetUsersOfBusinessUnits;
 module.exports.GetBusinessUnitsWithGroups=GetBusinessUnitsWithGroups;
+module.exports.GetMyBusinessUnit=GetMyBusinessUnit;
