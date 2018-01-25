@@ -471,6 +471,7 @@ app.get('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),aut
 app.put('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateAccessibleFieldConfig);
 app.post('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.AddAccessibleFieldConfig);
 app.get('/DVP/API/:version/ExternalUserConfig/DefaultKeys', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetDefaultAccessibleFieldConfig);
+app.get('/DVP/API/:version/ExternalUserConfig/UserFields', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetUserFields);
 
 
 
