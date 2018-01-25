@@ -6,6 +6,10 @@ var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJ
 var UserInvitation = require('dvp-mongomodels/model/UserInvitation').UserInvitation;
 var UserAccount = require('dvp-mongomodels/model/UserAccount');
 var PublishToQueue = require('./Worker').PublishToQueue;
+var request = require("request");
+var util = require("util");
+var config = require("config");
+var validator = require("validator");
 
 
 function GetInvitation(req, res){
@@ -203,6 +207,10 @@ function CreateInvitation(req, res) {
                                 sendObj.Parameters = {username: to, owner: from, created_at: new Date()};
 
                                 PublishToQueue("EMAILOUT", sendObj);
+
+                                SenNotification(company,tenant,from,to,message,function(){
+
+                                })
 
                                 jsonString = messageFormatter.FormatMessage(undefined, "User Invitation saved successfully", true, invitation);
                                 res.end(jsonString);
@@ -424,6 +432,53 @@ function ResendUserInvitation(req, res){
     });
 
 }
+
+
+
+
+var SenNotification = function (company, tenant,from, to, message,  callback) {
+    //var jsonStr = JSON.stringify(postData);
+    var accessToken = util.format("bearer %s", config.Services.accessToken);
+    var internalAccessToken = util.format("%d:%d", tenant, company);
+
+    var data = {
+        From: from,
+        To: to,
+        Message: message,
+        Direction: "STATELESS",
+        CallbackURL: "",
+        Ref: ""
+    };
+
+
+    var serviceurl = util.format("http://%s/DVP/API/%s/NotificationService/Notification/initiate", config.Services.notificationServiceHost, config.Services.notificationServiceVersion);
+    if (validator.isIP(config.Services.notificationServiceHost)) {
+        serviceurl = util.format("http://%s:%s/DVP/API/%s/NotificationService/Notification/initiate", config.Services.notificationServiceHost, config.Services.notificationServicePort, config.Services.notificationServiceVersion);
+    }
+
+    var options = {
+        url: serviceurl,
+        method: 'POST',
+        headers: {
+
+            'authorization': accessToken,
+            'companyinfo': internalAccessToken,
+            'eventname': 'invite'
+        },
+        json: data
+    };
+    try {
+        request.post(options, function optionalCallback(err, httpResponse, body) {
+            if (err) {
+                console.log('upload failed:', err);
+            }
+            console.log('Server returned: %j', body);
+            callback(err, httpResponse, body);
+        });
+    }catch(ex){
+        callback(ex, undefined, undefined);
+    }
+};
 
 
 

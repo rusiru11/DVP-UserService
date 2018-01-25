@@ -143,7 +143,10 @@ module.exports = {
     "clusterconfigserviceVersion": "1.0.0.0",
     "billingserviceHost": "billingservice.app.veery.cloud",
     "billingservicePort": "4444",
-    "billingserviceVersion": "1.0.0.0"
+    "billingserviceVersion": "1.0.0.0",
+    "notificationServiceHost": "notificationservice.app1.veery.cloud",
+    "notificationServicePort": "8089",
+    "notificationServiceVersion": "1.0.0.0"
   },
 
   "Tenant": {

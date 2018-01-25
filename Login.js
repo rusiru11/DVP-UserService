@@ -505,8 +505,12 @@ module.exports.Login =  function(req, res) {
                     if (err) {
                         return res.status(401).send({message: 'User account verification failed'});
                     }
-                    if (!account) {
+                    if (!account ) {
                         return res.status(401).send({message: 'Invalid user account'});
+                    }
+
+                    if(account.verified != true || account.active != true ){
+                        return res.status(401).send({message: 'User account is not active'});
                     }
 
                     user._doc.tenant = org.tenant;
