@@ -509,16 +509,17 @@ module.exports.Login =  function(req, res) {
                         return res.status(401).send({message: 'Invalid user account'});
                     }
 
-                    user._doc.tenant = org.tenant;
-                    user._doc.company = org.id;
-                    user._doc.multi_login = account.multi_login;
-                    user._doc.user_meta = account.user_meta;
-                    user._doc.app_meta = account.app_meta;
-                    user._doc.user_scopes = account.user_scopes;
-                    user._doc.client_scopes = account.client_scopes;
-                    user._doc.resourceid = account.resource_id;
-                    user._doc.veeryaccount = account.veeryaccount;
-                    user._doc.multi_login = account.multi_login;
+                    user = user.toObject();
+                    user.tenant = org.tenant;
+                    user.company = org.id;
+                    user.multi_login = account.multi_login;
+                    user.user_meta = account.user_meta;
+                    user.app_meta = account.app_meta;
+                    user.user_scopes = account.user_scopes;
+                    user.client_scopes = account.client_scopes;
+                    user.resourceid = account.resource_id;
+                    user.veeryaccount = account.veeryaccount;
+                    user.multi_login = account.multi_login;
 
 
                     logger.info("config.auth.login_verification --> " + config.auth.login_verification + (config.auth.login_verification === true) + " user.verified --->"+ user.verified + (user.verified === false)+ " result -->" + ((config.auth.login_verification == true) && (user.verified == false)));

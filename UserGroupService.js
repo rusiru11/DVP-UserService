@@ -345,7 +345,7 @@ function GetGroupsAndUsers(req, res){
                                             //if(user && user._doc && user._doc.joined)
                                             user.joined = usrAcc.joined;
                                             //if(user && user._doc && user._doc.resource_id)
-                                            user.resource_id = usrAcc.resource_id;
+                                            user.resourceid = usrAcc.resource_id;
                                             //if(user && user._doc && user._doc.veeryaccount)
                                             user.veeryaccount = usrAcc.veeryaccount;
                                             //if(user && user._doc && user._doc.multi_login)
@@ -571,7 +571,7 @@ function GetGroupMembers(req, res){
                             //if(user && user._doc && user._doc.joined)
                             user.joined = userAccount.joined;
                             //if(user && user._doc && user._doc.resource_id)
-                            user.resource_id = userAccount.resource_id;
+                            user.resourceid = userAccount.resource_id;
                             //if(user && user._doc && user._doc.veeryaccount)
                             user.veeryaccount = userAccount.veeryaccount;
                             //if(user && user._doc && user._doc.multi_login)
