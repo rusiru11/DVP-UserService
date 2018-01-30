@@ -145,7 +145,7 @@ function UpdateBusinessUnit(req,res) {
         }
         else
         {
-            jsonString = messageFormatter.FormatMessage(new Error("Insufficient data found to create a business unit"), "Insufficient data found to create a business unit", false, undefined);
+            jsonString = messageFormatter.FormatMessage(new Error("Insufficient data found to update a business unit"), "Insufficient data found to create a business unit", false, undefined);
             res.end(jsonString);
         }
 
@@ -154,13 +154,88 @@ function UpdateBusinessUnit(req,res) {
     }
     catch (e)
     {
-        jsonString = messageFormatter.FormatMessage(e, "Exception in operation : AddBusinessUnit ", false, undefined);
+        jsonString = messageFormatter.FormatMessage(e, "Exception in operation : UpdateBusinessUnit ", false, undefined);
         res.end(jsonString);
     }
 
 
 
 };
+
+function UpdateBusinessUnitUserGroups(req,res) {
+
+    try {
+        logger.debug("DVP-BusinessUnitService.UpdateBusinessUnitUserGroups Internal method ");
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+        if(req.body && req.params.unitname &&  req.body.groups)
+        {
+
+            var groupObj =
+                {
+                    $or:[],
+                    company: company,
+                    tenant: tenant
+                }
+
+            req.body.groups.forEach(function (item) {
+
+                groupObj.$or.push({_id:item});
+
+            }) ;
+
+
+
+
+            BusinessUnit.findOne({company:company, tenant:tenant,unitName:req.params.unitname},function (errUpdate,resUpdate) {
+
+                if(errUpdate)
+                {
+                    jsonString = messageFormatter.FormatMessage(errUpdate, "Error in Searching Business Unit ", false, undefined);
+                    res.end(jsonString);
+                }
+                else
+                {
+                    UserGroup.findOneAndUpdate(groupObj,{businessUnit:req.params.unitname},function (errGroupUpdate,resGroupUpdate) {
+
+                        if(errGroupUpdate)
+                        {
+                            jsonString = messageFormatter.FormatMessage(errGroupUpdate, "Error in updating Business Unit of Groups ", false, undefined);
+                        }
+                        else
+                        {
+                            jsonString = messageFormatter.FormatMessage(undefined, "Updating Business Unit of Groups succeeded ", true, resUpdate);
+                        }
+                        res.end(jsonString);
+                    });
+
+                }
+
+            });
+
+
+        }
+        else
+        {
+            jsonString = messageFormatter.FormatMessage(new Error("Insufficient data found to update a business unit User groups"), "Insufficient data found to create a business unit", false, undefined);
+            res.end(jsonString);
+        }
+
+
+
+    }
+    catch (e)
+    {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in operation : UpdateBusinessUnitUserGroups ", false, undefined);
+        res.end(jsonString);
+    }
+
+
+
+};
+
 function GetBusinessUnits(req,res) {
 
     try {
@@ -726,3 +801,4 @@ module.exports.UpdateBusinessUnit=UpdateBusinessUnit;
 module.exports.GetUsersOfBusinessUnits=GetUsersOfBusinessUnits;
 module.exports.GetBusinessUnitsWithGroups=GetBusinessUnitsWithGroups;
 module.exports.GetMyBusinessUnit=GetMyBusinessUnit;
+module.exports.UpdateBusinessUnitUserGroups=UpdateBusinessUnitUserGroups;
