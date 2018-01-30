@@ -513,6 +513,8 @@ module.exports.Login =  function(req, res) {
                         return res.status(401).send({message: 'User account is not active'});
                     }
 
+
+                    //user = user.toObject();
                     user._doc.tenant = org.tenant;
                     user._doc.company = org.id;
                     user._doc.multi_login = account.multi_login;
