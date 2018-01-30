@@ -1028,6 +1028,36 @@ function GetDefaultAccessibleFieldConfig(req, res){
 
 }
 
+function GetUserFields(req,res){
+
+
+    var jsonString;
+
+    try
+    {
+
+        var propsKeys = ExternalUser.schema.paths;
+
+
+
+        /*propsKeys.splice(propsKeys.indexOf('created_at'),1);
+        propsKeys.splice(propsKeys.indexOf('updated_at'),1);
+        propsKeys.splice(propsKeys.indexOf('_id'),1);
+        propsKeys.splice(propsKeys.indexOf('__v'),1);*/
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Get External User Access Key Fields succeeded", true, propsKeys);
+        res.end(jsonString);
+
+    } catch (e) {
+
+        jsonString = messageFormatter.FormatMessage(e, "Error in operation : GetExternalUserAccessKeyFields", false, undefined);
+        res.end(jsonString);
+    }
+
+
+
+}
+
 module.exports.GetExternalUsers = GetExternalUsers;
 module.exports.GetExternalUser = GetExternalUser;
 module.exports.DeleteExternalUser = DeleteExternalUser;
@@ -1052,3 +1082,5 @@ module.exports.GetAccessibleFieldConfig = GetAccessibleFieldConfig;
 module.exports.UpdateAccessibleFieldConfig = UpdateAccessibleFieldConfig;
 module.exports.AddAccessibleFieldConfig = AddAccessibleFieldConfig;
 module.exports.GetDefaultAccessibleFieldConfig = GetDefaultAccessibleFieldConfig;
+module.exports.GetUserFields = GetUserFields;
+

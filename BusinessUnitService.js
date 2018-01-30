@@ -192,6 +192,88 @@ function GetBusinessUnits(req,res) {
 
 
 };
+
+mongoose.set('debug', true);
+function GetBusinessUnitsWithGroups(req,res) {
+
+    try {
+        logger.debug("DVP-BusinessUnitService.GetBusinessUnitsWithGroups Internal method ");
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+
+        BusinessUnit.find({company:company, tenant:tenant}).populate('heads').exec(function (errUnits,resUnits) {
+            if(errUnits)
+            {
+                jsonString = messageFormatter.FormatMessage(errUnits, "Error in searching BusinessUnits ", false, undefined);
+                res.end(jsonString);
+            }
+            else
+            {
+                var qObj = {
+                    company:company,
+                    tenant:tenant,
+                    $or:[]
+                }
+
+                if(resUnits)
+                {
+                    resUnits.forEach(function (item) {
+                        qObj.$or.push({businessUnit:item.unitName});
+                    });
+                }
+
+                UserGroup.find(qObj).exec(function (errGroups,resGroups) {
+
+                    if(errGroups)
+                    {
+                        jsonString = messageFormatter.FormatMessage(errGroups, "Error in searching User Groups ", false, undefined);
+                        res.end(jsonString);
+                    }
+                    else
+                    {
+                        resUnits.forEach(function (unit) {
+
+                            resGroups.forEach(function (group) {
+
+                                if(group.businessUnit==unit.unitName)
+                                {
+                                    if( unit._doc && !unit._doc.groups)
+                                    {
+                                        unit._doc.groups=[];
+                                    }
+                                    unit._doc.groups.push(group);
+                                }
+
+                            });
+
+                        });
+
+                        jsonString = messageFormatter.FormatMessage(undefined, "BusinessUnits with Groups Found ", true, resUnits);
+                        res.end(jsonString);
+                    }
+
+
+                });
+
+
+            }
+
+        });
+
+
+
+    } catch (e) {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in operation : GetBusinessUnit ", false, undefined);
+        res.end(jsonString);
+    }
+
+
+
+};
+
+
 function GetBusinessUnit(req,res) {
 
     try {
@@ -446,10 +528,55 @@ function AddHeadsToBusinessUnit(req, res){
 
 
 }
+function GetMyBusinessUnit(req, res){
+
+
+    logger.debug("DVP-UserService.GetMyBusinessUnit Internal method ");
+
+    try {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+        UserAccount.findOne({company:company, tenant:tenant, user:req.user.iss}).populate('group').exec(function (errUser,resUser) {
+
+            if(errUser)
+            {
+                jsonString = messageFormatter.FormatMessage(errUser, "User searching Failed", false, undefined);
+                logger.error("DVP-UserService.GetMyBusinessUnit :  User searching Failed ");
+                res.end(jsonString);
+            }
+            else
+            {
+                if(resUser && resUser.group && resUser.group.businessUnit)
+                {
+                    jsonString = messageFormatter.FormatMessage(undefined, "User details found", true, resUser.group.businessUnit);
+                    logger.debug("DVP-UserService.GetMyBusinessUnit :  User details found ");
+                    res.end(jsonString);
+                }
+                else
+                {
+                    jsonString = messageFormatter.FormatMessage(undefined, "User details found / No business Unit found", true, undefined);
+                    logger.debug("DVP-UserService.GetMyBusinessUnit :  User details found / No business Unit found ");
+                    res.end(jsonString);
+                }
+            }
+        });
+
+
+
+    } catch (e) {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in operation GetMyBusinessUnit", false, undefined);
+        res.end(jsonString);
+    }
+
+
+};
+
 function GetUsersOfBusinessUnits(req, res){
 
 
-    logger.debug("DVP-UserService.GetUsersOfBusinessUnits Internal method ");
+    logger.debug("DVP-UserService.GetMyBusinessUnit Internal method ");
 
     try {
         var company = parseInt(req.user.company);
@@ -587,7 +714,7 @@ function GetUsersOfBusinessUnits(req, res){
     }
 
 
-}
+};
 
 module.exports.AddBusinessUnit=AddBusinessUnit;
 module.exports.GetBusinessUnits=GetBusinessUnits;
@@ -597,3 +724,5 @@ module.exports.AddHeadToBusinessUnits=AddHeadToBusinessUnits;
 module.exports.AddHeadsToBusinessUnit=AddHeadsToBusinessUnit;
 module.exports.UpdateBusinessUnit=UpdateBusinessUnit;
 module.exports.GetUsersOfBusinessUnits=GetUsersOfBusinessUnits;
+module.exports.GetBusinessUnitsWithGroups=GetBusinessUnitsWithGroups;
+module.exports.GetMyBusinessUnit=GetMyBusinessUnit;
