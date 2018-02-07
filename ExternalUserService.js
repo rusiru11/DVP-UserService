@@ -219,8 +219,8 @@ function CreateExternalUser(req, res) {
             });
         }
 
-        if (req.body.customFields) {
-            req.body.customFields.map(function (item) {
+        if (req.body.custom_fields) {
+            req.body.custom_fields.map(function (item) {
                 if (item && item.key) {
                     extUser.custom_fields.push({
                         field: item.key, value: item.value
