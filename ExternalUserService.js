@@ -215,6 +215,16 @@ function CreateExternalUser(req, res) {
             });
         }
 
+        if (req.body.custom_fields) {
+            req.body.custom_fields.map(function (item) {
+                if (item && item.key) {
+                    extUser.custom_fields.push({
+                        field: item.key, value: item.value
+                    });
+                }
+            });
+        }
+
         extUser.save(function (err, user) {
             if (err) {
                 jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
