@@ -3,6 +3,7 @@
  */
 
 var User = require('dvp-mongomodels/model/User');
+var UserAccount = require('dvp-mongomodels/model/UserAccount');
 var jwt = require('jsonwebtoken');
 var redis = require('ioredis');
 var accessToken = require ('dvp-mongomodels/model/AccessToken');
@@ -102,8 +103,6 @@ if(redismode != "cluster") {
 
         redisClient = new redis(redisSetting);
     }
-
-
 }
 
 redisClient.on('error', function (err) {
@@ -467,16 +466,6 @@ function GetJWT(user, scopesx, client_id, type, req, done){
 
         });
     }
-
-
-
-
-
-
-
-
-
-
 }
 
 function Encrypt(plainText, workingKey) {
@@ -505,9 +494,7 @@ module.exports.Login =  function(req, res) {
 
         if ((config.auth.login_verification === true || config.auth.login_verification === 'true') && (user.verified === false)) {
 
-
             //res.status(449 ).send({message: 'Activate your account before login'});
-
             crypto.randomBytes(20, function (err, buf) {
                 var token = buf.toString('hex');
 
@@ -521,9 +508,7 @@ module.exports.Login =  function(req, res) {
 
                     }else{
 
-
                         redisClient.expireat("activate"+":"+token,  parseInt((+new Date)/1000) + 86400);
-
                         var sendObj = {
                             "company": 0,
                             "tenant": 1
@@ -537,7 +522,6 @@ module.exports.Login =  function(req, res) {
                             url:url}
 
                         PublishToQueue("EMAILOUT", sendObj)
-
                         return res.status(449 ).send({message: 'Activate your account before login'});
                     }
                 });
