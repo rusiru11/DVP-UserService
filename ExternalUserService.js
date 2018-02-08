@@ -192,7 +192,8 @@ function CreateExternalUser(req, res) {
             created_at: Date.now(),
             updated_at: Date.now(),
             tags: req.body.tags,
-            contacts: []
+            contacts: [],
+            custom_fields: []
         });
 
         if (req.body.address) {
