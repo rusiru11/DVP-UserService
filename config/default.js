@@ -64,7 +64,7 @@ module.exports = {
 
   "Redis":
   {
-    "mode":"instance",//instance, cluster, sentinel
+    "mode":"sentinel",//instance, cluster, sentinel
     "ip": "45.55.142.207",
     "port": 6389,
     "user": "duo",
@@ -143,7 +143,10 @@ module.exports = {
     "clusterconfigserviceVersion": "1.0.0.0",
     "billingserviceHost": "billingservice.app.veery.cloud",
     "billingservicePort": "4444",
-    "billingserviceVersion": "1.0.0.0"
+    "billingserviceVersion": "1.0.0.0",
+    "notificationServiceHost": "notificationservice.app1.veery.cloud",
+    "notificationServicePort": "8089",
+    "notificationServiceVersion": "1.0.0.0"
   },
 
   "Tenant": {

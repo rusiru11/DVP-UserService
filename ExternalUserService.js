@@ -185,15 +185,6 @@ function CreateExternalUser(req, res) {
             lastname: req.body.lastname,
             locale: req.body.locale,
             ssn: req.body.ssn,
-            address: {
-                zipcode: req.body.address.zipcode,
-                number: req.body.address.number,
-                street: req.body.address.street,
-                city: req.body.address.city,
-                province: req.body.address.province,
-                country: req.body.address.country
-
-            },
             phone: req.body.phone,
             email: req.body.email,
             company: parseInt(req.user.company),
@@ -204,6 +195,17 @@ function CreateExternalUser(req, res) {
             contacts: [],
             custom_fields: []
         });
+
+        if (req.body.address) {
+            extUser.address = {
+                zipcode: req.body.address.zipcode,
+                number: req.body.address.number,
+                street: req.body.address.street,
+                city: req.body.address.city,
+                province: req.body.address.province,
+                country: req.body.address.country
+            }
+        }
 
         if (req.body.contacts) {
             req.body.contacts.map(function (item) {
@@ -1093,6 +1095,33 @@ function GetDefaultAccessibleFieldConfig(req, res) {
 
 }
 
+function GetUserFields(req, res) {
+
+
+    var jsonString;
+
+    try {
+
+        var propsKeys = ExternalUser.schema.paths;
+
+
+        /*propsKeys.splice(propsKeys.indexOf('created_at'),1);
+        propsKeys.splice(propsKeys.indexOf('updated_at'),1);
+        propsKeys.splice(propsKeys.indexOf('_id'),1);
+        propsKeys.splice(propsKeys.indexOf('__v'),1);*/
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Get External User Access Key Fields succeeded", true, propsKeys);
+        res.end(jsonString);
+
+    } catch (e) {
+
+        jsonString = messageFormatter.FormatMessage(e, "Error in operation : GetExternalUserAccessKeyFields", false, undefined);
+        res.end(jsonString);
+    }
+
+
+}
+
 module.exports.GetExternalUsers = GetExternalUsers;
 module.exports.GetExternalUser = GetExternalUser;
 module.exports.DeleteExternalUser = DeleteExternalUser;
@@ -1117,3 +1146,5 @@ module.exports.GetAccessibleFieldConfig = GetAccessibleFieldConfig;
 module.exports.UpdateAccessibleFieldConfig = UpdateAccessibleFieldConfig;
 module.exports.AddAccessibleFieldConfig = AddAccessibleFieldConfig;
 module.exports.GetDefaultAccessibleFieldConfig = GetDefaultAccessibleFieldConfig;
+module.exports.GetUserFields = GetUserFields;
+

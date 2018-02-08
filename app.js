@@ -37,6 +37,7 @@ var secret = require('dvp-common/Authentication/Secret.js');
 var authorization = require('dvp-common/Authentication/Authorization.js');
 var Login = require("./Login");
 var ActiveDirectory = require('./ActiveDirectoryService');
+var UserInvitationService = require("./UserInvitationService")
 
 // tenant operations
 var tenantService=require("./TenantService");
@@ -206,6 +207,8 @@ app.post('/DVP/API/:version/UsersByRoles', jwt({secret: secret.Secret}),authoriz
 
 
 app.get('/DVP/API/:version/User/:name/exsists', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserExists);
+app.get('/DVP/API/:version/User/:name/invitable', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserInvitable);
+app.get('/DVP/API/:version/UserAccount/:name/exsists', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserAccountExists);
 
 app.delete('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), userService.DeleteUser);
 app.put('/DVP/API/:version/User/ReActivate/:username', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.ReActivateUser);
@@ -214,13 +217,13 @@ app.put('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorizati
 app.put('/DVP/API/:version/User/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.AddFileCategoryToUser);
 app.put('/DVP/API/:version/User/:user/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"write"}), userService.AddFileCategoryToSpecificUser);
 /*app.put('/DVP/API/:version/User/Allow/FileCategories', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.AddFileCategoriesToUser);*/
-app.del('/DVP/API/:version/User/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"delete"}), userService.RemoveFileCategoryFromUser);
-app.del('/DVP/API/:version/User/:user/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"delete"}), userService.RemoveFileCategoryFromSpecificUser);
+app.delete('/DVP/API/:version/User/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"delete"}), userService.RemoveFileCategoryFromUser);
+app.delete('/DVP/API/:version/User/:user/FileCategory/:category', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"delete"}), userService.RemoveFileCategoryFromSpecificUser);
 app.get('/DVP/API/:version/FileCategories', jwt({secret: secret.Secret}),authorization({resource:"userfilecategory", action:"read"}), userService.GetFileCategories);
 
 
 
-app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({resource:"externaluser", action:"write"}), userService.CreateExternalUser);
+//app.post('/DVP/API/:version/User', jwt({secret: secret.Secret}),authorization({resource:"externaluser", action:"write"}), userService.CreateExternalUser);
 
 
 //////////////////////////////Organisation API/////////////////////////////////////////////////////
@@ -258,25 +261,21 @@ app.delete('/DVP/API/:version/User/:name/profile/contact/:contact', jwt({secret:
 
 app.put('/DVP/API/:version/Myprofile/contact/:contact', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}), userService.UpdateMyUserProfileContact);
 app.delete('/DVP/API/:version/Myprofile/contact/:contact', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"delete"}), userService.RemoveMyUserProfileContact);
-
 app.get('/DVP/API/:version/Organisation/Name/:tenant/:company', jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"read"}), organisationService.GetOrganisationName);
-
 app.get('/DVP/API/:version/Organisations', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetOrganisations);
-
 app.get('/DVP/API/:version/Organisations/:page/:size', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetOrganisationsWithPaging);
-
 app.get('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetOrganisation);
 app.delete('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"delete"}), organisationService.DeleteOrganisation);
 app.put('/DVP/API/:version/Organisation/Activate/:state', jwt({secret: secret.Secret}),authorization({resource:"organisationManage", action:"write"}), organisationService.ActivateOrganisation);
 
 
-app.post('/DVP/API/:version/Organisation', passport.authenticate('local', { session: false }), organisationService.CreateOrganisation);
+//app.post('/DVP/API/:version/Organisation', passport.authenticate('local', { session: false }), organisationService.CreateOrganisation);
 
 
 
 app.get('/DVP/API/:version/Organization/:company/exists', organisationService.IsOrganizationExists);
 
-app.post('/DVP/API/:version/Organisation/Owner', organisationService.CreateOwner);
+//app.post('/DVP/API/:version/Organisation/Owner', organisationService.CreateOwner);
 app.put('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.UpdateOrganisation);
 app.put('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.AssignPackageToOrganisation);
 app.delete('/DVP/API/:version/Organisation/Package/:packageName', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.RemovePackageFromOrganisation);
@@ -456,7 +455,9 @@ app.post('/DVP/API/:version/ActiveDirectory/FaceTone/User', jwt({secret: secret.
 
 app.post('/DVP/API/:version/BusinessUnit', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.AddBusinessUnit);
 app.put('/DVP/API/:version/BusinessUnit/:unitname', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.UpdateBusinessUnit);
+app.put('/DVP/API/:version/BusinessUnit/:unitname/Groups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.UpdateBusinessUnitUserGroups);
 app.get('/DVP/API/:version/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnits);
+app.get('/DVP/API/:version/BusinessUnitsWithGroups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnitsWithGroups);
 app.get('/DVP/API/:version/BusinessUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnit);
 
 app.get('/DVP/API/:version/Supervisor/:sid/Groups', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), userGroupService.GetSupervisorUserGroups);
@@ -464,13 +465,30 @@ app.put('/DVP/API/:version/BusinessUnit/:name/Head/:hid', jwt({secret: secret.Se
 app.put('/DVP/API/:version/BusinessUnit/:name/Heads', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadsToBusinessUnit);
 app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetSupervisorBusinessUnits);
 app.get('/DVP/API/:version/BusinessUnit/:name/Users', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetUsersOfBusinessUnits);
+app.get('/DVP/API/:version/MyBusinessUnit', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetMyBusinessUnit);
 
 
 app.get('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetAccessibleFieldConfig);
 app.put('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateAccessibleFieldConfig);
 app.post('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.AddAccessibleFieldConfig);
 app.get('/DVP/API/:version/ExternalUserConfig/DefaultKeys', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetDefaultAccessibleFieldConfig);
+app.get('/DVP/API/:version/ExternalUserConfig/UserFields', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetUserFields);
 
+
+
+
+
+
+app.get('/DVP/API/:version/ReceivedInvitations',jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}),UserInvitationService.GetMyReceivedInvitations);
+app.get('/DVP/API/:version/SendInvitations',jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}),UserInvitationService.GetMySendInvitations);
+app.post('/DVP/API/:version/Invitation/to/:to',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.CreateInvitation);
+app.get('/DVP/API/:version/Invitation/:id',jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}),UserInvitationService.GetInvitation);
+app.put('/DVP/API/:version/Invitation/Accept/:id/company/:company/tenant/:tenant',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),UserInvitationService.AcceptUserInvitation);
+app.put('/DVP/API/:version/Invitation/Reject/:id/company/:company/tenant/:tenant',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),UserInvitationService.RejectUserInvitation);
+app.put('/DVP/API/:version/Invitation/Cancel/:id',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.CancelUserInvitation);
+app.put('/DVP/API/:version/Invitation/Resend/:id',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.ResendUserInvitation);
+
+app.put('/DVP/API/:version/UserAccount/:username/Activation/:state',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),userService.UserAcccountActivation);
 
 
 
