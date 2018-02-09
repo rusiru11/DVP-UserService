@@ -436,6 +436,9 @@ function GetJWT(user, scopesx, client_id, type, req, done){
                 payload.company = user.company;
                 //payload.aud = client.name;
 
+                if(user.companyName)
+                    payload.companyName = user.companyName;
+
                 var scopes = GetScopes(user, scopesx);
                 payload.context = scopes.context;
                 payload.scope = scopes.scope;
@@ -520,7 +523,7 @@ module.exports.Login =  function(req, res) {
                     //user = user.toObject();
                     user._doc.tenant = org.tenant;
                     user._doc.company = org.id;
-                    user._doc.companyName = org.companyName;
+                    user.companyName = org.companyName;
                     user._doc.multi_login = account.multi_login;
                     user._doc.user_meta = account.user_meta;
                     user._doc.app_meta = account.app_meta;
