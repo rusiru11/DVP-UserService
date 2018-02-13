@@ -515,7 +515,7 @@ module.exports.Login =  function(req, res) {
                         return res.status(401).send({message: 'Invalid user account'});
                     }
 
-                    if(account.verified != true || account.active != true ){
+                    if((config.auth.login_verification === true || config.auth.login_verification === 'true') && (account.verified != true || account.active != true )){
                         return res.status(401).send({message: 'User account is not active'});
                     }
 
