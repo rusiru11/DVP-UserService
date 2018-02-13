@@ -379,6 +379,9 @@ function GetJWT(user, scopesx, client_id, type, req, done){
                     payload.exp = expin;
                     payload.tenant = user.tenant;
                     payload.company = user.company;
+
+                    if(user.companyName)
+                        payload.companyName = user.companyName;
                     //payload.aud = client.name;
 
                     var scopes = GetScopes(user, scopesx);
@@ -432,6 +435,9 @@ function GetJWT(user, scopesx, client_id, type, req, done){
                 payload.tenant = user.tenant;
                 payload.company = user.company;
                 //payload.aud = client.name;
+
+                if(user.companyName)
+                    payload.companyName = user.companyName;
 
                 var scopes = GetScopes(user, scopesx);
                 payload.context = scopes.context;
@@ -509,7 +515,7 @@ module.exports.Login =  function(req, res) {
                         return res.status(401).send({message: 'Invalid user account'});
                     }
 
-                    if(account.verified != true || account.active != true ){
+                    if((config.auth.login_verification === true || config.auth.login_verification === 'true') && (account.verified != true || account.active != true )){
                         return res.status(401).send({message: 'User account is not active'});
                     }
 
@@ -517,6 +523,7 @@ module.exports.Login =  function(req, res) {
                     //user = user.toObject();
                     user._doc.tenant = org.tenant;
                     user._doc.company = org.id;
+                    user.companyName = org.companyName;
                     user._doc.multi_login = account.multi_login;
                     user._doc.user_meta = account.user_meta;
                     user._doc.app_meta = account.app_meta;
