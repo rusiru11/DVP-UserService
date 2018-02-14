@@ -128,6 +128,11 @@ module.exports = {
         "activeTenant": "ACTIVE_TENANT"
     },
 
+    "Cluster": "HOST_CLUSTER",
+    "Provision": "HOST_PROVISION_MECHANISM",
+    "ClusterCompany": "HOST_CLUSTER_COMPANY",
+    "ClusterTenant": "HOST_CLUSTER_TENANT",
+
     "ActiveDirectory": {
         "groupName": "AD_GROUPNAME"
     }

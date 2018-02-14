@@ -419,7 +419,7 @@ function DeleteOrganisation(req,res){
 //     });
 // }
 
-var AssignPackageToOrganisationLib = function(company, tenant, packageName, requestedUser, callback){
+var AssignPackageToOrganisationLib = function(company, tenant, packageName, requestedUser, addDefaultData, callback){
     logger.debug("DVP-UserService.AssignPackageToOrganisation Internal method ");
     logger.debug(packageName);
 
@@ -496,7 +496,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                                         typeExist.veeryPackage = vPackage._id;
                                                                         typeExist.buyDate = Date.now();
 
-                                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, function (jsonResponse) {
+                                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, addDefaultData, function (jsonResponse) {
                                                                             callback(jsonResponse);
                                                                         });
                                                                     } else {
@@ -529,7 +529,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                             } else {
                                                                 if (response) {
                                                                     if (response.IsSuccess) {
-                                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, function (jsonResponse) {
+                                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, addDefaultData, function (jsonResponse) {
                                                                             callback(jsonResponse);
                                                                         });
                                                                     } else {
@@ -543,7 +543,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                             }
                                                         });
                                                     } else {
-                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, function (jsonResponse) {
+                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, addDefaultData, function (jsonResponse) {
                                                             callback(jsonResponse);
                                                         });
                                                     }
@@ -743,7 +743,7 @@ function ActivateOrganisation(req, res){
     });
 }
 
-var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, org, userAccountId, callback){
+var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, org, userAccountId, addDefaultData, callback){
     var jsonString;
 
     if(vPackage.spaceLimit && vPackage.spaceLimit.length >0){
@@ -831,7 +831,10 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
                 // UpdateUser(org.ownerId, vPackage);
                 UpdateUser(userAccountId, vPackage);
                 AssignTaskToOrganisation(company, tenant, vPackage.veeryTask);
-                AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
+                if(addDefaultData)
+                {
+                    AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
+                }
                 jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
             }
             callback(jsonString);
@@ -859,7 +862,7 @@ function AssignPackageToOrganisation(req,res){
             res.end(jsonString);
         } else {
             if(userAccount) {
-                AssignPackageToOrganisationLib(orgId, tenant, req.params.packageName, userAccount.userref, function (jsonString) {
+                AssignPackageToOrganisationLib(orgId, tenant, req.params.packageName, userAccount.userref, false, function (jsonString) {
                     res.end(jsonString);
                 });
             }else{
@@ -915,9 +918,10 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
     var transferCodesUrl = util.format("http://%s/DVP/API/%s/SipUser/TransferCode",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointserviceVersion);
     var cloudEndUserUrl = util.format("http://%s/DVP/API/%s/CloudConfiguration/CloudEndUser",config.Services.clusterconfigserviceHost, config.Services.clusterconfigserviceVersion);
     if(validator.isIP(config.Services.resourceServiceHost))
+    //if(true)
     {
-        cloudEndUserUrl = util.format("http://%s:%s/DVP/API/%s/CloudConfiguration/CloudEndUser", config.Services.clusterconfigserviceHost, config.Services.sipuserendpointservicePort, config.Services.clusterconfigserviceVersion);
-        contextUrl = util.format("http://%s:%s/DVP/API/%s/SipUser/Context", config.Services.sipuserendpointserviceHost, config.Services.clusterconfigservicePort, config.Services.sipuserendpointserviceVersion);
+        cloudEndUserUrl = util.format("http://%s:%s/DVP/API/%s/CloudConfiguration/CloudEndUser", config.Services.clusterconfigserviceHost, config.Services.clusterconfigservicePort, config.Services.clusterconfigserviceVersion);
+        contextUrl = util.format("http://%s:%s/DVP/API/%s/SipUser/Context", config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointservicePort, config.Services.sipuserendpointserviceVersion);
         transferCodesUrl = util.format("http://%s:%s/DVP/API/%s/SipUser/TransferCode",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointservicePort, config.Services.sipuserendpointserviceVersion);
     }
     var companyInfo = util.format("%d:%d", tenant, company);
@@ -934,11 +938,30 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
             console.log(err);
         }
         else {
+            var clusterId = 1;
+            var provision = 1;
+
             var companyInfoForCloudEndUser = util.format("%d:%d", 1, 1);
+
+            if(config.Cluster)
+            {
+                clusterId = config.Cluster;
+            }
+
+            if(config.Provision)
+            {
+                provision = config.Provision;
+            }
+
+            if(config.ClusterCompany && config.ClusterTenant)
+            {
+                companyInfoForCloudEndUser = util.format("%d:%d", config.ClusterTenant, config.ClusterCompany);
+            }
+
             var cloudEndUserReqBody = {
-                ClusterID: 1,
+                ClusterID: clusterId,
                 Domain: domain,
-                Provision: 2,
+                Provision: provision,
                 ClientTenant: tenant,
                 ClientCompany: company
             };
@@ -1398,7 +1421,7 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
                                             callback(err, undefined);
                                         } else {
                                             //rUser.company = cid;
-                                            AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", user,function(jsonString){
+                                            AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", user, true, function(jsonString){
                                                 console.log(jsonString);
                                             });
                                             callback(undefined, user);
