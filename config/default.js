@@ -138,6 +138,9 @@ module.exports = {
     "sipuserendpointserviceHost": "127.0.0.1",
     "sipuserendpointservicePort": "8086",
     "sipuserendpointserviceVersion": "1.0.0.0",
+    "ruleserviceHost": "127.0.0.1",
+    "ruleservicePort": "8816",
+    "ruleserviceVersion": "1.0.0.0",
     "clusterconfigserviceHost": "127.0.0.1",
     "clusterconfigservicePort": "3636",
     "clusterconfigserviceVersion": "1.0.0.0",
@@ -153,10 +156,8 @@ module.exports = {
     "activeTenant": 1
   },
 
-  "Cluster": 2,
+  "ClusterCode": 2,
   "Provision": 1,
-  "ClusterCompany": 3,
-  "ClusterTenant": 1,
 
   "ActiveDirectory": {
     "groupName": "FaceTone"

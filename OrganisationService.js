@@ -741,7 +741,8 @@ function ActivateOrganisation(req, res){
         }
         res.end(jsonString);
     });
-}
+};
+
 
 var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, org, userAccountId, addDefaultData, callback){
     var jsonString;
@@ -834,6 +835,7 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
                 if(addDefaultData)
                 {
                     AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
+                    AddDefaultRule(company, tenant);
                 }
                 jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
             }
@@ -938,58 +940,76 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
             console.log(err);
         }
         else {
-            var clusterId = 1;
             var provision = 1;
 
             var companyInfoForCloudEndUser = util.format("%d:%d", 1, 1);
 
-            if(config.Cluster)
+            if(config.ClusterCode)
             {
-                clusterId = config.Cluster;
+                if(config.Provision)
+                {
+                    provision = config.Provision;
+                }
+
+                var cloudEndUserReqBody = {
+                    ClusterCode: config.ClusterCode,
+                    Domain: domain,
+                    Provision: provision,
+                    ClientTenant: tenant,
+                    ClientCompany: company
+                };
+                console.log("Assign context Success: ", result);
+                restClientHandler.DoPost(companyInfoForCloudEndUser, cloudEndUserUrl, cloudEndUserReqBody, function (err, res1, result) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else {
+                        console.log("Assign cloudEndUser Success: ", result);
+                    }
+                });
+
+                var transferCodesBody = {
+                    InternalTransfer: 3,
+                    ExternalTransfer: 6,
+                    GroupTransfer: 4,
+                    ConferenceTransfer: 5
+                };
+
+                restClientHandler.DoPost(companyInfo, transferCodesUrl, transferCodesBody, function (err, res1, result) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else {
+                        console.log("Assign transfer codes Success: ", result);
+                    }
+                });
+            }
+            else
+            {
+                console.log("Cluster Code not set");
             }
 
-            if(config.Provision)
-            {
-                provision = config.Provision;
-            }
 
-            if(config.ClusterCompany && config.ClusterTenant)
-            {
-                companyInfoForCloudEndUser = util.format("%d:%d", config.ClusterTenant, config.ClusterCompany);
-            }
+        }
+    });
+}
 
-            var cloudEndUserReqBody = {
-                ClusterID: clusterId,
-                Domain: domain,
-                Provision: provision,
-                ClientTenant: tenant,
-                ClientCompany: company
-            };
-            console.log("Assign context Success: ", result);
-            restClientHandler.DoPost(companyInfoForCloudEndUser, cloudEndUserUrl, cloudEndUserReqBody, function (err, res1, result) {
-                if (err) {
-                    console.log(err);
-                }
-                else {
-                    console.log("Assign cloudEndUser Success: ", result);
-                }
-            });
+function AddDefaultRule(company, tenant){
+    var ruleserviceUrl = util.format("http://%s/DVP/API/%s/CallRuleApi/DefaultRule",config.Services.ruleserviceHost, config.Services.ruleserviceVersion);
 
-            var transferCodesBody = {
-                InternalTransfer: 3,
-                ExternalTransfer: 6,
-                GroupTransfer: 4,
-                ConferenceTransfer: 5
-            };
-
-            restClientHandler.DoPost(companyInfo, transferCodesUrl, transferCodesBody, function (err, res1, result) {
-                if (err) {
-                    console.log(err);
-                }
-                else {
-                    console.log("Assign transfer codes Success: ", result);
-                }
-            });
+    if(validator.isIP(config.Services.ruleserviceHost))
+    {
+        ruleserviceUrl = util.format("http://%s:%s/DVP/API/%s/CallRuleApi/DefaultRule",config.Services.ruleserviceHost, config.Services.ruleservicePort, config.Services.ruleserviceVersion);
+    }
+    var companyInfo = util.format("%d:%d", tenant, company);
+    restClientHandler.DoPost(companyInfo, ruleserviceUrl, null, function (err, res1, result) {
+        if (err)
+        {
+            console.log(err);
+        }
+        else
+        {
+            console.log("Add default rule result : ", result);
         }
     });
 }
