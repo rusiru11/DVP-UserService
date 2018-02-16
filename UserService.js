@@ -3851,22 +3851,37 @@ function GetFileCategories(req, res) {
 
     req.body.updated_at = Date.now();
 
+    if(req.user.company && req.user.tenant)
+    {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
 
-    DbConn.FileCategory.findAll({where: [{Visible: true}]}).then(function (resCat) {
+        DbConn.FileCategory.findAll({where: [{Visible: true},{Company:company},{Tenant:tenant}]}).then(function (resCat) {
 
-        if (resCat) {
-            jsonString = messageFormatter.FormatMessage(undefined, "File categories found", true, resCat);
+            if (resCat) {
+                jsonString = messageFormatter.FormatMessage(undefined, "File categories found", true, resCat);
+                res.end(jsonString);
+            }
+            else {
+                jsonString = messageFormatter.FormatMessage(new Error('No fule categories found'), "No fule categories found ", false, undefined);
+                res.end(jsonString);
+            }
+
+        }).catch(function (errCat) {
+            jsonString = messageFormatter.FormatMessage(errCat, "Error in searching file categories", false, undefined);
             res.end(jsonString);
-        }
-        else {
-            jsonString = messageFormatter.FormatMessage(new Error('No fule categories found'), "No fule categories found ", false, undefined);
-            res.end(jsonString);
-        }
-
-    }).catch(function (errCat) {
-        jsonString = messageFormatter.FormatMessage(errCat, "Error in searching file categories", false, undefined);
+        });
+    }
+    else
+    {
+        jsonString = messageFormatter.FormatMessage(new Error("No Company Tenant details found"), "No Company Tenant details found", false, undefined);
         res.end(jsonString);
-    });
+
+
+    }
+
+
+
 
 
 }
