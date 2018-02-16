@@ -839,6 +839,7 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
                     AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
                     AddDefaultRule(company, tenant);
                     AddDefaultTicketTypes(company, tenant);
+                    AddDefaultFileCategories(company, tenant);
                     businessUnitService.AddDefaultBusinessUnit(company, tenant, org.ownerRef.id);
                     externalUserService.AddDefaultAccessibleFields(company, tenant);
 
@@ -1020,6 +1021,42 @@ function AddDefaultRule(company, tenant){
         else
         {
             console.log("Add default rule result : ", result);
+        }
+    });
+}
+
+function AddDefaultFileCategories(company, tenant){
+
+    var arr ={FileCategories: [
+            {Category: 'CONVERSATION', Owner: "user", Visible: true, Encripted: true},
+            {Category: 'VOICEMAIL', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'HOLDMUSIC', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'IVRCLIPS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'TICKET_ATTACHMENTS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'REPORTS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'PROFILE_PICTURES', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'NOTICE_ATTACHMENTS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'CHAT_ATTACHMENTS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'FAX', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'EMAIL_ATTACHMENTS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'AGENT_GREETINGS', Owner: "user", Visible: true, Encripted: false}
+        ]};
+
+    var fileserviceUrl = util.format("http://%s/DVP/API/%s/FileService/FileCategory/Bulk",config.Services.fileserviceHost, config.Services.fileserviceVersion);
+
+    if(validator.isIP(config.Services.fileserviceHost))
+    {
+        fileserviceUrl = util.format("http://%s:%s/DVP/API/%s/FileService/FileCategory/Bulk",config.Services.fileserviceHost, config.Services.fileservicePort, config.Services.fileserviceVersion);
+    }
+    var compInfo = util.format("%d:%d", tenant, company);
+    restClientHandler.DoPost(compInfo, fileserviceUrl, arr, function (err, res1, result) {
+        if (err)
+        {
+            console.log(err);
+        }
+        else
+        {
+            console.log("Add file categories result : ", result);
         }
     });
 }
