@@ -141,6 +141,9 @@ module.exports = {
     "ruleserviceHost": "127.0.0.1",
     "ruleservicePort": "8816",
     "ruleserviceVersion": "1.0.0.0",
+    "liteticketHost": "127.0.0.1",
+    "liteticketPort": "3635",
+    "liteticketVersion": "1.0.0.0",
     "clusterconfigserviceHost": "127.0.0.1",
     "clusterconfigservicePort": "3636",
     "clusterconfigserviceVersion": "1.0.0.0",
@@ -156,7 +159,7 @@ module.exports = {
     "activeTenant": 1
   },
 
-  "ClusterCode": 2,
+  "ClusterName": "DemoCloud",
   "Provision": 1,
 
   "ActiveDirectory": {

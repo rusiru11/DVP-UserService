@@ -108,6 +108,51 @@ function AddBusinessUnit(req,res) {
 
 
 };
+
+function AddDefaultBusinessUnit(companyId, tenantId, ownerRef) {
+
+    try {
+        logger.debug("DVP-BusinessUnitService.AddDefaultBusinessUnit Internal method ");
+
+        var unitObj =
+        {
+            unitName: 'ALL',
+            description: 'ALL',
+            created_at: Date.now(),
+            company: companyId,
+            tenant: tenantId
+        };
+
+        var ObjectId = mongoose.Types.ObjectId;
+
+        var arr = [];
+
+        arr.push(new ObjectId(ownerRef));
+
+        unitObj.heads = arr;
+
+        var BzUnit = BusinessUnit(unitObj);
+
+        BzUnit.save(function (errUnit, resUnit) {
+
+            if (errUnit) {
+                logger.error(messageFormatter.FormatMessage(errUnit, "Error in saving new Business Unit ", false, null));
+            }
+            else {
+                logger.info(messageFormatter.FormatMessage(null, "Default business unit added", true, null));
+            }
+        });
+
+
+
+    }
+    catch (e)
+    {
+        logger.error(messageFormatter.FormatMessage(e, "Error in saving new Business Unit ", false, null), e);
+    }
+
+};
+
 function UpdateBusinessUnit(req,res) {
 
     try {
@@ -802,3 +847,4 @@ module.exports.GetUsersOfBusinessUnits=GetUsersOfBusinessUnits;
 module.exports.GetBusinessUnitsWithGroups=GetBusinessUnitsWithGroups;
 module.exports.GetMyBusinessUnit=GetMyBusinessUnit;
 module.exports.UpdateBusinessUnitUserGroups=UpdateBusinessUnitUserGroups;
+module.exports.AddDefaultBusinessUnit = AddDefaultBusinessUnit;

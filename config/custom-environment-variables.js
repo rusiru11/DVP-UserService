@@ -119,6 +119,9 @@ module.exports = {
         "ruleserviceHost": "SYS_RULESERVICE_HOST",
         "ruleservicePort": "SYS_RULESERVICE_PORT",
         "ruleserviceVersion": "SYS_RULESERVICE_VERSION",
+        "liteticketHost": "SYS_LITETICKET_HOST",
+        "liteticketPort": "SYS_LITETICKET_PORT",
+        "liteticketVersion": "SYS_LITETICKET_VERSION",
         "clusterconfigserviceHost": "SYS_CLUSTERCONFIG_HOST",
         "clusterconfigservicePort": "SYS_CLUSTERCONFIG_PORT",
         "clusterconfigserviceVersion": "SYS_CLUSTERCONFIG_VERSION",
@@ -131,7 +134,7 @@ module.exports = {
         "activeTenant": "ACTIVE_TENANT"
     },
 
-    "ClusterCode": "HOST_CLUSTER_CODE",
+    "ClusterName": "HOST_CLUSTER_NAME",
     "Provision": "HOST_PROVISION_MECHANISM",
 
     "ActiveDirectory": {

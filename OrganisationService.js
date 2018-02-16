@@ -17,6 +17,8 @@ var validator = require('validator');
 var Tenant = require('dvp-mongomodels/model/Tenant').Tenant;
 var dbConn = require('dvp-dbmodels');
 var UserAccount = require('dvp-mongomodels/model/UserAccount');
+var businessUnitService = require('./BusinessUnitService.js');
+var externalUserService = require('./ExternalUserService.js');
 
 
 var redisip = config.Redis.ip;
@@ -836,6 +838,10 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
                 {
                     AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
                     AddDefaultRule(company, tenant);
+                    AddDefaultTicketTypes(company, tenant);
+                    businessUnitService.AddDefaultBusinessUnit(company, tenant, org.ownerRef.id);
+                    externalUserService.AddDefaultAccessibleFields(company, tenant);
+
                 }
                 jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
             }
@@ -918,14 +924,18 @@ function AssignTaskToOrganisation(company, tenant, taskList){
 function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
     var contextUrl = util.format("http://%s/DVP/API/%s/SipUser/Context",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointserviceVersion);
     var transferCodesUrl = util.format("http://%s/DVP/API/%s/SipUser/TransferCode",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointserviceVersion);
-    var cloudEndUserUrl = util.format("http://%s/DVP/API/%s/CloudConfiguration/CloudEndUser",config.Services.clusterconfigserviceHost, config.Services.clusterconfigserviceVersion);
-    if(validator.isIP(config.Services.resourceServiceHost))
-    //if(true)
+    var cloudEndUserUrl = util.format("http://%s/DVP/API/%s/CloudConfiguration/DefaultCloudEndUser",config.Services.clusterconfigserviceHost, config.Services.clusterconfigserviceVersion);
+    if(validator.isIP(config.Services.sipuserendpointserviceHost))
     {
-        cloudEndUserUrl = util.format("http://%s:%s/DVP/API/%s/CloudConfiguration/CloudEndUser", config.Services.clusterconfigserviceHost, config.Services.clusterconfigservicePort, config.Services.clusterconfigserviceVersion);
         contextUrl = util.format("http://%s:%s/DVP/API/%s/SipUser/Context", config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointservicePort, config.Services.sipuserendpointserviceVersion);
         transferCodesUrl = util.format("http://%s:%s/DVP/API/%s/SipUser/TransferCode",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointservicePort, config.Services.sipuserendpointserviceVersion);
     }
+
+    if(validator.isIP(config.Services.clusterconfigserviceHost))
+    {
+        cloudEndUserUrl = util.format("http://%s:%s/DVP/API/%s/CloudConfiguration/DefaultCloudEndUser", config.Services.clusterconfigserviceHost, config.Services.clusterconfigservicePort, config.Services.clusterconfigserviceVersion);
+    }
+
     var companyInfo = util.format("%d:%d", tenant, company);
     var contextReqBody = {
         ContextCat: 'INTERNAL',
@@ -944,7 +954,7 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
 
             var companyInfoForCloudEndUser = util.format("%d:%d", 1, 1);
 
-            if(config.ClusterCode)
+            if(config.ClusterName)
             {
                 if(config.Provision)
                 {
@@ -952,7 +962,7 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
                 }
 
                 var cloudEndUserReqBody = {
-                    ClusterCode: config.ClusterCode,
+                    ClusterName: config.ClusterName,
                     Domain: domain,
                     Provision: provision,
                     ClientTenant: tenant,
@@ -1001,8 +1011,8 @@ function AddDefaultRule(company, tenant){
     {
         ruleserviceUrl = util.format("http://%s:%s/DVP/API/%s/CallRuleApi/DefaultRule",config.Services.ruleserviceHost, config.Services.ruleservicePort, config.Services.ruleserviceVersion);
     }
-    var companyInfo = util.format("%d:%d", tenant, company);
-    restClientHandler.DoPost(companyInfo, ruleserviceUrl, null, function (err, res1, result) {
+    var compInfo = util.format("%d:%d", tenant, company);
+    restClientHandler.DoPost(compInfo, ruleserviceUrl, null, function (err, res1, result) {
         if (err)
         {
             console.log(err);
@@ -1010,6 +1020,30 @@ function AddDefaultRule(company, tenant){
         else
         {
             console.log("Add default rule result : ", result);
+        }
+    });
+}
+
+function AddDefaultTicketTypes(company, tenant){
+    var ticketserviceUrl = util.format("http://%s/DVP/API/%s/TicketTypes",config.Services.liteticketHost, config.Services.liteticketVersion);
+
+    if(validator.isIP(config.Services.liteticketHost))
+    {
+        ticketserviceUrl = util.format("http://%s:%s/DVP/API/%s/TicketTypes",config.Services.liteticketHost, config.Services.liteticketPort, config.Services.liteticketVersion);
+    }
+    var compInfo = util.format("%d:%d", tenant, company);
+
+    var obj = {
+        custom_types: []
+    };
+    restClientHandler.DoPost(compInfo, ticketserviceUrl, obj, function (err, res1, result) {
+        if (err)
+        {
+            console.log(err);
+        }
+        else
+        {
+            console.log("Add default ticket types : ", result);
         }
     });
 }
