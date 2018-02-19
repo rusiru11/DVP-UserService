@@ -135,11 +135,20 @@ module.exports = {
     "resourceServiceHost": "resourceservice.app.veery.cloud",
     "resourceServicePort": "8831",
     "resourceServiceVersion": "1.0.0.0",
-    "sipuserendpointserviceHost": "sipuserendpointservice.app.veery.cloud",
-    "sipuserendpointservicePort": "8831",
+    "sipuserendpointserviceHost": "127.0.0.1",
+    "sipuserendpointservicePort": "8086",
     "sipuserendpointserviceVersion": "1.0.0.0",
-    "clusterconfigserviceHost": "clusterconfig.app.veery.cloud",
-    "clusterconfigservicePort": "8831",
+    "ruleserviceHost": "127.0.0.1",
+    "ruleservicePort": "8816",
+    "ruleserviceVersion": "1.0.0.0",
+    "fileserviceHost": "127.0.0.1",
+    "fileservicePort": "5648",
+    "fileserviceVersion": "1.0.0.0",
+    "liteticketHost": "127.0.0.1",
+    "liteticketPort": "3635",
+    "liteticketVersion": "1.0.0.0",
+    "clusterconfigserviceHost": "127.0.0.1",
+    "clusterconfigservicePort": "3636",
     "clusterconfigserviceVersion": "1.0.0.0",
     "billingserviceHost": "billingservice.app.veery.cloud",
     "billingservicePort": "4444",
@@ -152,6 +161,9 @@ module.exports = {
   "Tenant": {
     "activeTenant": 1
   },
+
+  "ClusterName": "DemoCloud",
+  "Provision": 1,
 
   "ActiveDirectory": {
     "groupName": "FaceTone"

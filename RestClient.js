@@ -6,7 +6,8 @@ var request = require('request');
 var util = require('util');
 var config = require('config');
 var DoPost = function (companyInfo, serviceurl, postData, callback) {
-    var jsonStr = JSON.stringify(postData);
+
+
     var accessToken = util.format("bearer %s", config.Services.accessToken);
     var options = {
         url: serviceurl,
@@ -15,9 +16,13 @@ var DoPost = function (companyInfo, serviceurl, postData, callback) {
             'content-type': 'application/json',
             'authorization': accessToken,
             'companyinfo': companyInfo
-        },
-        body: jsonStr
+        }
     };
+
+    if(postData)
+    {
+        options.body = JSON.stringify(postData);
+    }
     try {
         request.post(options, function optionalCallback(err, httpResponse, body) {
             if (err) {
