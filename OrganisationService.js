@@ -1666,10 +1666,10 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                                                                         if(existingSpaceLimit && existingSpaceLimit.length > 0){
                                                                                             existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit + sLimit.spaceLimit;
-                                                                                            SetCompanySpaceLimit(tenant, company, sLimit.spaceType, existingSpaceLimit[0]);
+                                                                                            SetCompanySpaceLimit(org.tenant, org.id, sLimit.spaceType, existingSpaceLimit[0]);
                                                                                         }else{
                                                                                             spaceLimitsToAdd.push(sLimit);
-                                                                                            SetCompanySpaceLimit(tenant, company, sLimit.spaceType, sLimit);
+                                                                                            SetCompanySpaceLimit(org.tenant, org.id, sLimit.spaceType, sLimit);
                                                                                         }
                                                                                     });
 
