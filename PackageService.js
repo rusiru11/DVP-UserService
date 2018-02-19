@@ -204,7 +204,7 @@ function CreatePackageUnit(req, res){
         unitData: {},
         billingType: req.body.billingType,
         setupFee: req.body.setupFee,
-        unitprice: req.body.unitPrice,
+        unitprice: req.body.unitprice,
         created_at: Date.now(),
         updated_at: Date.now()
 
