@@ -180,6 +180,17 @@ function GetNewCompanyId(callback){
     });
 }
 
+function SetCompanySpaceLimit(tenant, company, spaceType, limit){
+    var spaceLimitKey = util.format('SpaceLimit:%d:%d:%s', tenant, company, spaceType);
+    client.set(spaceLimitKey, limit, function (err, result) {
+        if (err) {
+            logger.error("Set Company space limit in redis failed: "+ err);
+        } else {
+            logger.error("Set Company space limit in redis success.");
+        }
+    });
+}
+
 function GetOrganisations(req, res){
     logger.debug("DVP-UserService.GetOrganisations Internal method ");
 
@@ -759,9 +770,11 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
             if(existingSpaceLimit && existingSpaceLimit.length > 0){
                 if(existingSpaceLimit[0].spaceLimit < sLimit.spaceLimit) {
                     existingSpaceLimit[0].spaceLimit = sLimit.spaceLimit;
+                    SetCompanySpaceLimit(tenant,company, sLimit.spaceType, existingSpaceLimit[0].spaceLimit);
                 }
             }else{
                 spaceLimitsToAdd.push(sLimit);
+                SetCompanySpaceLimit(tenant,company, sLimit.spaceType, sLimit.spaceLimit);
             }
         });
 
@@ -1123,6 +1136,7 @@ function RemovePackageFromOrganisation(req,res){
 
                                 if(existingSpaceLimit && existingSpaceLimit.length > 0){
                                     existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit - sLimit.spaceLimit;
+                                    SetCompanySpaceLimit(tenant,company, sLimit.spaceType, existingSpaceLimit[0].spaceLimit);
                                 }
                             });
                         }
@@ -1652,8 +1666,10 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                                                                         if(existingSpaceLimit && existingSpaceLimit.length > 0){
                                                                                             existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit + sLimit.spaceLimit;
+                                                                                            SetCompanySpaceLimit(tenant, company, sLimit.spaceType, existingSpaceLimit[0].spaceLimit);
                                                                                         }else{
                                                                                             spaceLimitsToAdd.push(sLimit);
+                                                                                            SetCompanySpaceLimit(tenant, company, sLimit.spaceType, sLimit.spaceLimit);
                                                                                         }
                                                                                     });
 
