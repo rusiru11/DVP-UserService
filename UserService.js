@@ -900,7 +900,7 @@ function ReActivateUser(req, res) {
                             if (userAccount) {
 
                                 if (userAccount.user_meta.role) {
-                                    var userRole = user.user_meta.role.toLowerCase();
+                                    var userRole = userAccount.user_meta.role.toLowerCase();
                                     var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
                                     if (limitObj) {
                                         if (limitObj.accessLimit > limitObj.currentAccess.length) {
