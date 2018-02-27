@@ -134,7 +134,8 @@ module.exports = {
     },
 
     "Tenant": {
-        "activeTenant": "ACTIVE_TENANT"
+        "activeTenant": "ACTIVE_TENANT",
+        "activeCompany": "ACTIVE_COMPANY"
     },
 
     "ClusterName": "HOST_CLUSTER_NAME",

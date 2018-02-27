@@ -159,7 +159,8 @@ module.exports = {
   },
 
   "Tenant": {
-    "activeTenant": 1
+    "activeTenant": 1,
+    "activeCompany": 0
   },
 
   "ClusterName": "DemoCloud",
