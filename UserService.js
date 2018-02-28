@@ -807,8 +807,8 @@ function CreateUser(req, res) {
                                                                                             redisClient.expireat("activate" + ":" + token, parseInt((+new Date) / 1000) + 86400);
 
                                                                                             var sendObj = {
-                                                                                                "company": 0,
-                                                                                                "tenant": 1
+                                                                                                "company": config.Tenant.activeCompany,
+                                                                                                "tenant": config.Tenant.activeTenant
                                                                                             };
 
                                                                                             sendObj.to = req.body.mail;
