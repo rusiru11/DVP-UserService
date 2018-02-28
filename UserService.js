@@ -1156,8 +1156,8 @@ function UpdateUserProfilePassword(req, res) {
 
                             redisClient.expireat("reset" + ":" + token, parseInt((+new Date) / 1000) + 86400);
                             var sendObj = {
-                                "company": 0,
-                                "tenant": 1
+                                "company": config.Tenant.activeCompany,
+                                "tenant": config.Tenant.activeTenant
                             };
 
                             //existingUser.url = url;
