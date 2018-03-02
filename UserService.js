@@ -13,7 +13,7 @@ var config = require('config');
 var redis = require('ioredis');
 var bcrypt = require('bcryptjs');
 var DbConn = require('dvp-dbmodels');
-
+var UserAccount = require('dvp-mongomodels/model/UserAccount');
 
 
 var redisip = config.Redis.ip;
@@ -23,10 +23,9 @@ var redismode = config.Redis.mode;
 var redisdb = config.Redis.db;
 
 
-
-var redisSetting =  {
-    port:redisport,
-    host:redisip,
+var redisSetting = {
+    port: redisport,
+    host: redisip,
     family: 4,
     password: redispass,
     db: redisdb,
@@ -40,26 +39,26 @@ var redisSetting =  {
     }
 };
 
-if(redismode == 'sentinel'){
+if (redismode == 'sentinel') {
 
-    if(config.Redis.sentinels && config.Redis.sentinels.hosts && config.Redis.sentinels.port && config.Redis.sentinels.name){
+    if (config.Redis.sentinels && config.Redis.sentinels.hosts && config.Redis.sentinels.port && config.Redis.sentinels.name) {
         var sentinelHosts = config.Redis.sentinels.hosts.split(',');
-        if(Array.isArray(sentinelHosts) && sentinelHosts.length > 2){
+        if (Array.isArray(sentinelHosts) && sentinelHosts.length > 2) {
             var sentinelConnections = [];
 
-            sentinelHosts.forEach(function(item){
+            sentinelHosts.forEach(function (item) {
 
-                sentinelConnections.push({host: item, port:config.Redis.sentinels.port})
+                sentinelConnections.push({host: item, port: config.Redis.sentinels.port})
 
             })
 
             redisSetting = {
-                sentinels:sentinelConnections,
+                sentinels: sentinelConnections,
                 name: config.Redis.sentinels.name,
                 password: redispass
             }
 
-        }else{
+        } else {
 
             console.log("No enough sentinel servers found .........");
         }
@@ -69,26 +68,27 @@ if(redismode == 'sentinel'){
 
 var redisClient = undefined;
 
-if(redismode != "cluster") {
+if (redismode != "cluster") {
     redisClient = new redis(redisSetting);
-}else{
+} else {
 
     var redisHosts = redisip.split(",");
-    if(Array.isArray(redisHosts)){
+    if (Array.isArray(redisHosts)) {
 
 
         redisSetting = [];
-        redisHosts.forEach(function(item){
+        redisHosts.forEach(function (item) {
             redisSetting.push({
                 host: item,
                 port: redisport,
                 family: 4,
-                password: redispass});
+                password: redispass
+            });
         });
 
         var redisClient = new redis.Cluster([redisSetting]);
 
-    }else{
+    } else {
 
         redisClient = new redis(redisSetting);
     }
@@ -101,8 +101,7 @@ redisClient.on('error', function (err) {
 });
 
 
-
-function GetUsers(req, res){
+function GetUsers(req, res) {
 
 
     var company = parseInt(req.user.company);
@@ -112,29 +111,46 @@ function GetUsers(req, res){
     var jsonString;
     var queryString;
 
-    if(filterActive === 'all'){
-        queryString = {company: company, tenant: tenant, systemuser: true};
-    }else if(filterActive === 'false'){
-        queryString = {company: company, tenant: tenant, systemuser: true, Active: false};
-    }else{
-        queryString = {company: company, tenant: tenant, systemuser: true, Active: true};
+    if (filterActive === 'all') {
+        queryString = {company: company, tenant: tenant};
+    } else if (filterActive === 'false') {
+        queryString = {company: company, tenant: tenant, active: false};
+    } else {
+        queryString = {company: company, tenant: tenant, active: true};
     }
 
 
-    User.find(queryString)
-        .select("-password")
-        .exec( function(err, users) {
+    UserAccount.find(queryString).populate('userref', '-password')
+        .exec(function (err, userAccounts) {
             if (err) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
-            }else {
+            } else {
 
-                if (users) {
+                if (userAccounts && Array.isArray(userAccounts) ) {
 
+                    var users = userAccounts.map(function (userAccount) {
+                        if(userAccount.userref) {
+                            var user = userAccount.userref.toObject();
+
+                            user.group = userAccount.group;
+                            user.active = userAccount.active;
+                            user.joined = userAccount.joined;
+                            user.resourceid = userAccount.resource_id;
+                            user.veeryaccount = userAccount.veeryaccount;
+                            user.multi_login = userAccount.multi_login;
+                            user.allowoutbound = userAccount.allowoutbound;
+                            user.allowed_file_categories = userAccount.allowed_file_categories;
+                            user.user_meta = userAccount.user_meta;
+
+                            return user;
+                        }
+
+                    });
                     jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
-                }else{
+                } else {
 
                     jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
 
@@ -146,39 +162,39 @@ function GetUsers(req, res){
 
 }
 
-function GetExternalUsers(req, res){
+// function GetExternalUsers(req, res){
+//
+//
+//     var company = parseInt(req.user.company);
+//     var tenant = parseInt(req.user.tenant);
+//     var jsonString;
+//     User.find({company: company, tenant: tenant, systemuser: false})
+//         .select("-password")
+//         .exec( function(err, users) {
+//             if (err) {
+//
+//                 jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+//
+//             }else {
+//
+//                 if (users) {
+//
+//
+//                     jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+//
+//                 }else{
+//
+//                     jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+//
+//                 }
+//             }
+//
+//             res.end(jsonString);
+//         });
+//
+// }
 
-
-    var company = parseInt(req.user.company);
-    var tenant = parseInt(req.user.tenant);
-    var jsonString;
-    User.find({company: company, tenant: tenant, systemuser: false})
-        .select("-password")
-        .exec( function(err, users) {
-            if (err) {
-
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
-
-            }else {
-
-                if (users) {
-
-
-                    jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
-
-                }else{
-
-                    jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
-
-                }
-            }
-
-            res.end(jsonString);
-        });
-
-}
-
-function GetUser(req, res){
+function GetUser(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
@@ -187,18 +203,36 @@ function GetUser(req, res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    var query = {username: req.params.name,company: company, tenant: tenant};
+    var query = {user: req.params.name, company: company, tenant: tenant};
 
-    User.findOne(query)
-        .select("-password")
-        .exec( function(err, users) {
+    UserAccount.findOne(query).populate('userref', '-password').populate({path: 'group'})
+        .exec(function (err, userAccount) {
             if (err) {
 
-                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed", false, undefined);
 
-            }else{
+            } else {
 
-                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                //var users = userAccounts.map(function (userAccount) {
+                    var user = userAccount.userref.toObject();
+
+                    user.group = userAccount.group;
+                    user.active = userAccount.active;
+                    user.joined = userAccount.joined;
+                    user.resourceid = userAccount.resource_id;
+                    user.veeryaccount = userAccount.veeryaccount;
+                    user.multi_login = userAccount.multi_login;
+                    user.allowoutbound = userAccount.allowoutbound;
+                    user.allowed_file_categories = userAccount.allowed_file_categories;
+                    user.user_meta = userAccount.user_meta;
+                    user.app_meta = userAccount.app_meta;
+                    user.user_scopes = userAccount.user_scopes;
+                    user.client_scopes = userAccount.client_scopes;
+
+
+                //});
+
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, user);
 
             }
 
@@ -206,15 +240,9 @@ function GetUser(req, res){
         });
 
 
-
-
-
-
-
-
 }
 
-function GetUsersByIDs(req, res){
+function GetUsersByIDs(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsersByID Internal method ");
@@ -223,21 +251,35 @@ function GetUsersByIDs(req, res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    var query = {_id: {$in:req.query.id},company: company, tenant: tenant, Active: true};
+    var query = {userref: {$in: req.query.id}, company: company, tenant: tenant, active: true};
 
-    if(!util.isArray(req.query.id))
-        query = {_id: req.query.id,company: company, tenant: tenant, Active: true};
+    if (!util.isArray(req.query.id))
+        query = {userref: req.query.id, company: company, tenant: tenant, active: true};
 
 
-
-    User.findOne(query).select("-password")
-        .exec(  function(err, users) {
+    UserAccount.findOne(query).populate('userref', '-password')
+        .exec(function (err, userAccounts) {
             if (err) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-            }else{
+            } else {
 
+                var users = userAccounts.map(function (userAccount) {
+                    var user = userAccount.userref.toObject();
+
+                    user.group = userAccount.group;
+                    user.active = userAccount.active;
+                    user.joined = userAccount.joined;
+                    user.resourceid = userAccount.resource_id;
+                    user.veeryaccount = userAccount.veeryaccount;
+                    user.multi_login = userAccount.multi_login;
+                    user.allowoutbound = userAccount.allowoutbound;
+                    user.allowed_file_categories = userAccount.allowed_file_categories;
+
+                    return user;
+
+                });
 
                 jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
@@ -248,7 +290,7 @@ function GetUsersByIDs(req, res){
 
 }
 
-function GetUsersByRole(req, res){
+function GetUsersByRole(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsersByRole Internal method ");
@@ -257,23 +299,39 @@ function GetUsersByRole(req, res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    var query = {_id: {$in:req.query.id},company: company, tenant: tenant, Active: true};
+    var query = {_id: {$in: req.query.id}, company: company, tenant: tenant, active: true};
 
-    if(!util.isArray(req.query.id))
-        query = {_id: req.query.id,company: company, tenant: tenant, Active: true};
-
-
+    if (!util.isArray(req.query.id))
+        query = {_id: req.query.id, company: company, tenant: tenant, active: true};
 
 
-
-    User.find({company:company , tenant:tenant,'user_meta.role':req.params.role}).select("-password")
-        .exec(  function(err, users) {
+    UserAccount.find({
+        company: company,
+        tenant: tenant,
+        'user_meta.role': req.params.role
+    }).populate('userref', '-password')
+        .exec(function (err, userAccounts) {
             if (err) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
-            }else{
+            } else {
 
+                var users = userAccounts.map(function (userAccount) {
+                    var user = userAccount.userref.toObject();
+
+                    user.group = userAccount.group;
+                    user.active = userAccount.active;
+                    user.joined = userAccount.joined;
+                    user.resourceid = userAccount.resource_id;
+                    user.veeryaccount = userAccount.veeryaccount;
+                    user.multi_login = userAccount.multi_login;
+                    user.allowoutbound = userAccount.allowoutbound;
+                    user.allowed_file_categories = userAccount.allowed_file_categories;
+
+                    return user;
+
+                });
 
                 jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
@@ -284,7 +342,7 @@ function GetUsersByRole(req, res){
 
 }
 
-function GetUsersByRoles(req, res){
+function GetUsersByRoles(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsersByRoles Internal method ");
@@ -294,28 +352,41 @@ function GetUsersByRoles(req, res){
     var jsonString;
 
 
-
-
     var qObj = {
-        company:company,
-        tenant:tenant,
-        $or:[],
-        Active: true
-    }
+        company: company,
+        tenant: tenant,
+        $or: [],
+        active: true
+    };
 
     req.body.roles.forEach(function (item) {
-        qObj.$or.push({'user_meta.role':item});
+        qObj.$or.push({'user_meta.role': item});
     });
 
 
-    User.find(qObj).select("-password")
-        .exec(  function(err, users) {
+    UserAccount.find(qObj).populate('userref', '-password')
+        .exec(function (err, userAccounts) {
             if (err) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
-            }else{
+            } else {
 
+                var users = userAccounts.map(function (userAccount) {
+                    var user = userAccount.userref.toObject();
+
+                    user.group = userAccount.group;
+                    user.active = userAccount.active;
+                    user.joined = userAccount.joined;
+                    user.resourceid = userAccount.resource_id;
+                    user.veeryaccount = userAccount.veeryaccount;
+                    user.multi_login = userAccount.multi_login;
+                    user.allowoutbound = userAccount.allowoutbound;
+                    user.allowed_file_categories = userAccount.allowed_file_categories;
+
+                    return user;
+
+                });
 
                 jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
@@ -326,7 +397,79 @@ function GetUsersByRoles(req, res){
 
 }
 
-function UserExists(req, res){
+///UserInvitable
+
+function UserInvitable(req, res) {
+
+
+    logger.debug("DVP-UserService.UserInvitable Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    User.findOne({
+        username: req.params.name
+        //company: company,
+        //tenant: tenant
+    }).exec(function (err, user) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+            res.end(jsonString);
+
+        } else {
+
+
+            if (user) {
+                //jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
+
+
+
+                UserAccount.findOne({
+                    user: req.params.name,
+                    company: company,
+                    tenant: tenant
+                }).populate('userref', '-password').exec(function (err, userAccount) {
+                    if (err) {
+
+                        jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed", false, undefined);
+
+                    } else {
+
+
+                        if (userAccount) {
+                            jsonString = messageFormatter.FormatMessage(err, "Get User Account Successful", false, undefined);
+
+                        } else {
+
+                            jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed", true, undefined);
+
+                        }
+
+                    }
+
+                    res.end(jsonString);
+                });
+
+
+
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                res.end(jsonString);
+
+            }
+
+        }
+
+
+    });
+
+}
+
+
+function UserExists(req, res) {
 
 
     logger.debug("DVP-UserService.UserExists Internal method ");
@@ -334,19 +477,22 @@ function UserExists(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+    User.findOne({
+        username: req.params.name
+        //company: company,
+        //tenant: tenant
+    }).exec(function (err, user) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+        } else {
 
 
-            if(users)
-            {
+            if (user) {
                 jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
@@ -359,31 +505,65 @@ function UserExists(req, res){
 
 }
 
-function OwnerExists(req, res){
+
+function UserAccountExists(req, res) {
+
+
+    logger.debug("DVP-UserAccountExists.UserExists Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    UserAccount.findOne({
+        user: req.params.name,
+        company: company,
+        tenant: tenant
+    }).populate('userref', '-password').exec(function (err, userAccount) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+        } else {
+
+
+            if (userAccount) {
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+            }
+
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+function OwnerExists(req, res) {
 
 
     logger.debug("DVP-UserService.OwnerExsists Internal method ");
 
 
     var jsonString;
-    User.findOne({username: req.params.name}, function(err, users) {
+    User.findOne({username: req.params.name}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get Owner Failed", false, undefined);
 
-        }else{
+        } else {
 
             //var userObj = false;
-            if(users)
-            {
+            if (users) {
                 jsonString = messageFormatter.FormatMessage(err, "Get Owner Successful", true, undefined);
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(err, "Get Owner Failed", false, undefined);
             }
-
-
 
 
         }
@@ -393,7 +573,7 @@ function OwnerExists(req, res){
 
 }
 
-function DeleteUser(req,res){
+function DeleteUser(req, res) {
 
 
     logger.debug("DVP-UserService.DeleteUsers Internal method ");
@@ -402,24 +582,24 @@ function DeleteUser(req,res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({tenant: tenant, id: company}, function (err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
             console.log(jsonString);
         } else {
 
-            if(org.ownerId == req.params.name){
+            if (org.ownerId == req.params.name) {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Delete organization owner failed", false, undefined);
                 console.log(jsonString);
 
-            }else {
+            } else {
 
-                User.findOneAndUpdate({
-                    username: req.params.name,
+                UserAccount.findOneAndUpdate({
+                    user: req.params.name,
                     company: company,
                     tenant: tenant
-                }, {Active:false}, function (err, user) {
+                }, {active: false}, function (err, user) {
                     if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
                     } else {
@@ -458,163 +638,238 @@ function DeleteUser(req,res){
 
 }
 
-function CreateUser(req, res){
+function CreateUser(req, res) {
 
     logger.debug("DVP-UserService.CreateUser Internal method ");
     var jsonString;
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({tenant: tenant, id: company}, function (err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
             res.end(jsonString);
-        }else{
-            if(org){
-                if(req.body.role && req.body.mail){
+        } else {
+            if (org) {
+                if (req.body.role && req.body.mail) {
                     var userRole = req.body.role.toLowerCase();
                     var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
-                    if(limitObj){
-                        if(limitObj.accessLimit > limitObj.currentAccess.length){
+                    if (limitObj) {
+                        if (limitObj.accessLimit > limitObj.currentAccess.length) {
 
-                            if(!req.body.address)
-                            {
+                            if (!req.body.address) {
                                 req.body.address = {};
                             }
 
 
-                            var user = User({
-                                systemuser: true,
-                                title: req.body.title,
-                                name: req.body.name,
-                                avatar: req.body.avatar,
-                                birthday: req.body.birthday,
-                                Active: true,
-                                gender: req.body.gender,
-                                firstname: req.body.firstname,
-                                lastname: req.body.lastname,
-                                locale: req.body.locale,
-                                ssn: req.body.ssn,
-                                address:{
-                                    zipcode: req.body.address.zipcode,
-                                    number: req.body.address.number,
-                                    street: req.body.address.street,
-                                    city: req.body.address.city,
-                                    province: req.body.address.province,
-                                    country: req.body.address.country,
-
-
-                                },
-                                username: req.body.mail,
-                                password: req.body.password,
-                                phoneNumber: {contact:req.body.phone, type: "phone", verified: false},
-                                email:{contact:req.body.mail, type: "phone", verified: false},
-                                company: parseInt(req.user.company),
-                                tenant: parseInt(req.user.tenant),
-                                user_meta: {role: userRole},
-                                created_at: Date.now(),
-                                updated_at: Date.now()
-                            });
-
-                            if(config.auth.login_verification){
-
-                                user.verified = false;
-
-                            }else{
-
-                                user.verified = true;
-                            }
-
-
-
-                            user.save(function(err, user) {
+                            UserAccount.findOne({
+                                user: req.body.mail,
+                                company: company,
+                                tenant: tenant
+                            }).populate('userref', '-password').exec(function (err, userAccount) {
                                 if (err) {
-                                    jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+
+                                    jsonString = messageFormatter.FormatMessage(err, "Validate User Account Failed", false, undefined);
                                     res.end(jsonString);
-                                }else{
-                                    /*Org.findOneAndUpdate({company: company, tenant: tenant},{$filter: {input: "$consoleAccessLimits", as: "consoleAccessLimit", cond: { $eq: [ "$$consoleAccessLimit.accessType", userRole] }}, $addToSet :{$consoleAccessLimit : user.username}}, function(err, rUsers) {
-                                     if (err) {
-                                     user.remove(function (err) {});
-                                     jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
-                                     }else{
-                                     jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
-                                     }
-                                     res.end(jsonString);
-                                     });*/
 
-                                    limitObj.currentAccess.push(user.username);
-                                    Org.findOneAndUpdate({id: company, tenant: tenant},org, function(err, rOrg) {
-                                        if (err) {
-                                            user.remove(function (err) {});
-                                            jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
-                                        }else{
+                                } else {
 
-                                            if(config.auth.login_verification){
 
-                                                crypto.randomBytes(20, function (err, buf) {
-                                                    var token = buf.toString('hex');
+                                    if (userAccount) {
+                                        jsonString = messageFormatter.FormatMessage(err, "User Account Already Exists", false, undefined);
+                                        res.end(jsonString);
 
-                                                    var url = config.auth.ui_host + '#/activate/' + token;
+                                    } else {
 
-                                                    if(userRole == "agent"){
+                                        User.findOne({username: req.body.mail}).select('-password').exec(function (err, user) {
+                                            if (err) {
 
-                                                        url = config.auth.agent_host + '#/activate/' + token;
+                                                jsonString = messageFormatter.FormatMessage(err, "Validate User Failed", false, undefined);
+                                                res.end(jsonString);
+
+                                            } else {
+
+
+                                                if (user) {
+                                                    jsonString = messageFormatter.FormatMessage(err, "User Already Exists, Please send an invitation", false, undefined);
+                                                    res.end(jsonString);
+
+                                                } else {
+
+                                                    var user = User({
+                                                        tenant: org.tenant,
+                                                        company: org.id,
+                                                        systemuser: true,
+                                                        title: req.body.title,
+                                                        name: req.body.name,
+                                                        avatar: req.body.avatar,
+                                                        birthday: req.body.birthday,
+                                                        Active: true,
+                                                        gender: req.body.gender,
+                                                        firstname: req.body.firstname,
+                                                        lastname: req.body.lastname,
+                                                        locale: req.body.locale,
+                                                        ssn: req.body.ssn,
+                                                        address: {
+                                                            zipcode: req.body.address.zipcode,
+                                                            number: req.body.address.number,
+                                                            street: req.body.address.street,
+                                                            city: req.body.address.city,
+                                                            province: req.body.address.province,
+                                                            country: req.body.address.country
+
+
+                                                        },
+                                                        username: req.body.mail,
+                                                        password: req.body.password,
+                                                        phoneNumber: {
+                                                            contact: req.body.phone,
+                                                            type: "phone",
+                                                            verified: false
+                                                        },
+                                                        email: {contact: req.body.mail, type: "phone", verified: false},
+                                                        // company: parseInt(req.user.company),
+                                                        // tenant: parseInt(req.user.tenant),
+                                                        // user_meta: {role: userRole},
+                                                        created_at: Date.now(),
+                                                        updated_at: Date.now()
+                                                    });
+
+                                                    if (config.auth.login_verification) {
+
+                                                        user.verified = false;
+
+                                                    } else {
+
+                                                        user.verified = true;
                                                     }
 
-                                                    redisClient.set("activate"+":"+token,user._id ,function (err, val) {
+
+                                                    user.save(function (err, user) {
                                                         if (err) {
-
-                                                            jsonString = messageFormatter.FormatMessage(err, "Create activation token failed", false, user);
+                                                            jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
                                                             res.end(jsonString);
+                                                        } else {
+                                                            var userAccount = UserAccount({
+                                                                active: true,
+                                                                verified: false,
+                                                                joined: Date.now(),
+                                                                user: user.username,
+                                                                userref: user._id,
+                                                                tenant: org.tenant,
+                                                                company: org.id,
+                                                                user_meta: {role: userRole},
+                                                                app_meta: {},
+                                                                created_at: Date.now(),
+                                                                updated_at: Date.now(),
+                                                                multi_login: false
+                                                            });
 
-                                                        }else{
+                                                            userAccount.save(function (err, account) {
+                                                                if (err) {
+                                                                    user.remove(function (err) {
+                                                                    });
+                                                                    jsonString = messageFormatter.FormatMessage(err, "Create user account failed", false, undefined);
+                                                                    res.end(jsonString);
+                                                                } else {
+
+                                                                    limitObj.currentAccess.push(user.username);
+                                                                    Org.findOneAndUpdate({
+                                                                        id: company,
+                                                                        tenant: tenant
+                                                                    }, org, function (err, rOrg) {
+                                                                        if (err) {
+                                                                            user.remove(function (err) {
+                                                                            });
+                                                                            jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
+                                                                        } else {
+
+                                                                            if (config.auth.login_verification) {
+
+                                                                                crypto.randomBytes(20, function (err, buf) {
+                                                                                    var token = buf.toString('hex');
+
+                                                                                    var url = config.auth.ui_host + '#/activate/' + token;
+
+                                                                                    if (userRole == "agent") {
+
+                                                                                        url = config.auth.agent_host + '#/activate/' + token;
+                                                                                    }
+
+                                                                                    redisClient.set("activate" + ":" + token, user._id, function (err, val) {
+                                                                                        if (err) {
+
+                                                                                            jsonString = messageFormatter.FormatMessage(err, "Create activation token failed", false, user);
+                                                                                            res.end(jsonString);
+
+                                                                                        } else {
 
 
-                                                            redisClient.expireat("activate"+":"+token,  parseInt((+new Date)/1000) + 86400);
+                                                                                            redisClient.expireat("activate" + ":" + token, parseInt((+new Date) / 1000) + 86400);
 
-                                                            var sendObj = {
-                                                                "company": 0,
-                                                                "tenant": 1
-                                                            };
+                                                                                            var sendObj = {
+                                                                                                "company": 0,
+                                                                                                "tenant": 1
+                                                                                            };
 
-                                                            sendObj.to =  req.body.mail;
-                                                            sendObj.from = "no-reply";
-                                                            sendObj.template = "By-User Registration Confirmation";
-                                                            sendObj.Parameters = {username: user.username,
-                                                                created_at: new Date(),
-                                                                url:url}
+                                                                                            sendObj.to = req.body.mail;
+                                                                                            sendObj.from = "no-reply";
+                                                                                            sendObj.template = "By-User Registration Confirmation";
+                                                                                            sendObj.Parameters = {
+                                                                                                username: user.username,
+                                                                                                created_at: new Date(),
+                                                                                                url: url
+                                                                                            }
 
-                                                            PublishToQueue("EMAILOUT", sendObj)
+                                                                                            PublishToQueue("EMAILOUT", sendObj)
 
-                                                            jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
-                                                            res.end(jsonString);
+                                                                                            jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                                                            res.end(jsonString);
+                                                                                        }
+                                                                                    });
+
+                                                                                });
+                                                                            } else {
+
+                                                                                jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                                                res.end(jsonString);
+                                                                            }
+
+                                                                        }
+
+                                                                    });
+
+                                                                }
+                                                            });
+
+
                                                         }
                                                     });
 
-                                                });
-                                            }else{
+                                                }
 
-                                                jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
-                                                res.end(jsonString);
                                             }
 
-                                        }
+                                        });
 
-                                    });
+                                    }
+
                                 }
+
                             });
-                        }else{
+
+                        } else {
                             jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
                             res.end(jsonString);
                         }
-                    }else{
+                    } else {
                         jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
                         res.end(jsonString);
                     }
-                }else{
+                } else {
                     jsonString = messageFormatter.FormatMessage(err, "No User Role Found", false, undefined);
                     res.end(jsonString);
                 }
-            }else{
+            } else {
                 jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
                 res.end(jsonString);
             }
@@ -622,47 +877,46 @@ function CreateUser(req, res){
     });
 }
 
-function ReActivateUser(req, res){
+function ReActivateUser(req, res) {
 
     logger.debug("DVP-UserService.ReActivateUser Internal method ");
     var jsonString;
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({tenant: tenant, id: company}, function (err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
             res.end(jsonString);
-        }else{
-            if(org){
-                User.findOne({company: company, tenant: tenant, username: req.params.username, Active: false})
-                    .select("-password")
-                    .exec( function(err, user) {
+        } else {
+            if (org) {
+                UserAccount.findOne({company: company, tenant: tenant, user: req.params.username, active: false})
+                    .exec(function (err, userAccount) {
                         if (err) {
 
                             jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
                             res.end(jsonString);
-                        }else {
+                        } else {
 
-                            if (user) {
+                            if (userAccount) {
 
-                                if(user.user_meta.role){
+                                if (userAccount.user_meta.role) {
                                     var userRole = user.user_meta.role.toLowerCase();
                                     var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
-                                    if(limitObj){
-                                        if(limitObj.accessLimit > limitObj.currentAccess.length){
+                                    if (limitObj) {
+                                        if (limitObj.accessLimit > limitObj.currentAccess.length) {
 
-                                            User.findOneAndUpdate({
-                                                username: user.username,
+                                            UserAccount.findOneAndUpdate({
+                                                user: userAccount.user,
                                                 company: company,
                                                 tenant: tenant
-                                            }, {Active:true}, function (err, updatedUser) {
+                                            }, {active: true}, function (err, updatedUser) {
                                                 if (err) {
                                                     jsonString = messageFormatter.FormatMessage(err, "Re-Activate User Failed", false, undefined);
                                                 } else {
 
 
-                                                    if(updatedUser) {
-                                                        limitObj.currentAccess.push(updatedUser.username);
+                                                    if (updatedUser) {
+                                                        limitObj.currentAccess.push(updatedUser.user);
                                                         Org.findOneAndUpdate({
                                                             id: company,
                                                             tenant: tenant
@@ -677,31 +931,29 @@ function ReActivateUser(req, res){
 
                                                         });
                                                         jsonString = messageFormatter.FormatMessage(undefined, "Re-Activate User Success", true, undefined);
-                                                    }else{
+                                                    } else {
                                                         jsonString = messageFormatter.FormatMessage(undefined, "Re-Activate User Failed", true, undefined);
                                                     }
-
-
 
 
                                                 }
                                                 res.end(jsonString);
                                             });
 
-                                        }else{
+                                        } else {
                                             jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
                                             res.end(jsonString);
                                         }
-                                    }else{
+                                    } else {
                                         jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
                                         res.end(jsonString);
                                     }
-                                }else{
+                                } else {
                                     jsonString = messageFormatter.FormatMessage(err, "No User Role Found", false, undefined);
                                     res.end(jsonString);
                                 }
 
-                            }else{
+                            } else {
 
                                 jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
                                 res.end(jsonString);
@@ -711,7 +963,7 @@ function ReActivateUser(req, res){
 
                     });
 
-            }else{
+            } else {
                 jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
                 res.end(jsonString);
             }
@@ -719,68 +971,67 @@ function ReActivateUser(req, res){
     });
 }
 
-function CreateExternalUser(req, res) {
+// function CreateExternalUser(req, res) {
+//
+//     logger.debug("DVP-UserService.CreateUser Internal method ");
+//     var jsonString;
+//     var tenant = parseInt(req.user.tenant);
+//     var company = parseInt(req.user.company);
+//
+//     if(req.body) {
+//
+//         if (!req.body.address) {
+//             req.body.address = {};
+//         }
+//
+//
+//         var user = User({
+//             systemuser: false,
+//             name: req.body.name,
+//             avatar: req.body.avatar,
+//             birthday: req.body.birthday,
+//             gender: req.body.gender,
+//             firstname: req.body.firstname,
+//             lastname: req.body.lastname,
+//             locale: req.body.locale,
+//             ssn: req.body.ssn,
+//             address: {
+//                 zipcode: req.body.address.zipcode,
+//                 number: req.body.address.number,
+//                 street: req.body.address.street,
+//                 city: req.body.address.city,
+//                 province: req.body.address.province,
+//                 country: req.body.address.country,
+//             },
+//             username: req.body.username,
+//             phoneNumber: {contact: req.body.phone, type: "phone", verified: false},
+//             email: {contact: req.body.mail, type: "phone", verified: false},
+//             company: parseInt(req.user.company),
+//             tenant: parseInt(req.user.tenant),
+//             created_at: Date.now(),
+//             updated_at: Date.now()
+//         });
+//
+//
+//         user.save(function (err, user) {
+//             if (err) {
+//                 jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
+//
+//             } else {
+//                 jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
+//             }
+//             res.end(jsonString);
+//         });
+//     }else{
+//
+//         jsonString = messageFormatter.FormatMessage(undefined, "Requestbody empty", false, undefined);
+//         res.end(jsonString);
+//
+//
+//     }
+// }
 
-    logger.debug("DVP-UserService.CreateUser Internal method ");
-    var jsonString;
-    var tenant = parseInt(req.user.tenant);
-    var company = parseInt(req.user.company);
-
-    if(req.body) {
-
-        if (!req.body.address) {
-            req.body.address = {};
-        }
-
-
-        var user = User({
-            systemuser: false,
-            name: req.body.name,
-            avatar: req.body.avatar,
-            birthday: req.body.birthday,
-            gender: req.body.gender,
-            firstname: req.body.firstname,
-            lastname: req.body.lastname,
-            locale: req.body.locale,
-            ssn: req.body.ssn,
-            address: {
-                zipcode: req.body.address.zipcode,
-                number: req.body.address.number,
-                street: req.body.address.street,
-                city: req.body.address.city,
-                province: req.body.address.province,
-                country: req.body.address.country,
-            },
-            username: req.body.username,
-            phoneNumber: {contact: req.body.phone, type: "phone", verified: false},
-            email: {contact: req.body.mail, type: "phone", verified: false},
-            company: parseInt(req.user.company),
-            tenant: parseInt(req.user.tenant),
-            created_at: Date.now(),
-            updated_at: Date.now()
-        });
-
-
-        user.save(function (err, user) {
-            if (err) {
-                jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
-
-            } else {
-                jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, user);
-            }
-            res.end(jsonString);
-        });
-    }else{
-
-        jsonString = messageFormatter.FormatMessage(undefined, "Requestbody empty", false, undefined);
-        res.end(jsonString);
-
-
-    }
-}
-
-function UpdateUser(req, res){
-
+function UpdateUser(req, res) {
 
 
     logger.debug("DVP-UserService.UpdateUser Internal method ");
@@ -791,33 +1042,70 @@ function UpdateUser(req, res){
 
     req.body.updated_at = Date.now();
 
-    if(req.params.name) {
+    var userAccountObj = {
+        veeryaccount: req.body.veeryaccount,
+        allowoutbound: req.body.allowoutbound,
+        updated_at: req.body.updated_at
+    };
+
+    delete req.body.veeryaccount;
+    delete req.body.allowoutbound;
+
+    if (req.params.name) {
 
         User.findOneAndUpdate({
-            username:req.params.name,
-            company: company,
-            tenant: tenant
-        }, req.body, function (err, users) {
+            username: req.params.name
+        }, req.body, function (err, user) {
             if (err) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
+                res.end(jsonString);
 
             } else {
-                if(users)
-                {
-                    jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, users);
+                if (user) {
+                    user = user.toObject();
+                    UserAccount.findOneAndUpdate({
+                        user: req.params.name,
+                        company: company,
+                        tenant: tenant
+                    }, userAccountObj, function (err, userAccount) {
+                        if (err) {
+
+                            jsonString = messageFormatter.FormatMessage(err, "Update User Account Failed", false, undefined);
+
+                        } else {
+                            if (userAccount) {
+                                user.group = userAccount.group;
+                                user.active = userAccount.active;
+                                user.joined = userAccount.joined;
+                                user.resourceid = userAccount.resource_id;
+                                user.veeryaccount = userAccount.veeryaccount;
+                                user.multi_login = userAccount.multi_login;
+                                user.allowoutbound = userAccount.allowoutbound;
+                                user.allowed_file_categories = userAccount.allowed_file_categories;
+
+                                jsonString = messageFormatter.FormatMessage(err, "Update User Account Successful", true, user);
+                            }
+                            else {
+                                jsonString = messageFormatter.FormatMessage(err, "Update User Account Failed", false, undefined);
+                            }
+
+
+                        }
+
+                        res.end(jsonString);
+                    });
                 }
-                else
-                {
+                else {
                     jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
+                    res.end(jsonString);
                 }
 
 
             }
 
-            res.end(jsonString);
         });
-    }else{
+    } else {
 
         jsonString = messageFormatter.FormatMessage(new Error('Update User Failed Username empty'), "Update User Failed Username empty", false, undefined);
         res.end(jsonString);
@@ -826,15 +1114,14 @@ function UpdateUser(req, res){
 
 }
 
-
 function UpdateUserProfilePassword(req, res) {
 
     logger.debug("DVP-UserService.UpdateUserProfilePassword Internal method ");
 
-    var company = parseInt(req.user.company);
-    var tenant = parseInt(req.user.tenant);
-    var user = req.user.iss;
-    var jsonString;
+    // var company = parseInt(req.user.company);
+    // var tenant = parseInt(req.user.tenant);
+    // var user = req.user.iss;
+    // var jsonString;
 
     req.body.updated_at = Date.now();
 
@@ -843,9 +1130,7 @@ function UpdateUserProfilePassword(req, res) {
 
     if (req.params.name) {
         User.findOne({
-            username: req.params.name,
-            company: company,
-            tenant: tenant
+            username: req.params.name
         }, function (err, existingUser) {
             if (!existingUser || err) {
 
@@ -902,23 +1187,21 @@ function UpdateUserProfilePassword(req, res) {
     }
 }
 
-function UpdateMyPassword(req, res){
+function UpdateMyPassword(req, res) {
 
     logger.debug("DVP-UserService.UpdateUserPassword Internal method ");
 
-    var company = parseInt(req.user.company);
-    var tenant = parseInt(req.user.tenant);
+    // var company = parseInt(req.user.company);
+    // var tenant = parseInt(req.user.tenant);
     var user = req.user.iss;
     var jsonString;
 
     req.body.updated_at = Date.now();
 
-    if(user && req.body.oldpassword && req.body.newpassword) {
+    if (user && req.body.oldpassword && req.body.newpassword) {
 
         User.findOne({
-            username: user,
-            company: company,
-            tenant: tenant
+            username: user
 
         }, '+password', function (err, myprofile) {
 
@@ -934,7 +1217,7 @@ function UpdateMyPassword(req, res){
 
                 jsonString = messageFormatter.FormatMessage(err, "Update User Password Successful", true, undefined);
 
-                if(myprofile){
+                if (myprofile) {
 
                     myprofile.comparePassword(req.body.oldpassword, function (err, isMatch) {
                         if (!isMatch) {
@@ -942,13 +1225,13 @@ function UpdateMyPassword(req, res){
                             jsonString = messageFormatter.FormatMessage(err, "Update User Password Failed No User Found", false, undefined);
                             res.end(jsonString);
 
-                        }else{
+                        } else {
 
-                            bcrypt.genSalt(10, function(err, salt) {
-                                bcrypt.hash(req.body.newpassword, salt, function(err, hash) {
+                            bcrypt.genSalt(10, function (err, salt) {
+                                bcrypt.hash(req.body.newpassword, salt, function (err, hash) {
                                     User.findOneAndUpdate({
                                         _id: myprofile._id
-                                    }, {password:hash}, function (err, users) {
+                                    }, {password: hash}, function (err, users) {
                                         if (err) {
                                             jsonString = messageFormatter.FormatMessage(err, "Update User Password Failed", false, undefined);
                                         } else {
@@ -961,14 +1244,14 @@ function UpdateMyPassword(req, res){
                         }
                     });
 
-                }else{
+                } else {
 
                     jsonString = messageFormatter.FormatMessage(err, "Update User Password Failed No User Found", false, undefined);
                     res.end(jsonString);
                 }
             }
         });
-    }else{
+    } else {
 
         jsonString = messageFormatter.FormatMessage(err, "Update User Failed Username empty", false, undefined);
         res.end(jsonString);
@@ -977,7 +1260,7 @@ function UpdateMyPassword(req, res){
 
 }
 
-function GetMyrProfile(req, res){
+function GetMyrProfile(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
@@ -987,21 +1270,50 @@ function GetMyrProfile(req, res){
     var jsonString;
 
     try {
-        User.findOne({username: req.user.iss, company: company, tenant: tenant}).select("-password")
+        User.findOne({username: req.user.iss}).select("-password")
             .exec(function (err, users) {
                 if (err) {
 
                     jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                    res.end(jsonString);
 
                 } else {
 
-                    jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                    UserAccount.findOne({
+                        user: req.user.iss,
+                        tenant: tenant,
+                        company: company
+                    }).populate({path: 'group'}).exec(function (err, userAccount) {
+
+                        if (err) {
+
+                            jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed", false, undefined);
+
+                        } else {
+
+                            users = users.toObject();
+                            users.group = userAccount.group;
+                            users.active = userAccount.active;
+                            users.joined = userAccount.joined;
+                            users.resourceid = userAccount.resource_id;
+                            users.veeryaccount = userAccount.veeryaccount;
+                            users.multi_login = userAccount.multi_login;
+                            users.allowed_file_categories = userAccount.allowed_file_categories;
+                            users.user_meta = userAccount.user_meta;
+
+                            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+
+                        }
+
+
+                        res.end(jsonString);
+
+                    });
 
                 }
 
-                res.end(jsonString);
             });
-    }catch(ex){
+    } catch (ex) {
 
         console.log(ex);
     }
@@ -1009,8 +1321,7 @@ function GetMyrProfile(req, res){
 
 }
 
-function UpdateMyUser(req, res){
-
+function UpdateMyUser(req, res) {
 
 
     logger.debug("DVP-UserService.UpdateUser Internal method ");
@@ -1021,23 +1332,48 @@ function UpdateMyUser(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: userName,company: company, tenant: tenant}, req.body, function(err, users) {
+    var userAccountObj = {
+        veeryaccount: req.body.veeryaccount,
+        allowoutbound: req.body.allowoutbound,
+        updated_at: req.body.updated_at
+    };
+
+    delete req.body.veeryaccount;
+    delete req.body.allowoutbound;
+
+    User.findOneAndUpdate({username: userName}, req.body, function (err, user) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
+            res.end(jsonString);
 
-        }else{
+        } else {
 
-            jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
+            UserAccount.findOneAndUpdate({
+                user: userName,
+                company: company,
+                tenant: tenant
+            }, userAccountObj, function (err, userAccount) {
+                if (err) {
+
+                    jsonString = messageFormatter.FormatMessage(err, "Update User Account Failed", false, undefined);
+
+                } else {
+
+                    jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
+
+                }
+
+                res.end(jsonString);
+            });
 
         }
 
-        res.end(jsonString);
     });
 
 }
 
-function GetUserProfileByResourceId(req, res){
+function GetUserProfileByResourceId(req, res) {
 
 
     logger.debug("DVP-UserService.GetUserProfileByResourceId Internal method ");
@@ -1048,17 +1384,29 @@ function GetUserProfileByResourceId(req, res){
     var jsonString;
 
 
-
-    User.findOne({resourceid: req.params.resourceid ,company: company, tenant: tenant}).select("-password")
-        .exec(   function(err, users) {
+    UserAccount.findOne({
+        resource_id: req.params.resourceid,
+        company: company,
+        tenant: tenant
+    }).populate('userref', '-password')
+        .exec(function (err, userAccount) {
             if (err) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-            }else{
+            } else {
 
+                var user = userAccount.userref.toObject();
+                user.group = userAccount.group;
+                user.active = userAccount.active;
+                user.joined = userAccount.joined;
+                user.resourceid = userAccount.resource_id;
+                user.veeryaccount = userAccount.veeryaccount;
+                user.multi_login = userAccount.multi_login;
+                user.allowoutbound = userAccount.allowoutbound;
+                user.allowed_file_categories = userAccount.allowed_file_categories;
 
-                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, user);
 
             }
 
@@ -1068,7 +1416,7 @@ function GetUserProfileByResourceId(req, res){
 
 }
 
-function GetUserProfileByContact(req, res){
+function GetUserProfileByContact(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
@@ -1079,54 +1427,86 @@ function GetUserProfileByContact(req, res){
     var contact = req.params.contact;
     var jsonString;
 
-    var queryObject = {company: company, tenant: tenant};
-    queryObject[category+".contact"] = contact
-    User.find(queryObject).select("-password")
-        .exec(   function(err, users) {
-            if (err) {
+    var queryObject = {};
+    queryObject[category + ".contact"] = contact;
 
-                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+    UserAccount.find({
+        tenant: tenant,
+        company: company
+    }).populate('userref', '-password').exec(function (err, userAccounts) {
+        if (err) {
 
-            }else{
+            jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed", false, undefined);
 
-                jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+        } else {
 
-            }
+            var users = [];
+            userAccounts.forEach(function (account) {
+                if (account.userref[category + ".contact"] === contact) {
+                    var user = account.userref.toObject();
+                    user.group = account.group;
+                    user.active = account.active;
+                    user.joined = account.joined;
+                    user.resourceid = account.resource_id;
+                    user.veeryaccount = account.veeryaccount;
+                    user.multi_login = account.multi_login;
+                    user.allowoutbound = account.allowoutbound;
+                    user.allowed_file_categories = account.allowed_file_categories;
 
-            res.end(jsonString);
-        });
+                    users.push(user);
+                }
+            });
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+
+        }
+    });
+    // User.find(queryObject).select("-password")
+    //     .exec(   function(err, users) {
+    //         if (err) {
+    //
+    //             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+    //
+    //         }else{
+    //
+    //             jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
+    //
+    //         }
+    //
+    //         res.end(jsonString);
+    //     });
 
 
 }
 
-function GetExternalUserProfile(req, res){
+// function GetExternalUserProfile(req, res){
+//
+//
+//     logger.debug("DVP-UserService.GetExternalUserProfile Internal method ");
+//
+//     var company = parseInt(req.user.company);
+//     var tenant = parseInt(req.user.tenant);
+//     var jsonString;
+//     User.findOne({username: req.params.name,company: company, tenant: tenant}).select("-password")
+//         .exec(   function(err, users) {
+//             if (err) {
+//
+//                 jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
+//
+//             }else{
+//
+//
+//                 jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
+//
+//             }
+//
+//             res.end(jsonString);
+//         });
+//
+//
+// }
 
-
-    logger.debug("DVP-UserService.GetExternalUserProfile Internal method ");
-
-    var company = parseInt(req.user.company);
-    var tenant = parseInt(req.user.tenant);
-    var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}).select("-password")
-        .exec(   function(err, users) {
-            if (err) {
-
-                jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
-
-            }else{
-
-
-                jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
-
-            }
-
-            res.end(jsonString);
-        });
-
-
-}
-
-function GetUserProfile(req, res){
+function GetUserProfile(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
@@ -1134,16 +1514,26 @@ function GetUserProfile(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}).select("-password")
-        .exec(  function(err, users) {
+    UserAccount.findOne({user: req.params.name, company: company, tenant: tenant}).populate('userref', '-password')
+        .exec(function (err, userAccount) {
             if (err) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-            }else{
+            } else {
 
+                var user = userAccount.userref.toObject();
 
-                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users);
+                user.group = userAccount.group;
+                user.active = userAccount.active;
+                user.joined = userAccount.joined;
+                user.resourceid = userAccount.resource_id;
+                user.veeryaccount = userAccount.veeryaccount;
+                user.multi_login = userAccount.multi_login;
+                user.allowoutbound = userAccount.allowoutbound;
+                user.allowed_file_categories = userAccount.allowed_file_categories;
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, user);
 
             }
 
@@ -1219,18 +1609,45 @@ function UpdateUserProfile(req, res) {
 
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, req.body, function (err, users) {
+
+    var userAccountObj = {
+        veeryaccount: req.body.veeryaccount,
+        allowoutbound: req.body.allowoutbound,
+        updated_at: req.body.updated_at
+    };
+
+    delete req.body.veeryaccount;
+    delete req.body.allowoutbound;
+
+
+    User.findOneAndUpdate({username: req.params.name}, req.body, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
+            res.end(jsonString);
 
         } else {
 
-            jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
+            UserAccount.findOneAndUpdate({
+                user: req.params.name,
+                company: company,
+                tenant: tenant
+            }, userAccountObj, function (err, userAccount) {
+                if (err) {
+
+                    jsonString = messageFormatter.FormatMessage(err, "Update User Account Failed", false, undefined);
+
+                } else {
+
+                    jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
+
+                }
+
+                res.end(jsonString);
+            });
 
         }
 
-        res.end(jsonString);
     });
 
 }
@@ -1298,23 +1715,49 @@ function UpdateMyUserProfile(req, res) {
 
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: userName, company: company, tenant: tenant}, req.body, function (err, users) {
+
+    var userAccountObj = {
+        veeryaccount: req.body.veeryaccount,
+        allowoutbound: req.body.allowoutbound,
+        updated_at: req.body.updated_at
+    };
+
+    delete req.body.veeryaccount;
+    delete req.body.allowoutbound;
+
+    User.findOneAndUpdate({username: userName}, req.body, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Failed", false, undefined);
+            res.end(jsonString);
 
         } else {
 
-            jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
+            UserAccount.findOneAndUpdate({
+                user: userName,
+                company: company,
+                tenant: tenant
+            }, userAccountObj, function (err, userAccount) {
+                if (err) {
+
+                    jsonString = messageFormatter.FormatMessage(err, "Update User Account Failed", false, undefined);
+
+                } else {
+
+                    jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, undefined);
+
+                }
+
+                res.end(jsonString);
+            });
 
         }
 
-        res.end(jsonString);
     });
 
 }
 
-function GetMyARDSFriendlyContactObject(req,res){
+function GetMyARDSFriendlyContactObject(req, res) {
 
 
     logger.debug("DVP-UserService.GetARDSFriendlyContactObject Internal method ");
@@ -1324,13 +1767,16 @@ function GetMyARDSFriendlyContactObject(req,res){
     var username = req.user.iss;
     var contact = req.params.contact;
     var jsonString;
-    User.findOne({username: username,company: company, tenant: tenant}, function(err, users) {
+    UserAccount.findOne({
+        user: username,
+        company: company,
+        tenant: tenant
+    }).populate('userref', '-password').exec(function (err, userAccount) {
         if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+            jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed", false, undefined);
 
-        }else{
-
+        } else {
 
 
             var contactObj = {};
@@ -1353,44 +1799,42 @@ function GetMyARDSFriendlyContactObject(req,res){
 
 
             ////////////////////////////////////////////
-            if(users && users.contacts) {
+            //var users = userAccount.userref;
+            if (userAccount && userAccount[contact]) {
 
 
-                var contactinfo = users[contact];
+                var contactinfo = userAccount[contact];
 
-                contactObj.Profile = users.username;
+                contactObj.Profile = userAccount.user;
 
-                if(!contactinfo){
+                if (!contactinfo) {
 
 
-                    contactinfo = users.contacts.filter(function (item) {
+                    contactinfo = userAccount.userref.contacts.filter(function (item) {
                         return item.contact == contact;
                     });
-
 
 
                 }
 
 
-                if(contactinfo && contactinfo.contact){
-
-
+                if (contactinfo && contactinfo.contact) {
 
 
                     var infoArr = contactinfo.contact.split("@");
-                    if(infoArr.length > 1){
+                    if (infoArr.length > 1) {
 
                         contactObj.ContactName = infoArr[0];
-                        contactObj.Domain =  infoArr[1];
-                    }else{
+                        contactObj.Domain = infoArr[1];
+                    } else {
 
                         contactObj.ContactName = contactinfo.contact;
                     }
 
 
-                    if(contactinfo.display) {
+                    if (contactinfo.display) {
                         contactObj.Extention = contactinfo.display;
-                    }else{
+                    } else {
 
                         contactObj.Extention = contactObj.ContactName;
 
@@ -1401,7 +1845,7 @@ function GetMyARDSFriendlyContactObject(req,res){
                     contactObj.ContactType = "PUBLIC";
 
 
-                    if(contact == "veeryaccount")
+                    if (contact == "veeryaccount")
                         contactObj.ContactType = "PRIVATE";
 
                 }
@@ -1421,7 +1865,7 @@ function GetMyARDSFriendlyContactObject(req,res){
 
 }
 
-function GetARDSFriendlyContactObject(req,res){
+function GetARDSFriendlyContactObject(req, res) {
 
 
     logger.debug("DVP-UserService.GetARDSFriendlyContactObject Internal method ");
@@ -1430,13 +1874,16 @@ function GetARDSFriendlyContactObject(req,res){
     var tenant = parseInt(req.user.tenant);
     var contact = req.params.contact;
     var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+    UserAccount.findOne({
+        user: req.params.name,
+        company: company,
+        tenant: tenant
+    }).populate('userref', '-password').exec(function (err, userAccount) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
-
+        } else {
 
 
             var contactObj = {};
@@ -1459,14 +1906,15 @@ function GetARDSFriendlyContactObject(req,res){
 
 
             ////////////////////////////////////////////
-            if(users && users.contacts) {
+            var users = userAccount.userref;
+            if (users && users.contacts) {
 
 
                 var contactinfo = users[contact];
 
                 contactObj.Profile = users.username;
 
-                if(!contactinfo){
+                if (!contactinfo) {
 
 
                     contactinfo = users.contacts.filter(function (item) {
@@ -1474,29 +1922,26 @@ function GetARDSFriendlyContactObject(req,res){
                     });
 
 
-
                 }
 
 
-                if(contactinfo && contactinfo.contact){
-
-
+                if (contactinfo && contactinfo.contact) {
 
 
                     var infoArr = contactinfo.contact.split("@");
-                    if(infoArr.length > 1){
+                    if (infoArr.length > 1) {
 
                         contactObj.ContactName = infoArr[0];
-                        contactObj.Domain =  infoArr[1];
-                    }else{
+                        contactObj.Domain = infoArr[1];
+                    } else {
 
                         contactObj.ContactName = contactinfo.contact;
                     }
 
 
-                    if(contactinfo.display) {
+                    if (contactinfo.display) {
                         contactObj.Extention = contactinfo.display;
-                    }else{
+                    } else {
 
                         contactObj.Extention = contactObj.ContactName;
 
@@ -1507,7 +1952,7 @@ function GetARDSFriendlyContactObject(req,res){
                     contactObj.ContactType = "PUBLIC";
 
 
-                    if(contact == "veeryaccount")
+                    if (contact == "veeryaccount")
                         contactObj.ContactType = "PRIVATE";
 
                 }
@@ -1537,7 +1982,9 @@ function UpdateUserProfileEmail(req, res) {
 
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { email : {contact:req.params.email, type:"email", verified: false}}, function (err, users) {
+    User.findOneAndUpdate({
+        username: req.params.name
+    }, {email: {contact: req.params.email, type: "email", verified: false}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User email Failed", false, undefined);
@@ -1562,7 +2009,17 @@ function UpdateUserProfileContact(req, res) {
     var jsonString;
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { $addToSet :{contacts : {contact:req.params.contact, type:req.body.type, verified: false}}}, function (err, users) {
+    User.findOneAndUpdate({
+        username: req.params.name
+    }, {
+        $addToSet: {
+            contacts: {
+                contact: req.params.contact,
+                type: req.body.type,
+                verified: false
+            }
+        }
+    }, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User phone number Failed", false, undefined);
@@ -1578,7 +2035,7 @@ function UpdateUserProfileContact(req, res) {
 
 }
 
-function RemoveMyUserProfileContact(req, res){
+function RemoveMyUserProfileContact(req, res) {
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -1586,13 +2043,15 @@ function RemoveMyUserProfileContact(req, res){
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: userName,company: company, tenant: tenant},{ $pull: { 'contacts': {'contact':req.params.contact} } }, function(err, users) {
+    User.findOneAndUpdate({
+        username: userName
+    }, {$pull: {'contacts': {'contact': req.params.contact}}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Remove contact Failed", false, undefined);
 
 
-        }else{
+        } else {
 
             jsonString = messageFormatter.FormatMessage(undefined, "Remove contact successfully", false, undefined);
 
@@ -1615,7 +2074,17 @@ function UpdateMyUserProfileContact(req, res) {
     var jsonString;
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: userName,company: company, tenant: tenant}, { $addToSet :{contacts : {contact:req.params.contact, type:req.body.type, verified: false}}}, function (err, users) {
+    User.findOneAndUpdate({
+        username: userName
+    }, {
+        $addToSet: {
+            contacts: {
+                contact: req.params.contact,
+                type: req.body.type,
+                verified: false
+            }
+        }
+    }, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User phone number Failed", false, undefined);
@@ -1631,20 +2100,22 @@ function UpdateMyUserProfileContact(req, res) {
 
 }
 
-function RemoveUserProfileContact(req, res){
+function RemoveUserProfileContact(req, res) {
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ $pull: { 'contacts': {'contact':req.params.contact} } }, function(err, users) {
+    User.findOneAndUpdate({
+        username: req.params.name
+    }, {$pull: {'contacts': {'contact': req.params.contact}}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Remove contact Failed", false, undefined);
 
 
-        }else{
+        } else {
 
             jsonString = messageFormatter.FormatMessage(undefined, "Remove contact successfully", false, undefined);
 
@@ -1667,7 +2138,9 @@ function UpdateUserProfilePhone(req, res) {
 
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { phoneNumber : {contact:req.params.email, type:"voice", verified: false}}, function (err, users) {
+    User.findOneAndUpdate({
+        username: req.params.name
+    }, {phoneNumber: {contact: req.params.email, type: "voice", verified: false}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User phone number Failed", false, undefined);
@@ -1683,7 +2156,7 @@ function UpdateUserProfilePhone(req, res) {
 
 }
 
-function SetUserProfileResourceId(req, res){
+function SetUserProfileResourceId(req, res) {
 
     logger.debug("DVP-UserService.UpdateUser Internal method ");
 
@@ -1693,12 +2166,12 @@ function SetUserProfileResourceId(req, res){
 
 
     req.body.updated_at = Date.now();
-    if(req.params.name) {
-        User.findOneAndUpdate({
-            username: req.params.name,
+    if (req.params.name) {
+        UserAccount.findOneAndUpdate({
+            user: req.params.name,
             company: company,
             tenant: tenant
-        }, {resourceid: req.params.resourceid}, function (err, users) {
+        }, {resource_id: req.params.resourceid}, function (err, users) {
             if (err) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Update User resource id Failed", false, undefined);
@@ -1713,7 +2186,7 @@ function SetUserProfileResourceId(req, res){
 
             res.end(jsonString);
         });
-    }else{
+    } else {
 
         jsonString = messageFormatter.FormatMessage(err, "Update User resource id Failed Username empty", false, undefined);
         res.end(jsonString);
@@ -1722,11 +2195,11 @@ function SetUserProfileResourceId(req, res){
 
 }
 
-function FilterObjFromArray(itemArray, field, value){
+function FilterObjFromArray(itemArray, field, value) {
     var resultObj;
-    for(var i in itemArray){
+    for (var i in itemArray) {
         var item = itemArray[i];
-        if(item[field] == value){
+        if (item[field] == value) {
             resultObj = item;
             break;
         }
@@ -1736,7 +2209,7 @@ function FilterObjFromArray(itemArray, field, value){
 
 function UniqueArray(array) {
     var processed = [];
-    if(array && Array.isArray(array)) {
+    if (array && Array.isArray(array)) {
         for (var i = array.length - 1; i >= 0; i--) {
             if (array[i] != null) {
                 if (processed.indexOf(array[i]) < 0) {
@@ -1747,14 +2220,14 @@ function UniqueArray(array) {
             }
         }
         return array;
-    }else{
+    } else {
         return [];
     }
 }
 
 function UniqueObjectArray(array, field) {
     var processed = [];
-    if(array && Array.isArray(array)) {
+    if (array && Array.isArray(array)) {
         for (var i = array.length - 1; i >= 0; i--) {
             if (processed.indexOf(array[i][field]) < 0) {
                 processed.push(array[i][field]);
@@ -1763,53 +2236,64 @@ function UniqueObjectArray(array, field) {
             }
         }
         return array;
-    }else{
+    } else {
         return [];
     }
 }
 
-function AssignConsoleToUser(req,res){
+function AssignConsoleToUser(req, res) {
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var adminUserName = req.user.iss;
     var jsonString;
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({tenant: tenant, id: company}, function (err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Validate Organisation Failed", false, undefined);
             res.end(jsonString);
-        }else{
+        } else {
 
-            Console.findOne({consoleName: req.params.consoleName}, function(err, appConsole) {
+            Console.findOne({consoleName: req.params.consoleName}, function (err, appConsole) {
                 if (err) {
                     jsonString = messageFormatter.FormatMessage(err, "Validate Console Failed", false, undefined);
                     res.end(jsonString);
-                }else{
-                    User.findOne({username: adminUserName, company:company, tenant: tenant}, function(err, adminUser) {
+                } else {
+                    UserAccount.findOne({
+                        user: adminUserName,
+                        company: company,
+                        tenant: tenant
+                    }, function (err, adminUser) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
                             res.end(jsonString);
                         } else {
-                            User.findOne({username: req.params.username,company: company, tenant: tenant}, function(err, assignUser) {
+                            UserAccount.findOne({
+                                user: req.params.username,
+                                company: company,
+                                tenant: tenant
+                            }, function (err, assignUser) {
                                 if (err) {
                                     jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
                                     res.end(jsonString);
                                 } else {
-                                    if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
-                                        if(appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1){
-                                            var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
+                                    if (adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin") {
+                                        if (appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1) {
+                                            var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", assignUser.user_meta.role);
                                             //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
-                                            if(consoleAccessLimitObj) {
-                                                var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
-                                                if(consoleScope){
+                                            if (consoleAccessLimitObj) {
+                                                var consoleScope = FilterObjFromArray(assignUser.client_scopes, "consoleName", appConsole.consoleName);
+                                                if (consoleScope) {
                                                     jsonString = messageFormatter.FormatMessage(err, "Console Already Added", false, undefined);
                                                     res.end(jsonString);
-                                                }else{
-                                                    assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: []});
+                                                } else {
+                                                    assignUser.client_scopes.push({
+                                                        consoleName: appConsole.consoleName,
+                                                        menus: []
+                                                    });
                                                 }
 
 
-                                                User.findOneAndUpdate({
-                                                    username: req.params.username,
+                                                UserAccount.findOneAndUpdate({
+                                                    user: req.params.username,
                                                     company: company,
                                                     tenant: tenant
                                                 }, assignUser, function (err, rUser) {
@@ -1820,11 +2304,14 @@ function AssignConsoleToUser(req,res){
                                                         jsonString = messageFormatter.FormatMessage(undefined, "Assign Console successfull", true, undefined);
 
 
-                                                        var basicscopes = [{"scope": "myNavigation", "read": true}, {"scope": "myUserProfile", "read": true}];
+                                                        var basicscopes = [{
+                                                            "scope": "myNavigation",
+                                                            "read": true
+                                                        }, {"scope": "myUserProfile", "read": true}];
 
 
-                                                        User.findOneAndUpdate({
-                                                            username: req.params.username,
+                                                        UserAccount.findOneAndUpdate({
+                                                            user: req.params.username,
                                                             company: company,
                                                             tenant: tenant
                                                         }, {$addToSet: {user_scopes: {$each: basicscopes}}}, function (err, rUsers) {
@@ -1855,16 +2342,16 @@ function AssignConsoleToUser(req,res){
                                                     }
 
                                                 });
-                                            }else{
+                                            } else {
                                                 //jsonString = messageFormatter.FormatMessage(err, "Access Denied, Console Access Limit Exceeded", false, undefined);
                                                 jsonString = messageFormatter.FormatMessage(err, "Access Denied, No Console Access Limit Found", false, undefined);
                                                 res.end(jsonString);
                                             }
-                                        }else{
+                                        } else {
                                             jsonString = messageFormatter.FormatMessage(err, "Access Denied, No user permissions", false, undefined);
                                             res.end(jsonString);
                                         }
-                                    }else{
+                                    } else {
                                         jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
                                         res.end(jsonString);
                                     }
@@ -1878,56 +2365,64 @@ function AssignConsoleToUser(req,res){
     });
 }
 
-function RemoveConsoleFromUser(req,res){
+function RemoveConsoleFromUser(req, res) {
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var adminUserName = req.user.iss;
     var jsonString;
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({tenant: tenant, id: company}, function (err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Validate Organisation Failed", false, undefined);
             res.end(jsonString);
-        }else{
+        } else {
 
-            Console.findOne({consoleName: req.params.consoleName}, function(err, appConsole) {
+            Console.findOne({consoleName: req.params.consoleName}, function (err, appConsole) {
                 if (err) {
                     jsonString = messageFormatter.FormatMessage(err, "Validate Console Failed", false, undefined);
                     res.end(jsonString);
-                }else{
-                    User.findOne({username: adminUserName, company:company, tenant: tenant}, function(err, adminUser) {
+                } else {
+                    UserAccount.findOne({
+                        user: adminUserName,
+                        company: company,
+                        tenant: tenant
+                    }, function (err, adminUser) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
                             res.end(jsonString);
                         } else {
-                            User.findOne({username: req.params.username,company: company, tenant: tenant}, function(err, assignUser) {
+                            UserAccount.findOne({
+                                user: req.params.username,
+                                company: company,
+                                tenant: tenant
+                            }, function (err, assignUser) {
                                 if (err) {
                                     jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
                                     res.end(jsonString);
                                 } else {
-                                    if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
-                                        if(appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1){
-                                            var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
+                                    if (adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin") {
+                                        if (appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1) {
+                                            var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", assignUser.user_meta.role);
                                             //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
-                                            if(consoleAccessLimitObj) {
-                                                var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
-                                                if(consoleScope){
-                                                    for(var i in assignUser.client_scopes) {
+                                            if (consoleAccessLimitObj) {
+                                                var consoleScope = FilterObjFromArray(assignUser.client_scopes, "consoleName", appConsole.consoleName);
+                                                if (consoleScope) {
+                                                    for (var i in assignUser.client_scopes) {
                                                         var cs = assignUser.client_scopes[i];
-                                                        if(cs.consoleName == appConsole.consoleName) {
+                                                        if (cs.consoleName == appConsole.consoleName) {
                                                             var index = parseInt(i);
                                                             //for(var k in cs.)
                                                             assignUser.client_scopes.splice(index, 1);
                                                             break;
                                                         }
                                                     }
-                                                }else{
+                                                } else {
                                                     jsonString = messageFormatter.FormatMessage(err, "Console Not Found", false, undefined);
                                                     res.end(jsonString);
                                                 }
 
 
-                                                User.findOneAndUpdate({
-                                                    username: req.params.username,
+                                                UserAccount.findOneAndUpdate({
+                                                    user: req.params.username,
                                                     company: company,
                                                     tenant: tenant
                                                 }, assignUser, function (err, rUser) {
@@ -1957,16 +2452,16 @@ function RemoveConsoleFromUser(req,res){
                                                     }
                                                     res.end(jsonString);
                                                 });
-                                            }else{
+                                            } else {
                                                 //jsonString = messageFormatter.FormatMessage(err, "Access Denied, Console Access Limit Exceeded", false, undefined);
                                                 jsonString = messageFormatter.FormatMessage(err, "Access Denied, No Console Access Limit Found", false, undefined);
                                                 res.end(jsonString);
                                             }
-                                        }else{
+                                        } else {
                                             jsonString = messageFormatter.FormatMessage(err, "Access Denied, No user permissions", false, undefined);
                                             res.end(jsonString);
                                         }
-                                    }else{
+                                    } else {
                                         jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
                                         res.end(jsonString);
                                     }
@@ -1980,28 +2475,32 @@ function RemoveConsoleFromUser(req,res){
     });
 }
 
-function AddUserScopes(req, res){
+function AddUserScopes(req, res) {
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var adminUserName = req.user.iss;
     var jsonString;
 
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({tenant: tenant, id: company}, function (err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Validate Organisation Failed", false, undefined);
             res.end(jsonString);
-        }else{
-            User.findOne({username: adminUserName,company: company, tenant: tenant}, function(err, adminUser) {
+        } else {
+            UserAccount.findOne({user: adminUserName, company: company, tenant: tenant}, function (err, adminUser) {
                 if (err) {
                     jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
                     res.end(jsonString);
                 } else {
-                    User.findOne({username: req.params.username,company: company, tenant: tenant}, function(err, assignUser) {
+                    UserAccount.findOne({
+                        user: req.params.username,
+                        company: company,
+                        tenant: tenant
+                    }, function (err, assignUser) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
                             res.end(jsonString);
                         } else {
-                            if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
+                            if (adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin") {
                                 /*
                                  assignUser.user_scopes.push(req.body);
                                  assignUser.user_scopes = UniqueObjectArray(assignUser.user_scopes,"scope");
@@ -2014,16 +2513,20 @@ function AddUserScopes(req, res){
                                  res.end(jsonString);
                                  });
                                  */
-                                User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ $addToSet :{user_scopes : req.body}}, function(err, rUsers) {
+                                UserAccount.findOneAndUpdate({
+                                    user: req.params.name,
+                                    company: company,
+                                    tenant: tenant
+                                }, {$addToSet: {user_scopes: req.body}}, function (err, rUsers) {
                                     if (err) {
                                         jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
-                                    }else{
+                                    } else {
                                         jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", true, undefined);
                                     }
                                     res.end(jsonString);
                                 });
                                 //{ $addToSet :{user_scopes : req.body}}
-                            }else{
+                            } else {
                                 jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
                                 res.end(jsonString);
                             }
@@ -2038,25 +2541,26 @@ function AddUserScopes(req, res){
     //Show.update({ "_id": showId },{ "$push": { "episodes": episodeData } },callback)
 
 
-
-
-
 }
 
-function RemoveUserScopes(req, res){
+function RemoveUserScopes(req, res) {
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "$pull": { "user_scopes": {"scope":req.params.scope} } }, function(err, users) {
+    UserAccount.findOneAndUpdate({
+        user: req.params.name,
+        company: company,
+        tenant: tenant
+    }, {"$pull": {"user_scopes": {"scope": req.params.scope}}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
 
 
-        }else{
+        } else {
 
             jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
 
@@ -2069,71 +2573,100 @@ function RemoveUserScopes(req, res){
 
 }
 
-function AddUserAppScopes(req, res){
+function AddUserAppScopes(req, res) {
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var adminUserName = req.user.iss;
     var jsonString;
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({tenant: tenant, id: company}, function (err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Validate Organisation Failed", false, undefined);
             res.end(jsonString);
-        }else{
+        } else {
 
-            Console.findOne({consoleName: req.params.consoleName}, function(err, appConsole) {
+            Console.findOne({consoleName: req.params.consoleName}, function (err, appConsole) {
                 if (err) {
                     jsonString = messageFormatter.FormatMessage(err, "Validate Console Failed", false, undefined);
                     res.end(jsonString);
-                }else{
-                    User.findOne({username: adminUserName, company:company, tenant: tenant}, function(err, adminUser) {
+                } else {
+                    UserAccount.findOne({
+                        user: adminUserName,
+                        company: company,
+                        tenant: tenant
+                    }, function (err, adminUser) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
                             res.end(jsonString);
                         } else {
-                            User.findOne({username: req.params.username,company: company, tenant: tenant}, function(err, assignUser) {
+                            UserAccount.findOne({
+                                user: req.params.username,
+                                company: company,
+                                tenant: tenant
+                            }, function (err, assignUser) {
                                 if (err) {
                                     jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
                                     res.end(jsonString);
                                 } else {
-                                    if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin"){
-                                        if(appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1){
-                                            var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits,"accessType",assignUser.user_meta.role);
+                                    if (adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin") {
+                                        if (appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1) {
+                                            var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", assignUser.user_meta.role);
                                             //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
-                                            if(consoleAccessLimitObj) {
-                                                var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
-                                                if(consoleScope){
-                                                    var menuItem = FilterObjFromArray(consoleScope.menus,"menuItem",req.body.menuItem);
-                                                    if(menuItem){
-                                                        for(var j=0; j<menuItem.menuAction.length; j++){
+                                            if (consoleAccessLimitObj) {
+                                                var consoleScope = FilterObjFromArray(assignUser.client_scopes, "consoleName", appConsole.consoleName);
+                                                if (consoleScope) {
+                                                    var menuItem = FilterObjFromArray(consoleScope.menus, "menuItem", req.body.menuItem);
+                                                    if (menuItem) {
+                                                        for (var j = 0; j < menuItem.menuAction.length; j++) {
                                                             var menuAction = FilterObjFromArray(menuItem.menuAction, "scope", req.body.menuAction[j].scope);
-                                                            if(menuAction){
-                                                                menuAction.read = (!req.body.menuAction[j].read)? false: req.body.menuAction[j].read;
-                                                                menuAction.write = (!req.body.menuAction[j].write)? false: req.body.menuAction[j].write;
-                                                                menuAction.delete = (!req.body.menuAction[j].delete)? false: req.body.menuAction[j].delete;
-                                                            }else{
+                                                            if (menuAction) {
+                                                                if (req.body.menuAction[j].read) {
+                                                                    menuAction.read = req.body.menuAction[j].read;
+                                                                }
+                                                                if (req.body.menuAction[j].write) {
+                                                                    menuAction.write = req.body.menuAction[j].write;
+                                                                }
+                                                                if (req.body.menuAction[j].delete) {
+                                                                    menuAction.delete = req.body.menuAction[j].delete;
+                                                                }
+                                                                // menuAction.read = (!req.body.menuAction[j].read)? false: req.body.menuAction[j].read;
+                                                                // menuAction.write = (!req.body.menuAction[j].write)? false: req.body.menuAction[j].write;
+                                                                // menuAction.delete = (!req.body.menuAction[j].delete)? false: req.body.menuAction[j].delete;
+                                                            } else {
                                                                 assignUser.user_scopes.push(req.body.menuAction);
                                                             }
                                                         }
-                                                    }else {
+                                                    } else {
                                                         consoleScope.menus.push(req.body);
                                                         consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
                                                     }
-                                                }else{
-                                                    assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: [req.body]});
+                                                } else {
+                                                    assignUser.client_scopes.push({
+                                                        consoleName: appConsole.consoleName,
+                                                        menus: [req.body]
+                                                    });
                                                 }
-                                                for(var i in req.body.menuAction){
+                                                for (var i in req.body.menuAction) {
                                                     var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction[i].scope);
-                                                    if(userScope){
-                                                        userScope.read = (!req.body.menuAction[i].read)? false: req.body.menuAction[i].read;
-                                                        userScope.write = (!req.body.menuAction[i].write)? false: req.body.menuAction[i].write;
-                                                        userScope.delete = (!req.body.menuAction[i].delete)? false: req.body.menuAction[i].delete;
-                                                    }else{
+                                                    if (userScope) {
+                                                        if (req.body.menuAction[i].read && (!userScope.read || userScope.read == false)) {
+                                                            userScope.read = req.body.menuAction[i].read;
+                                                        }
+                                                        if (req.body.menuAction[i].write && (!userScope.write || userScope.write == false)) {
+                                                            userScope.write = req.body.menuAction[i].write;
+                                                        }
+                                                        if (req.body.menuAction[i].delete && (!userScope.delete || userScope.delete == false)) {
+                                                            userScope.delete = req.body.menuAction[i].delete;
+                                                        }
+                                                        // userScope.read = (!req.body.menuAction[i].read)? false: req.body.menuAction[i].read;
+                                                        // userScope.write = (!req.body.menuAction[i].write)? false: req.body.menuAction[i].write;
+                                                        // userScope.delete = (!req.body.menuAction[i].delete)? false: req.body.menuAction[i].delete;
+                                                    } else {
                                                         assignUser.user_scopes.push(req.body.menuAction[i]);
                                                     }
                                                 }
 
-                                                User.findOneAndUpdate({
-                                                    username: req.params.username,
+                                                UserAccount.findOneAndUpdate({
+                                                    user: req.params.username,
                                                     company: company,
                                                     tenant: tenant
                                                 }, assignUser, function (err, rUser) {
@@ -2157,16 +2690,16 @@ function AddUserAppScopes(req, res){
                                                     }
                                                     res.end(jsonString);
                                                 });
-                                            }else{
+                                            } else {
                                                 //jsonString = messageFormatter.FormatMessage(err, "Access Denied, Console Access Limit Exceeded", false, undefined);
                                                 jsonString = messageFormatter.FormatMessage(err, "Access Denied, No Console Access Limit Found", false, undefined);
                                                 res.end(jsonString);
                                             }
-                                        }else{
+                                        } else {
                                             jsonString = messageFormatter.FormatMessage(err, "Access Denied, No user permissions", false, undefined);
                                             res.end(jsonString);
                                         }
-                                    }else{
+                                    } else {
                                         jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
                                         res.end(jsonString);
                                     }
@@ -2180,7 +2713,7 @@ function AddUserAppScopes(req, res){
     });
 }
 
-function RemoveUserAppScopes(req, res){
+function RemoveUserAppScopes(req, res) {
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -2188,23 +2721,23 @@ function RemoveUserAppScopes(req, res){
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOne({username: adminUserName, company:company, tenant: tenant}, function(err, adminUser) {
+    UserAccount.findOne({user: adminUserName, company: company, tenant: tenant}, function (err, adminUser) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Validate Admin User Failed", false, undefined);
             res.end(jsonString);
         } else {
-            User.findOne({
+            UserAccount.findOne({
                 $and: [{"client_scopes.consoleName": req.params.consoleName}, {
-                    username: req.params.username,
+                    user: req.params.username,
                     company: company,
                     tenant: tenant
                 }]
             }, function (err, user) {
-                if(err){
+                if (err) {
                     jsonString = messageFormatter.FormatMessage(err, "Validate Assigned User Failed", false, undefined);
                     res.end(jsonString);
-                }else {
-                    if(adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin") {
+                } else {
+                    if (adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin") {
                         for (var i in user.client_scopes) {
                             var cScope = user.client_scopes[i];
                             if (cScope.consoleName == req.params.consoleName) {
@@ -2217,9 +2750,9 @@ function RemoveUserAppScopes(req, res){
                                 }
                             }
                         }
-                        User.findOneAndUpdate({
+                        UserAccount.findOneAndUpdate({
                             $and: [{"client_scopes.consoleName": req.params.consoleName}, {
-                                username: req.params.username,
+                                user: req.params.username,
                                 company: company,
                                 tenant: tenant
                             }]
@@ -2231,7 +2764,7 @@ function RemoveUserAppScopes(req, res){
                             }
                             res.end(jsonString);
                         });
-                    }else {
+                    } else {
                         jsonString = messageFormatter.FormatMessage(err, "Access Denied, No admin permissions", false, undefined);
                         res.end(jsonString);
                     }
@@ -2241,7 +2774,7 @@ function RemoveUserAppScopes(req, res){
     });
 }
 
-function GetUserMeta(req, res){
+function GetUserMeta(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
@@ -2249,52 +2782,49 @@ function GetUserMeta(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
-        if (err ) {
-
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
-
-        }else{
-
-            if(users) {
-
-                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users.user_meta);
-            }else{
-                jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
-
-            }
-
-        }
-
-        res.end(jsonString);
-    });
-
-
-
-
-
-}
-
-function GetAppMeta(req, res){
-
-
-    logger.debug("DVP-UserService.GetUsers Internal method ");
-
-    var company = parseInt(req.user.company);
-    var tenant = parseInt(req.user.tenant);
-    var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+    UserAccount.findOne({user: req.params.name, company: company, tenant: tenant}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+        } else {
 
-            if(users){
+            if (users) {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users.user_meta);
+            } else {
+                jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
+
+            }
+
+        }
+
+        res.end(jsonString);
+    });
+
+
+}
+
+function GetAppMeta(req, res) {
+
+
+    logger.debug("DVP-UserService.GetUsers Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    UserAccount.findOne({user: req.params.name, company: company, tenant: tenant}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+
+        } else {
+
+            if (users) {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User Successful", true, users.app_meta);
             }
-            else{
+            else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
             }
@@ -2306,16 +2836,9 @@ function GetAppMeta(req, res){
     });
 
 
-
-
-
-
-
-
 }
 
-function UpdateUserMetadata(req, res){
-
+function UpdateUserMetadata(req, res) {
 
 
     logger.debug("DVP-UserService.UpdateUser Internal method ");
@@ -2325,12 +2848,16 @@ function UpdateUserMetadata(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { "user_meta" : req.body }, function(err, users) {
+    UserAccount.findOneAndUpdate({
+        user: req.params.name,
+        company: company,
+        tenant: tenant
+    }, {"user_meta": req.body}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update user meta Failed", false, undefined);
 
-        }else{
+        } else {
 
             jsonString = messageFormatter.FormatMessage(err, "Update user meta Successful", true, undefined);
 
@@ -2340,13 +2867,9 @@ function UpdateUserMetadata(req, res){
     });
 
 
-
-
-
 }
 
-function UpdateAppMetadata(req, res){
-
+function UpdateAppMetadata(req, res) {
 
 
     logger.debug("DVP-UserService.UpdateUser Internal method ");
@@ -2356,12 +2879,16 @@ function UpdateAppMetadata(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant}, { "app_meta" : req.body }, function(err, users) {
+    UserAccount.findOneAndUpdate({
+        user: req.params.name,
+        company: company,
+        tenant: tenant
+    }, {"app_meta": req.body}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update app meta Failed", false, undefined);
 
-        }else{
+        } else {
 
             jsonString = messageFormatter.FormatMessage(err, "Update app meta Successful", true, undefined);
 
@@ -2371,12 +2898,9 @@ function UpdateAppMetadata(req, res){
     });
 
 
-
-
-
 }
 
-function RemoveUserMetadata(req, res){
+function RemoveUserMetadata(req, res) {
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -2384,13 +2908,17 @@ function RemoveUserMetadata(req, res){
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "user_meta" : {} }, function(err, users) {
+    UserAccount.findOneAndUpdate({
+        user: req.params.name,
+        company: company,
+        tenant: tenant
+    }, {"user_meta": {}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Remove user meta Failed", false, undefined);
 
 
-        }else{
+        } else {
 
             jsonString = messageFormatter.FormatMessage(undefined, "Remove user meta successfully", false, undefined);
 
@@ -2403,7 +2931,7 @@ function RemoveUserMetadata(req, res){
 
 }
 
-function RemoveAppMetadata(req, res){
+function RemoveAppMetadata(req, res) {
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -2411,13 +2939,17 @@ function RemoveAppMetadata(req, res){
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    User.findOneAndUpdate({username: req.params.name,company: company, tenant: tenant},{ "app_meta" : {} }, function(err, users) {
+    UserAccount.findOneAndUpdate({
+        user: req.params.name,
+        company: company,
+        tenant: tenant
+    }, {"app_meta": {}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update app meta Failed", false, undefined);
 
 
-        }else{
+        } else {
 
             jsonString = messageFormatter.FormatMessage(undefined, "Update app meta successfully", false, undefined);
 
@@ -2430,7 +2962,7 @@ function RemoveAppMetadata(req, res){
 
 }
 
-function GetUserScopes(req, res){
+function GetUserScopes(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
@@ -2438,16 +2970,16 @@ function GetUserScopes(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+    UserAccount.findOne({user: req.params.name, company: company, tenant: tenant}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User scope Failed", false, undefined);
 
-        }else{
+        } else {
 
-            if(users) {
+            if (users) {
                 jsonString = messageFormatter.FormatMessage(err, "Get User scope Successful", true, users.user_scopes);
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User scope Failed", false, undefined);
 
@@ -2460,7 +2992,7 @@ function GetUserScopes(req, res){
 
 }
 
-function GetAppScopes(req, res){
+function GetAppScopes(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
@@ -2468,16 +3000,16 @@ function GetAppScopes(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    User.findOne({username: req.params.name,company: company, tenant: tenant}, function(err, users) {
+    UserAccount.findOne({user: req.params.name, company: company, tenant: tenant}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
 
-        }else{
+        } else {
 
-            if(users) {
+            if (users) {
                 jsonString = messageFormatter.FormatMessage(err, "Get User app scope Successful", true, users.client_scopes);
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
             }
@@ -2489,7 +3021,7 @@ function GetAppScopes(req, res){
 
 }
 
-function GetMyAppScopesByConsole(req, res){
+function GetMyAppScopesByConsole(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
@@ -2503,31 +3035,31 @@ function GetMyAppScopesByConsole(req, res){
     ////client_scopes:{$elemMatch: {consoleName: console}}
 
 
-    User.findOne({username: user,company: company, tenant: tenant, }, function(err, users) {
+    UserAccount.findOne({user: user, company: company, tenant: tenant}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
 
-        }else{
+        } else {
 
-            if(users) {
+            if (users) {
 
-                if(users.client_scopes) {
+                if (users.client_scopes) {
 
-                    var obj = users.client_scopes.filter(function(obj, index){
+                    var obj = users.client_scopes.filter(function (obj, index) {
 
                         return obj.consoleName == console;
 
                     });
 
-                    if(obj) {
+                    if (obj) {
                         jsonString = messageFormatter.FormatMessage(err, "Get User app scope Successful", true, obj);
-                    }else{
+                    } else {
 
-                        jsonString = messageFormatter.FormatMessage(err, "No Access found to "+ console, false, undefined);
+                        jsonString = messageFormatter.FormatMessage(err, "No Access found to " + console, false, undefined);
                     }
                 }
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
             }
@@ -2539,7 +3071,7 @@ function GetMyAppScopesByConsole(req, res){
 
 }
 
-function GetMyAppScopesByConsoles(req, res){
+function GetMyAppScopesByConsoles(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
@@ -2553,33 +3085,33 @@ function GetMyAppScopesByConsoles(req, res){
     ////client_scopes:{$elemMatch: {consoleName: console}}
 
 
-    User.findOne({username: user,company: company, tenant: tenant, }, function(err, users) {
+    UserAccount.findOne({user: user, company: company, tenant: tenant}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
 
-        }else{
+        } else {
 
-            if(users) {
+            if (users) {
 
-                if(users.client_scopes) {
+                if (users.client_scopes) {
                     var consoleObjects = [];
-                    for(var i =0; i< consoles.length; i++) {
+                    for (var i = 0; i < consoles.length; i++) {
                         var obj = users.client_scopes.filter(function (obj, index) {
                             return obj.consoleName == consoles[i];
                         });
-                        if(obj && obj.length>0) {
+                        if (obj && obj.length > 0) {
                             consoleObjects.push(obj[0]);
                         }
                     }
-                    if(consoleObjects) {
+                    if (consoleObjects) {
                         jsonString = messageFormatter.FormatMessage(err, "Get User app scope Successful", true, consoleObjects);
-                    }else{
+                    } else {
 
-                        jsonString = messageFormatter.FormatMessage(err, "No Access found to "+ console, false, undefined);
+                        jsonString = messageFormatter.FormatMessage(err, "No Access found to " + console, false, undefined);
                     }
                 }
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
             }
@@ -2591,7 +3123,7 @@ function GetMyAppScopesByConsoles(req, res){
 
 }
 
-function GetMyAppScopes(req, res){
+function GetMyAppScopes(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
@@ -2600,16 +3132,16 @@ function GetMyAppScopes(req, res){
     var tenant = parseInt(req.user.tenant);
     var user = req.user.iss;
     var jsonString;
-    User.findOne({username: user,company: company, tenant: tenant}, function(err, users) {
+    UserAccount.findOne({user: user, company: company, tenant: tenant}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
 
-        }else{
+        } else {
 
-            if(users) {
+            if (users) {
                 jsonString = messageFormatter.FormatMessage(err, "Get User app scope Successful", true, users.client_scopes);
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
             }
@@ -2621,7 +3153,7 @@ function GetMyAppScopes(req, res){
 
 }
 
-function SetLocation(req, res){
+function SetLocation(req, res) {
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
 
@@ -2629,17 +3161,17 @@ function SetLocation(req, res){
     var tenant = parseInt(req.user.tenant);
     var user = req.params.name;
     var jsonString;
-    User.findOne({username: user,company: company, tenant: tenant}, function(err, users) {
+    User.findOne({username: user}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
             res.end(jsonString);
 
-        }else{
+        } else {
 
-            if(users) {
+            if (users) {
 
-                var id = util.format('location:%d:%d', tenant,company);
+                var id = util.format('location:%d:%d', tenant, company);
 
                 try {
 
@@ -2651,7 +3183,7 @@ function SetLocation(req, res){
                      },
                      */
 
-                    redisClient.geoadd(id,req.body.latitude, req.body.longitude,user, function (err, reply) {
+                    redisClient.geoadd(id, req.body.latitude, req.body.longitude, user, function (err, reply) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "Set user location Failed", false, undefined);
                         }
@@ -2661,13 +3193,13 @@ function SetLocation(req, res){
                         }
                         res.end(jsonString);
                     });
-                }catch(exx){
+                } catch (exx) {
 
                     jsonString = messageFormatter.FormatMessage(exx, "Set user location Failed", false, undefined);
                     res.end(jsonString);
                 }
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
                 res.end(jsonString);
@@ -2677,7 +3209,7 @@ function SetLocation(req, res){
     });
 }
 
-function SetMyLocation(req, res){
+function SetMyLocation(req, res) {
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
 
@@ -2685,17 +3217,17 @@ function SetMyLocation(req, res){
     var tenant = parseInt(req.user.tenant);
     var user = req.user.iss;
     var jsonString;
-    User.findOne({username: user,company: company, tenant: tenant}, function(err, users) {
+    User.findOne({username: user}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
             res.end(jsonString);
 
-        }else{
+        } else {
 
-            if(users) {
+            if (users) {
 
-                var id = util.format('location:%d:%d', tenant,company);
+                var id = util.format('location:%d:%d', tenant, company);
 
                 try {
 
@@ -2707,7 +3239,7 @@ function SetMyLocation(req, res){
                      },
                      */
 
-                    redisClient.geoadd(id,req.body.latitude, req.body.longitude,user, function (err, reply) {
+                    redisClient.geoadd(id, req.body.latitude, req.body.longitude, user, function (err, reply) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "Set user location Failed", false, undefined);
                         }
@@ -2717,13 +3249,13 @@ function SetMyLocation(req, res){
                         }
                         res.end(jsonString);
                     });
-                }catch(exx){
+                } catch (exx) {
 
                     jsonString = messageFormatter.FormatMessage(exx, "Set user location Failed", false, undefined);
                     res.end(jsonString);
                 }
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
                 res.end(jsonString);
@@ -2733,8 +3265,7 @@ function SetMyLocation(req, res){
     });
 }
 
-function UpdateMyAppMetadata(req, res){
-
+function UpdateMyAppMetadata(req, res) {
 
 
     logger.debug("DVP-UserService.UpdateMyAppMetadata Internal method ");
@@ -2744,25 +3275,29 @@ function UpdateMyAppMetadata(req, res){
     var tenant = parseInt(req.user.tenant);
     var user = req.user.iss;
     var jsonString;
-    User.findOne({username: user,company: company, tenant: tenant}, function(err, users) {
+    UserAccount.findOne({user: user, company: company, tenant: tenant}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User app meta Failed", false, undefined);
             res.end(jsonString);
 
-        }else{
+        } else {
 
-            if(users) {
+            if (users) {
 
 
-                if(users.app_meta){
+                if (users.app_meta) {
 
-                    Object.keys(req.body).forEach(function(key) {
+                    Object.keys(req.body).forEach(function (key) {
                         var val = req.body[key];
                         users.app_meta[key] = val;
                     });
 
-                    User.findOneAndUpdate({username: user,company: company, tenant: tenant},{app_meta: users.app_meta},function (err, user) {
+                    UserAccount.findOneAndUpdate({
+                        user: user,
+                        company: company,
+                        tenant: tenant
+                    }, {app_meta: users.app_meta}, function (err, user) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
 
@@ -2772,11 +3307,15 @@ function UpdateMyAppMetadata(req, res){
                         res.end(jsonString);
                     });
 
-                }else{
+                } else {
 
                     users.app_meta = req.body;
 
-                    User.findOneAndUpdate({username: user,company: company, tenant: tenant},{app_meta: req.body},function (err, user) {
+                    UserAccount.findOneAndUpdate({
+                        user: user,
+                        company: company,
+                        tenant: tenant
+                    }, {app_meta: req.body}, function (err, user) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
 
@@ -2787,7 +3326,7 @@ function UpdateMyAppMetadata(req, res){
                     });
                 }
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User app Meta Failed", false, undefined);
                 res.end(jsonString);
@@ -2800,8 +3339,7 @@ function UpdateMyAppMetadata(req, res){
 
 }
 
-function GetMyAppMetadata(req, res){
-
+function GetMyAppMetadata(req, res) {
 
 
     logger.debug("DVP-UserService.GetMyAppMetadata Internal method ");
@@ -2811,18 +3349,18 @@ function GetMyAppMetadata(req, res){
     var tenant = parseInt(req.user.tenant);
     var user = req.user.iss;
     var jsonString;
-    User.findOne({username: user,company: company, tenant: tenant}, function(err, users) {
+    UserAccount.findOne({user: user, company: company, tenant: tenant}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
 
-        }else{
+        } else {
 
-            if(users){
+            if (users) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users.app_meta);
             }
-            else{
+            else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User Failed", false, undefined);
             }
@@ -2836,7 +3374,7 @@ function GetMyAppMetadata(req, res){
 
 }
 
-function CreateUserTag(req, res){
+function CreateUserTag(req, res) {
 
     logger.debug("DVP-UserService.CreateUserTag Internal method ");
     var jsonString;
@@ -2844,17 +3382,17 @@ function CreateUserTag(req, res){
     var company = parseInt(req.user.company);
 
 
-    var userTag= UserTag({
+    var userTag = UserTag({
         company: parseInt(req.user.company),
         tenant: parseInt(req.user.tenant),
-        name:req.body.name
-    })
+        name: req.body.name
+    });
 
-    userTag.save(function(errTag, resTag) {
+    userTag.save(function (errTag, resTag) {
         if (errTag) {
             jsonString = messageFormatter.FormatMessage(errTag, "UserTag save failed", false, undefined);
             res.end(jsonString);
-        }else{
+        } else {
             jsonString = messageFormatter.FormatMessage(undefined, "UserTag save succeeded", true, resTag);
             res.end(jsonString);
         }
@@ -2863,7 +3401,7 @@ function CreateUserTag(req, res){
 
 }
 
-function GetUserTag(req, res){
+function GetUserTag(req, res) {
 
 
     var company = parseInt(req.user.company);
@@ -2871,16 +3409,14 @@ function GetUserTag(req, res){
     var jsonString;
 
 
-
-    UserTag.findOne({company: company, tenant: tenant,name:req.params.tag}).exec( function(errTag, userTags) {
+    UserTag.findOne({company: company, tenant: tenant, name: req.params.tag}).exec(function (errTag, userTags) {
         if (errTag) {
 
             jsonString = messageFormatter.FormatMessage(errTag, "Get UserTag Failed", false, undefined);
             res.end(jsonString);
 
         }
-        else
-        {
+        else {
 
             jsonString = messageFormatter.FormatMessage(undefined, "Get UserTag Successful", true, userTags);
             res.end(jsonString);
@@ -2892,7 +3428,7 @@ function GetUserTag(req, res){
 
 }
 
-function GetUserTags(req, res){
+function GetUserTags(req, res) {
 
 
     var company = parseInt(req.user.company);
@@ -2900,15 +3436,13 @@ function GetUserTags(req, res){
     var jsonString;
 
 
-
-    UserTag.find({company: company, tenant: tenant}).exec( function(errTags, userTags) {
+    UserTag.find({company: company, tenant: tenant}).exec(function (errTags, userTags) {
         if (errTags) {
 
             jsonString = messageFormatter.FormatMessage(errTags, "Get UserTags Failed", false, undefined);
 
         }
-        else
-        {
+        else {
 
             jsonString = messageFormatter.FormatMessage(undefined, "Get UserTags Successful", true, userTags);
 
@@ -2919,7 +3453,7 @@ function GetUserTags(req, res){
 
 }
 
-function RemoveUserTag(req,res){
+function RemoveUserTag(req, res) {
 
 
     logger.debug("DVP-UserService.RemoveUserTag Internal method ");
@@ -2946,28 +3480,42 @@ function RemoveUserTag(req,res){
 
 }
 
-function GetSuperUsers(req, res){
+function GetSuperUsers(req, res) {
 
 
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
 
-
-    User.find({tenant: tenant, systemuser: true, Active: true, 'user_meta.role': 'superadmin'})
-        .select("-password")
-        .exec( function(err, users) {
+    UserAccount.find({tenant: tenant, active: true, 'user_meta.role': 'superadmin'})
+        .populate('userref', '-password')
+        .exec(function (err, userAccounts) {
             if (err) {
 
                 jsonString = messageFormatter.FormatMessage(err, "Get SuperUsers Failed", false, undefined);
 
-            }else {
+            } else {
 
-                if (users) {
+                if (userAccounts) {
+
+                    var users = userAccounts.map(function (userAcc) {
+                        var user = userAcc.userref.toObject();
+
+                        user.group = userAcc.group;
+                        user.active = userAcc.active;
+                        user.joined = userAcc.joined;
+                        user.resourceid = userAcc.resource_id;
+                        user.veeryaccount = userAcc.veeryaccount;
+                        user.multi_login = userAcc.multi_login;
+                        user.allowoutbound = userAcc.allowoutbound;
+                        user.allowed_file_categories = userAcc.allowed_file_categories;
+
+                        return user;
+                    });
 
                     jsonString = messageFormatter.FormatMessage(err, "Get SuperUsers Successful", true, users);
 
-                }else{
+                } else {
 
                     jsonString = messageFormatter.FormatMessage(undefined, "Get SuperUsers Failed", false, undefined);
 
@@ -2979,8 +3527,7 @@ function GetSuperUsers(req, res){
 
 }
 
-function AddFileCategoryToUser(req, res){
-
+function AddFileCategoryToUser(req, res) {
 
 
     logger.debug("DVP-UserService.addFileCategoryToUser Internal method ");
@@ -2991,13 +3538,13 @@ function AddFileCategoryToUser(req, res){
 
     req.body.updated_at = Date.now();
 
-    DbConn.FileCategory.findOne({where:[{Category:req.params.category}]}).then(function (resCat) {
+    DbConn.FileCategory.findOne({where: [{Category: req.params.category}]}).then(function (resCat) {
 
         if (resCat) {
             if (req.user.iss) {
 
-                User.findOneAndUpdate({
-                    username: req.user.iss,
+                UserAccount.findOneAndUpdate({
+                    user: req.user.iss,
                     company: company,
                     tenant: tenant
                 }, {$push: {allowed_file_categories: req.params.category}}, function (err, users) {
@@ -3025,25 +3572,20 @@ function AddFileCategoryToUser(req, res){
 
             }
         }
-        else
-        {
-            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : '+req.params.category), "Invalid file category "+req.params.category, false, undefined);
+        else {
+            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : ' + req.params.category), "Invalid file category " + req.params.category, false, undefined);
             res.end(jsonString);
         }
 
     }).catch(function (errCat) {
-        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category "+req.params.category, false, undefined);
+        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category " + req.params.category, false, undefined);
         res.end(jsonString);
     });
-
-
 
 
 }
 
-
-function AddFileCategoryToSpecificUser(req, res){
-
+function AddFileCategoryToSpecificUser(req, res) {
 
 
     logger.debug("DVP-UserService.addFileCategoryToUser Internal method ");
@@ -3054,13 +3596,13 @@ function AddFileCategoryToSpecificUser(req, res){
 
     req.body.updated_at = Date.now();
 
-    DbConn.FileCategory.findOne({where:[{Category:req.params.category}]}).then(function (resCat) {
+    DbConn.FileCategory.findOne({where: [{Category: req.params.category}]}).then(function (resCat) {
 
         if (resCat) {
             if (req.user.iss) {
 
-                User.findOneAndUpdate({
-                    username: req.params.user,
+                UserAccount.findOneAndUpdate({
+                    user: req.params.user,
                     company: company,
                     tenant: tenant
                 }, {$push: {allowed_file_categories: req.params.category}}, function (err, users) {
@@ -3088,18 +3630,15 @@ function AddFileCategoryToSpecificUser(req, res){
 
             }
         }
-        else
-        {
-            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : '+req.params.category), "Invalid file category "+req.params.category, false, undefined);
+        else {
+            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : ' + req.params.category), "Invalid file category " + req.params.category, false, undefined);
             res.end(jsonString);
         }
 
     }).catch(function (errCat) {
-        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category "+req.params.category, false, undefined);
+        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category " + req.params.category, false, undefined);
         res.end(jsonString);
     });
-
-
 
 
 }
@@ -3187,8 +3726,7 @@ function AddFileCategoryToSpecificUser(req, res){
 
 
  }*/
-function RemoveFileCategoryFromUser(req, res){
-
+function RemoveFileCategoryFromUser(req, res) {
 
 
     logger.debug("DVP-UserService.addFileCategoryToUser Internal method ");
@@ -3199,13 +3737,13 @@ function RemoveFileCategoryFromUser(req, res){
 
     req.body.updated_at = Date.now();
 
-    DbConn.FileCategory.findOne({where:[{Category:req.params.category}]}).then(function (resCat) {
+    DbConn.FileCategory.findOne({where: [{Category: req.params.category}]}).then(function (resCat) {
 
         if (resCat) {
             if (req.user.iss) {
 
-                User.findOneAndUpdate({
-                    username: req.user.iss,
+                UserAccount.findOneAndUpdate({
+                    user: req.user.iss,
                     company: company,
                     tenant: tenant
                 }, {$pull: {allowed_file_categories: req.params.category}}, function (err, users) {
@@ -3233,24 +3771,20 @@ function RemoveFileCategoryFromUser(req, res){
 
             }
         }
-        else
-        {
-            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : '+req.params.category), "Invalid file category "+req.params.category, false, undefined);
+        else {
+            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : ' + req.params.category), "Invalid file category " + req.params.category, false, undefined);
             res.end(jsonString);
         }
 
     }).catch(function (errCat) {
-        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category "+req.params.category, false, undefined);
+        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category " + req.params.category, false, undefined);
         res.end(jsonString);
     });
 
 
-
-
 }
 
-function RemoveFileCategoryFromSpecificUser(req, res){
-
+function RemoveFileCategoryFromSpecificUser(req, res) {
 
 
     logger.debug("DVP-UserService.addFileCategoryToUser Internal method ");
@@ -3261,13 +3795,13 @@ function RemoveFileCategoryFromSpecificUser(req, res){
 
     req.body.updated_at = Date.now();
 
-    DbConn.FileCategory.findOne({where:[{Category:req.params.category}]}).then(function (resCat) {
+    DbConn.FileCategory.findOne({where: [{Category: req.params.category}]}).then(function (resCat) {
 
         if (resCat) {
             if (req.user.iss) {
 
-                User.findOneAndUpdate({
-                    username: req.params.user,
+                UserAccount.findOneAndUpdate({
+                    user: req.params.user,
                     company: company,
                     tenant: tenant
                 }, {$pull: {allowed_file_categories: req.params.category}}, function (err, users) {
@@ -3295,24 +3829,20 @@ function RemoveFileCategoryFromSpecificUser(req, res){
 
             }
         }
-        else
-        {
-            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : '+req.params.category), "Invalid file category "+req.params.category, false, undefined);
+        else {
+            jsonString = messageFormatter.FormatMessage(new Error('Invalid file category  : ' + req.params.category), "Invalid file category " + req.params.category, false, undefined);
             res.end(jsonString);
         }
 
     }).catch(function (errCat) {
-        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category "+req.params.category, false, undefined);
+        jsonString = messageFormatter.FormatMessage(errCat, "Invalid file category " + req.params.category, false, undefined);
         res.end(jsonString);
     });
 
 
-
-
 }
 
-function GetFileCategories(req, res){
-
+function GetFileCategories(req, res) {
 
 
     logger.debug("DVP-UserService.GetFileCategories Internal method ");
@@ -3322,14 +3852,13 @@ function GetFileCategories(req, res){
     req.body.updated_at = Date.now();
 
 
-    DbConn.FileCategory.findAll({where:[{Visible:true}]}).then(function (resCat) {
+    DbConn.FileCategory.findAll({where: [{Visible: true}]}).then(function (resCat) {
 
         if (resCat) {
             jsonString = messageFormatter.FormatMessage(undefined, "File categories found", true, resCat);
             res.end(jsonString);
         }
-        else
-        {
+        else {
             jsonString = messageFormatter.FormatMessage(new Error('No fule categories found'), "No fule categories found ", false, undefined);
             res.end(jsonString);
         }
@@ -3340,39 +3869,40 @@ function GetFileCategories(req, res){
     });
 
 
-
-
 }
 
 //----------------------------ActiveDirectory------------------------------------
 
-function CreateUserFromAD(req, res){
+function CreateUserFromAD(req, res) {
 
     logger.debug("DVP-UserService.CreateUserFromAD Internal method ");
     var jsonString;
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
-    Org.findOne({tenant: tenant, id: company}, function(err, org) {
+    Org.findOne({tenant: tenant, id: company}, function (err, org) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
             res.end(jsonString);
-        }else{
-            if(org){
-                if(req.body.role && req.body.username){
+        } else {
+            if (org) {
+                if (req.body.role && req.body.username) {
                     var userRole = req.body.role.toLowerCase();
                     var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
-                    if(limitObj){
-                        if(limitObj.accessLimit > limitObj.currentAccess.length){
+                    if (limitObj) {
+                        if (limitObj.accessLimit > limitObj.currentAccess.length) {
 
-                            User.findOne({tenant: tenant, company: company, username: req.body.username}, function(err, existingUser) {
-                                if(err){
+                            User.findOne({
+                                tenant: tenant,
+                                company: company,
+                                username: req.body.username
+                            }, function (err, existingUser) {
+                                if (err) {
                                     jsonString = messageFormatter.FormatMessage(err, "Error on find existing user", false, undefined);
                                     res.end(jsonString);
                                 }
 
-                                if(!existingUser){
-                                    if(!req.body.address)
-                                    {
+                                if (!existingUser) {
+                                    if (!req.body.address) {
                                         req.body.address = {};
                                     }
 
@@ -3388,7 +3918,7 @@ function CreateUserFromAD(req, res){
                                         lastname: req.body.lastname,
                                         locale: req.body.locale,
                                         ssn: req.body.ssn,
-                                        address:{
+                                        address: {
                                             zipcode: req.body.address.zipcode,
                                             number: req.body.address.number,
                                             street: req.body.address.street,
@@ -3400,7 +3930,7 @@ function CreateUserFromAD(req, res){
                                         },
                                         username: req.body.username,
                                         password: req.body.password,
-                                        email:{contact:req.body.mail, type: "phone", verified: false},
+                                        email: {contact: req.body.mail, type: "phone", verified: false},
                                         company: parseInt(req.user.company),
                                         tenant: parseInt(req.user.tenant),
                                         user_meta: {role: userRole},
@@ -3410,19 +3940,22 @@ function CreateUserFromAD(req, res){
                                         updated_at: Date.now()
                                     });
 
-                                    user.save(function(err, user) {
+                                    user.save(function (err, user) {
                                         if (err) {
                                             jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
                                             res.end(jsonString);
-                                        }else{
+                                        } else {
 
                                             limitObj.currentAccess.push(user.username);
-                                            Org.findOneAndUpdate({id: company, tenant: tenant},org, function(err, rOrg) {
+                                            Org.findOneAndUpdate({
+                                                id: company,
+                                                tenant: tenant
+                                            }, org, function (err, rOrg) {
                                                 if (err) {
-                                                    user.remove(function (err) {});
+                                                    user.remove(function (err) {
+                                                    });
                                                     jsonString = messageFormatter.FormatMessage(err, "Update Limit Failed, Rollback User Creation", false, undefined);
-                                                }else{
-
+                                                } else {
 
 
                                                     jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
@@ -3433,26 +3966,26 @@ function CreateUserFromAD(req, res){
                                             });
                                         }
                                     });
-                                }else{
+                                } else {
                                     jsonString = messageFormatter.FormatMessage(err, "User already in deactivate state", false, undefined);
                                     res.end(jsonString);
                                 }
 
                             });
 
-                        }else{
+                        } else {
                             jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
                             res.end(jsonString);
                         }
-                    }else{
+                    } else {
                         jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
                         res.end(jsonString);
                     }
-                }else{
+                } else {
                     jsonString = messageFormatter.FormatMessage(err, "No User Role Found", false, undefined);
                     res.end(jsonString);
                 }
-            }else{
+            } else {
                 jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
                 res.end(jsonString);
             }
@@ -3460,8 +3993,7 @@ function CreateUserFromAD(req, res){
     });
 }
 
-
-function GetMyLanguages(req, res){
+function GetMyLanguages(req, res) {
 
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
@@ -3470,37 +4002,33 @@ function GetMyLanguages(req, res){
     var tenant = parseInt(req.user.tenant);
     var user = req.user.iss;
     var jsonString;
-    User.findOne({username: user,company: company, tenant: tenant}, function(err, user) {
+    UserAccount.findOne({user: user, company: company, tenant: tenant}, function (err, user) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get User app scope Failed", false, undefined);
 
-        }else{
+        } else {
 
-            if(user) {
+            if (user) {
 
-                Org.findOne({id:user.company,tenant:user.tenant},function (errOrg,resOrg) {
+                Org.findOne({id: user.company, tenant: user.tenant}, function (errOrg, resOrg) {
 
-                    if(errOrg)
-                    {
+                    if (errOrg) {
                         jsonString = messageFormatter.FormatMessage(errOrg, "Get organisation details failed", false, undefined);
                         res.end(jsonString);
                     }
-                    else
-                    {
-                        if(resOrg)
-                        {
+                    else {
+                        if (resOrg) {
                             jsonString = messageFormatter.FormatMessage(undefined, "Organization details found", true, resOrg.languages);
                         }
-                        else
-                        {
+                        else {
                             jsonString = messageFormatter.FormatMessage(undefined, "Get organisation details failed", false, undefined);
                         }
                         res.end(jsonString);
                     }
 
                 });
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get User app scope Failed", false, undefined);
                 res.end(jsonString);
@@ -3521,10 +4049,9 @@ function userIsAllowToOutbound(req, res) {
         var company = parseInt(req.user.company);
         var tenant = parseInt(req.user.tenant);
 
-        var query = {username: req.params.name, company: company, tenant: tenant};
+        var query = {user: req.params.name, company: company, tenant: tenant};
 
-        User.findOne(query)
-            .select("-password")
+        UserAccount.findOne(query)
             .exec(function (err, users) {
                 if (err) {
 
@@ -3532,7 +4059,7 @@ function userIsAllowToOutbound(req, res) {
 
                 } else {
 
-                    jsonString = messageFormatter.FormatMessage(err, "Get User Successful", users?(users.allowoutbound == true):false, null);
+                    jsonString = messageFormatter.FormatMessage(err, "Get User Successful", users ? (users.allowoutbound == true) : false, null);
                 }
 
                 res.end(jsonString);
@@ -3540,6 +4067,54 @@ function userIsAllowToOutbound(req, res) {
     } else {
         jsonString = messageFormatter.FormatMessage(null, "Invalid Operations", false, null);
     }
+
+
+}
+
+
+function UserAcccountActivation(req, res) {
+
+
+    logger.debug("DVP-UserService.UserAcccountActivation Internal method ");
+
+    var company = parseInt(req.params.company);
+    var tenant = parseInt(req.params.tenant);
+   var Active = true;
+
+    var jsonString;
+
+    if(req.params.state)
+    {
+        Active = req.params.state;
+    }
+
+    if(req.params.username)
+    {
+        UserAccount.findOneAndUpdate({company: company, tenant: tenant, user: req.params.username}, {
+            active: Active,
+            update_at: Date.now()
+        }, function (err, rUser) {
+            if (err) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Update User Account Activation failed", false, undefined);
+                res.end(jsonString);
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Update User Account Activation succeeded", true, invitation);
+                res.end(jsonString);
+            }
+
+        });
+    }
+    else
+    {
+        jsonString = messageFormatter.FormatMessage(new Error("No username received"), "No username received", false, undefined);
+        res.end(jsonString);
+
+    }
+
+
 
 
 }
@@ -3560,36 +4135,37 @@ module.exports.UpdateUserProfile = UpdateUserProfile;
 module.exports.AddUserScopes = AddUserScopes;
 module.exports.RemoveUserScopes = RemoveUserScopes;
 module.exports.AddUserAppScopes = AddUserAppScopes;
-module.exports.RemoveUserAppScopes =RemoveUserAppScopes;
-module.exports.GetUserMeta =GetUserMeta;
-module.exports.GetAppMeta =GetAppMeta;
+module.exports.RemoveUserAppScopes = RemoveUserAppScopes;
+module.exports.GetUserMeta = GetUserMeta;
+module.exports.GetAppMeta = GetAppMeta;
 module.exports.UpdateUserMetadata = UpdateUserMetadata;
 module.exports.UpdateAppMetadata = UpdateAppMetadata;
 module.exports.GetUserScopes = GetUserScopes;
 module.exports.GetAppScopes = GetAppScopes;
 module.exports.RemoveUserMetadata = RemoveUserMetadata;
-module.exports.RemoveAppMetadata= RemoveAppMetadata;
+module.exports.RemoveAppMetadata = RemoveAppMetadata;
 module.exports.UpdateUserProfileEmail = UpdateUserProfileEmail;
 module.exports.UpdateUserProfilePhone = UpdateUserProfilePhone;
 module.exports.UpdateUserProfileContact = UpdateUserProfileContact;
 module.exports.RemoveUserProfileContact = RemoveUserProfileContact;
-
+module.exports.UserInvitable = UserInvitable;
 
 module.exports.GetMyrProfile = GetMyrProfile;
 module.exports.UpdateMyUser = UpdateMyUser;
 module.exports.UpdateMyPassword = UpdateMyPassword;
 module.exports.UpdateMyUserProfile = UpdateMyUserProfile;
 module.exports.UpdateMyUserProfileContact = UpdateMyUserProfileContact;
-module.exports.RemoveMyUserProfileContact =RemoveMyUserProfileContact;
-module.exports.GetExternalUsers = GetExternalUsers;
+module.exports.RemoveMyUserProfileContact = RemoveMyUserProfileContact;
+//module.exports.GetExternalUsers = GetExternalUsers;
 
 module.exports.SetUserProfileResourceId = SetUserProfileResourceId;
 module.exports.GetUserProfileByResourceId = GetUserProfileByResourceId;
 module.exports.GetARDSFriendlyContactObject = GetARDSFriendlyContactObject;
 module.exports.UserExists = UserExists;
+module.exports.UserAccountExists = UserAccountExists;
 module.exports.AssignConsoleToUser = AssignConsoleToUser;
 module.exports.RemoveConsoleFromUser = RemoveConsoleFromUser;
-module.exports.CreateExternalUser =CreateExternalUser;
+//module.exports.CreateExternalUser = CreateExternalUser;
 module.exports.GetMyAppScopes = GetMyAppScopes;
 
 
@@ -3624,7 +4200,7 @@ module.exports.GetMyLanguages = GetMyLanguages;
 module.exports.UserIsAllowToOutbound = userIsAllowToOutbound;
 
 
-
 module.exports.GetFileCategories = GetFileCategories;
+module.exports.UserAcccountActivation = UserAcccountActivation;
 /*
  module.exports.AddFileCategoriesToUser = AddFileCategoriesToUser;*/

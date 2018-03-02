@@ -4,6 +4,8 @@
 var mongoose = require('mongoose');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var ExternalUser = require('dvp-mongomodels/model/ExternalUser');
+var ExternalUserAccessFields = require('dvp-mongomodels/model/ExternalUserAccessConfig').ExternalUserAccessFields;
+var AccessSchema = require('dvp-mongomodels/model/ExternalUserAccessConfig').AccessSchema;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var regex = require('regex');
 var FormSubmission = require('dvp-mongomodels/model/FormMaster').FormSubmission;
@@ -11,26 +13,26 @@ var config = require('config');
 var util = require('util');
 
 
-function GetExternalUsers(req, res){
+function GetExternalUsers(req, res) {
 
 
     logger.debug("DVP-UserService.GetExternalUsers Internal method ");
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.find({company: company, tenant: tenant}, function(err, users) {
+    ExternalUser.find({company: company, tenant: tenant}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
 
-        }else {
+        } else {
 
             if (users) {
 
 
                 jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "No External Users Found", false, undefined);
 
@@ -42,7 +44,7 @@ function GetExternalUsers(req, res){
 
 }
 
-function GetExternalUser(req, res){
+function GetExternalUser(req, res) {
 
 
     logger.debug("DVP-UserService.GetExternalUser Internal method ");
@@ -50,7 +52,7 @@ function GetExternalUser(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.findOne({_id: req.params.id,company: company, tenant: tenant}, function(err, users) {
+    ExternalUser.findOne({_id: req.params.id, company: company, tenant: tenant}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
@@ -59,7 +61,7 @@ function GetExternalUser(req, res){
 
             if (users) {
 
-                    jsonString = messageFormatter.FormatMessage(err, "Get External User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(err, "Get External User Successful", true, users);
 
 
             } else {
@@ -74,7 +76,7 @@ function GetExternalUser(req, res){
 }
 
 
-function GetExternalUserAttribute(req, res){
+function GetExternalUserAttribute(req, res) {
 
 
     logger.debug("DVP-UserService.GetExternalUser Internal method ");
@@ -82,7 +84,7 @@ function GetExternalUserAttribute(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.findOne({_id: req.params.id,company: company, tenant: tenant}, function(err, users) {
+    ExternalUser.findOne({_id: req.params.id, company: company, tenant: tenant}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
@@ -90,10 +92,10 @@ function GetExternalUserAttribute(req, res){
         } else {
 
             if (users) {
-                if( req.params.attribute && req.params.attribute && users[req.params.attribute]) {
+                if (req.params.attribute && req.params.attribute && users[req.params.attribute]) {
                     var userObj;
                     jsonString = messageFormatter.FormatMessage(err, "Get External User Successful", true, users[req.params.attribute]);
-                }else{
+                } else {
                     jsonString = messageFormatter.FormatMessage(err, "Get External User Successful but no attribute found", true, undefined);
                 }
 
@@ -108,7 +110,7 @@ function GetExternalUserAttribute(req, res){
 
 }
 
-function UpdateExternalUserAttribute(req, res){
+function UpdateExternalUserAttribute(req, res) {
 
 
     logger.debug("DVP-UserService.UpdateExternalUserAttribute Internal method ");
@@ -116,10 +118,14 @@ function UpdateExternalUserAttribute(req, res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    var updateObject= {};
+    var updateObject = {};
     updateObject[req.params.attribute] = req.params.value;
 
-    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant},updateObject, function(err, users) {
+    ExternalUser.findOneAndUpdate({
+        _id: req.params.id,
+        company: company,
+        tenant: tenant
+    }, updateObject, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update External User Failed", false, undefined);
@@ -143,8 +149,7 @@ function UpdateExternalUserAttribute(req, res){
 }
 
 
-
-function DeleteExternalUser(req,res){
+function DeleteExternalUser(req, res) {
 
 
     logger.debug("DVP-UserService.DeleteExternalUser Internal method ");
@@ -152,10 +157,10 @@ function DeleteExternalUser(req,res){
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.findOneAndRemove({_id: req.params.id,company: company, tenant: tenant}, function(err, user) {
+    ExternalUser.findOneAndRemove({_id: req.params.id, company: company, tenant: tenant}, function (err, user) {
         if (err) {
             jsonString = messageFormatter.FormatMessage(err, "Get External User Failed", false, undefined);
-        }else{
+        } else {
             jsonString = messageFormatter.FormatMessage(undefined, "Delete External User Success", true, undefined);
         }
         res.end(jsonString);
@@ -169,7 +174,7 @@ function CreateExternalUser(req, res) {
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
 
-    if(req.body && req.body.firstname && req.body.lastname && req.body.phone) {
+    if (req.body && req.body.firstname && req.body.lastname && req.body.phone && req.body.email) {
         var extUser = ExternalUser({
             title: req.body.title,
             name: req.body.name,
@@ -180,34 +185,47 @@ function CreateExternalUser(req, res) {
             lastname: req.body.lastname,
             locale: req.body.locale,
             ssn: req.body.ssn,
-            address: {
-                zipcode: req.body.address.zipcode,
-                number: req.body.address.number,
-                street: req.body.address.street,
-                city: req.body.address.city,
-                province: req.body.address.province,
-                country: req.body.address.country
-
-            },
             phone: req.body.phone,
             email: req.body.email,
             company: parseInt(req.user.company),
             tenant: parseInt(req.user.tenant),
             created_at: Date.now(),
             updated_at: Date.now(),
-            tags:req.body.tags,
-            contacts :[]
+            tags: req.body.tags,
+            contacts: [],
+            custom_fields: []
         });
 
-        if(req.body.contacts){
+        if (req.body.address) {
+            extUser.address = {
+                zipcode: req.body.address.zipcode,
+                number: req.body.address.number,
+                street: req.body.address.street,
+                city: req.body.address.city,
+                province: req.body.address.province,
+                country: req.body.address.country
+            }
+        }
+
+        if (req.body.contacts) {
             req.body.contacts.map(function (item) {
-                if(item){
+                if (item) {
                     extUser.contacts.push({
-                        contact:item.contact,
-                        type:item.type,
+                        contact: item.contact,
+                        type: item.type,
                         display: item.display,
                         verified: false,
                         raw: {}
+                    });
+                }
+            });
+        }
+
+        if (req.body.custom_fields) {
+            req.body.custom_fields.map(function (item) {
+                if (item && item.key) {
+                    extUser.custom_fields.push({
+                        field: item.key, value: item.value
                     });
                 }
             });
@@ -224,7 +242,7 @@ function CreateExternalUser(req, res) {
                 res.end(jsonString);
             }
         });
-    }else{
+    } else {
 
 
         jsonString = messageFormatter.FormatMessage(undefined, "Requre fields not found", false, undefined);
@@ -233,7 +251,7 @@ function CreateExternalUser(req, res) {
     }
 }
 
-function UpdateExternalUser(req, res){
+function UpdateExternalUser(req, res) {
 
 
     logger.debug("DVP-UserService.UpdateExternalUser Internal method ");
@@ -243,12 +261,16 @@ function UpdateExternalUser(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, req.body, function(err, users) {
+    ExternalUser.findOneAndUpdate({
+        _id: req.params.id,
+        company: company,
+        tenant: tenant
+    }, req.body, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update External User Failed", false, undefined);
 
-        }else{
+        } else {
 
             jsonString = messageFormatter.FormatMessage(err, "Update External User Successful", true, users);
 
@@ -259,7 +281,7 @@ function UpdateExternalUser(req, res){
 
 }
 
-function GetExternalUserProfileByInteraction(req, res){
+function GetExternalUserProfileByInteraction(req, res) {
 
 
     logger.debug("DVP-UserService.GetExternalUserProfileByContact Internal method ");
@@ -272,21 +294,20 @@ function GetExternalUserProfileByInteraction(req, res){
 
     //////////////////////////////////////////older version///////////////////////////////////////////////////////
     /*
-    var queryObject = {company: company, tenant: tenant};
-    queryObject[category] = contact;
+     var queryObject = {company: company, tenant: tenant};
+     queryObject[category] = contact;
 
-    var otherQuery = {company: company, tenant: tenant, "contacts.type":category ,"contacts.contact": contact};
+     var otherQuery = {company: company, tenant: tenant, "contacts.type":category ,"contacts.contact": contact};
 
-    var orQuery = {$or:[queryObject, otherQuery]};
- */
+     var orQuery = {$or:[queryObject, otherQuery]};
+     */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 
     var orArray = [];
 
-    if(category == 'call' || category == 'sms' ){
+    if (category == 'call' || category == 'sms') {
 
         var otherQuery = {company: company, tenant: tenant, "contacts.type": "phone", "contacts.contact": contact};
         orArray.push(otherQuery);
@@ -300,7 +321,7 @@ function GetExternalUserProfileByInteraction(req, res){
         queryObject["landnumber"] = contact;
 
         orArray.push(queryObject);
-    } else if(category == 'facebook-post' || category == 'facebook-chat'){
+    } else if (category == 'facebook-post' || category == 'facebook-chat') {
 
 
         var otherQuery = {company: company, tenant: tenant, "contacts.type": "facebook", "contacts.contact": contact};
@@ -310,7 +331,7 @@ function GetExternalUserProfileByInteraction(req, res){
         queryObject["facebook"] = contact;
 
         orArray.push(queryObject);
-    }else{
+    } else {
 
         var otherQuery = {company: company, tenant: tenant, "contacts.type": category, "contacts.contact": contact};
         orArray.push(otherQuery);
@@ -326,19 +347,22 @@ function GetExternalUserProfileByInteraction(req, res){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    ExternalUser.find(orQuery).populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
+    ExternalUser.find(orQuery).populate({
+        path: 'form_submission',
+        populate: {path: 'form'}
+    }).exec(function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
 
-        }else{
+        } else {
 
             var userObjectArray = [];
-            if(users) {
+            if (users) {
 
-                    jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
+                jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "No External User Found", false, undefined);
 
@@ -352,7 +376,7 @@ function GetExternalUserProfileByInteraction(req, res){
 
 }
 
-function GetExternalUserProfileByContact(req, res){
+function GetExternalUserProfileByContact(req, res) {
 
 
     logger.debug("DVP-UserService.GetExternalUserProfileByContact Internal method ");
@@ -370,7 +394,7 @@ function GetExternalUserProfileByContact(req, res){
     var otherQuery;
     var queryObject;
 
-    if(category == 'call' || category == 'sms' ){
+    if (category == 'call' || category == 'sms') {
 
         otherQuery = {company: company, tenant: tenant, "contacts.type": "phone", "contacts.contact": contact};
 
@@ -387,8 +411,7 @@ function GetExternalUserProfileByContact(req, res){
         orArray.push(queryObject);
 
 
-
-    } else if(category == 'facebook-post' || category == 'facebook-chat'){
+    } else if (category == 'facebook-post' || category == 'facebook-chat') {
 
         otherQuery = {company: company, tenant: tenant, "contacts.type": "facebook", "contacts.contact": contact};
 
@@ -397,7 +420,7 @@ function GetExternalUserProfileByContact(req, res){
 
         orArray.push(queryObject);
 
-    }else if(category == 'chat'){
+    } else if (category == 'chat') {
 
         otherQuery = {company: company, tenant: tenant, "contacts.type": "email", "contacts.contact": contact};
 
@@ -407,7 +430,7 @@ function GetExternalUserProfileByContact(req, res){
 
         orArray.push(queryObject);
 
-    }else if(category == 'skype'){
+    } else if (category == 'skype') {
 
         otherQuery = {company: company, tenant: tenant, "contacts.type": "skype", "contacts.contact": contact};
 
@@ -417,7 +440,7 @@ function GetExternalUserProfileByContact(req, res){
 
         orArray.push(queryObject);
 
-    }else{
+    } else {
 
         otherQuery = {company: company, tenant: tenant, "contacts.type": category, "contacts.contact": contact};
 
@@ -431,20 +454,20 @@ function GetExternalUserProfileByContact(req, res){
 
     var orQuery = {$or: orArray};
 
-    if(config.Host.profilesearch == "primary"){
+    if (config.Host.profilesearch == "primary") {
 
         orQuery = queryObject;
 
-    }else if(config.Host.profilesearch == "secondary"){
+    } else if (config.Host.profilesearch == "secondary") {
 
         orArray.push(otherQuery);
         orQuery = {$or: orArray};
 
-    }else if(config.Host.profilesearch == "secondaryonly"){
+    } else if (config.Host.profilesearch == "secondaryonly") {
 
         orQuery = otherQuery;
 
-    }else{
+    } else {
 
         orArray.push(otherQuery);
         orQuery = {$or: orArray};
@@ -454,19 +477,22 @@ function GetExternalUserProfileByContact(req, res){
 
     logger.info(orQuery);
 
-    ExternalUser.find(orQuery).populate( {path: 'form_submission',populate : {path: 'form'}}).exec( function(err, users) {
+    ExternalUser.find(orQuery).populate({
+        path: 'form_submission',
+        populate: {path: 'form'}
+    }).exec(function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
 
-        }else{
+        } else {
 
             var userObjectArray = [];
-            if(users) {
+            if (users) {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "No External User Found", false, undefined);
 
@@ -480,7 +506,7 @@ function GetExternalUserProfileByContact(req, res){
 
 }
 
-function GetExternalUserProfileBySSN(req, res){
+function GetExternalUserProfileBySSN(req, res) {
 
 
     logger.debug("DVP-UserService.GetExternalUserProfileByContact Internal method ");
@@ -490,21 +516,24 @@ function GetExternalUserProfileBySSN(req, res){
     var ssn = req.params.ssn;
     var jsonString;
 
-    var queryObject = {ssn:ssn, company: company, tenant: tenant};
+    var queryObject = {ssn: ssn, company: company, tenant: tenant};
 
-    ExternalUser.find(queryObject).populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
+    ExternalUser.find(queryObject).populate({
+        path: 'form_submission',
+        populate: {path: 'form'}
+    }).exec(function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
 
-        }else{
+        } else {
 
             var userObjectArray = [];
-            if(users) {
+            if (users) {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "No External User Found", false, undefined);
 
@@ -518,7 +547,7 @@ function GetExternalUserProfileBySSN(req, res){
 
 }
 
-function GetExternalUserProfileByField(req, res){
+function GetExternalUserProfileByField(req, res) {
 
 
     logger.debug("DVP-UserService.GetExternalUserProfileByContact Internal method ");
@@ -534,19 +563,22 @@ function GetExternalUserProfileByField(req, res){
     //var likeval = new RegExp('^'+value+'$', "i");
     queryObject[field] = value;
 
-    ExternalUser.find(queryObject).populate( {path: 'form_submission',populate : {path: 'form'}}).exec(  function(err, users) {
+    ExternalUser.find(queryObject).populate({
+        path: 'form_submission',
+        populate: {path: 'form'}
+    }).exec(function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
 
-        }else{
+        } else {
 
             var userObjectArray = [];
-            if(users) {
+            if (users) {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Get External User Successful", true, users);
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "No External User Found", false, undefined);
 
@@ -566,7 +598,20 @@ function UpdateExternalUserProfileContact(req, res) {
     var jsonString;
 
     req.body.updated_at = Date.now();
-    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { $addToSet :{contacts : {contact:req.params.contact, type:req.body.type, raw:req.body.raw_contact, verified: false}}}, function (err, users) {
+    ExternalUser.findOneAndUpdate({
+        _id: req.params.id,
+        company: company,
+        tenant: tenant
+    }, {
+        $addToSet: {
+            contacts: {
+                contact: req.params.contact,
+                type: req.body.type,
+                raw: req.body.raw_contact,
+                verified: false
+            }
+        }
+    }, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update External user contact Failed", false, undefined);
@@ -582,20 +627,24 @@ function UpdateExternalUserProfileContact(req, res) {
 
 }
 
-function RemoveExternalUserProfileContact(req, res){
+function RemoveExternalUserProfileContact(req, res) {
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
     //{ $pullAll : { 'comments' : [{'approved' : 1}, {'approved' : 0}] } });
-    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant},{ $pull: { 'contacts': {'contact':req.params.contact} } }, function(err, users) {
+    ExternalUser.findOneAndUpdate({
+        _id: req.params.id,
+        company: company,
+        tenant: tenant
+    }, {$pull: {'contacts': {'contact': req.params.contact}}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Remove External User Contact Failed", false, undefined);
 
 
-        }else{
+        } else {
 
             jsonString = messageFormatter.FormatMessage(undefined, "Remove External User Contact successfully", false, undefined);
 
@@ -625,7 +674,11 @@ function UpdateExternalUserProfilePhone(req, res) {
 
 
     req.body.updated_at = Date.now();
-    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { phone : req.params.phone}, function (err, users) {
+    ExternalUser.findOneAndUpdate({
+        _id: req.params.id,
+        company: company,
+        tenant: tenant
+    }, {phone: req.params.phone}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update External User phone number Failed", false, undefined);
@@ -651,7 +704,11 @@ function UpdateExternalUserProfileEmail(req, res) {
 
 
     req.body.updated_at = Date.now();
-    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { email : req.params.email}, function (err, users) {
+    ExternalUser.findOneAndUpdate({
+        _id: req.params.id,
+        company: company,
+        tenant: tenant
+    }, {email: req.params.email}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User email Failed", false, undefined);
@@ -667,7 +724,7 @@ function UpdateExternalUserProfileEmail(req, res) {
 
 }
 
-function BulkCreate(req, res){
+function BulkCreate(req, res) {
 
 
     /*
@@ -684,17 +741,16 @@ function BulkCreate(req, res){
     var company = parseInt(req.user.company);
 
 
-    if(req.body  ) {
+    if (req.body) {
 
-        req.body.forEach( function (item)
-        {
+        req.body.forEach(function (item) {
             item.company = company;
             item.tenant = tenant;
 
         });
 
 
-        ExternalUser.insertMany(req.body,function (err, docs) {
+        ExternalUser.insertMany(req.body, function (err, docs) {
             if (err) {
                 jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
                 res.end(jsonString);
@@ -706,7 +762,7 @@ function BulkCreate(req, res){
             }
         });
 
-    }else{
+    } else {
 
         jsonString = messageFormatter.FormatMessage(undefined, "Object validation failed", false, undefined);
         res.end(jsonString);
@@ -714,34 +770,41 @@ function BulkCreate(req, res){
     }
 }
 
-function SearchExternalUsers(req, res){
+function SearchExternalUsers(req, res) {
 
     logger.debug("DVP-UserService.SearchExternalUsers Internal method ");
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.find({$text : { $search : req.params.text } , company: company, tenant: tenant},{ score : { $meta: "textScore" } }).populate( {path: 'form_submission',populate : {path: 'form'}}).sort({ score : { $meta : 'textScore' } })
-        .exec(function(err, users) {
-        if (err) {
+    ExternalUser.find({
+        $text: {$search: req.params.text},
+        company: company,
+        tenant: tenant
+    }, {score: {$meta: "textScore"}}).populate({
+        path: 'form_submission',
+        populate: {path: 'form'}
+    }).sort({score: {$meta: 'textScore'}})
+        .exec(function (err, users) {
+            if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Get External Users Failed", false, undefined);
 
-        }else {
+            } else {
 
-            if (users) {
+                if (users) {
 
 
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+                    jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
-            }else{
+                } else {
 
-                jsonString = messageFormatter.FormatMessage(undefined, "No External Users Found", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(undefined, "No External Users Found", false, undefined);
 
+                }
             }
-        }
 
-        res.end(jsonString);
-    });
+            res.end(jsonString);
+        });
 
 }
 
@@ -757,29 +820,33 @@ function UpdateExternalUserProfileDynamicFields(req, res) {
 
 
     var form;
-    if(util.isArray(req.body)){
+    if (util.isArray(req.body)) {
 
         fields = [];
 
-        req.body.forEach(function(item){
+        req.body.forEach(function (item) {
             //console.log(item)
 
-            fields.push({field:item.field, value:item.value});
+            fields.push({field: item.field, value: item.value});
 
         });
 
-        form = {dynamic_form : {$each: fields}};
+        form = {dynamic_form: {$each: fields}};
 
-    }else{
+    } else {
 
 
-        form = {dynamic_form : {field:req.body.field, value: req.body.value}};
+        form = {dynamic_form: {field: req.body.field, value: req.body.value}};
 
     }
 
 
     // dynamic_form:[{field:{ type: String, required: true}, value:{ type: String, required: true}}],
-    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, { $addToSet :form}, function (err, users) {
+    ExternalUser.findOneAndUpdate({
+        _id: req.params.id,
+        company: company,
+        tenant: tenant
+    }, {$addToSet: form}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update External user fields Failed", false, undefined);
@@ -795,18 +862,22 @@ function UpdateExternalUserProfileDynamicFields(req, res) {
 
 }
 
-function RemoveExternalUserProfileDynamicFields(req, res){
+function RemoveExternalUserProfileDynamicFields(req, res) {
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant},{ $pull: { 'dynamic_form': {'field':req.params.field} } }, function(err, users) {
+    ExternalUser.findOneAndUpdate({
+        _id: req.params.id,
+        company: company,
+        tenant: tenant
+    }, {$pull: {'dynamic_form': {'field': req.params.field}}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Remove External User fields Failed", false, undefined);
 
-        }else{
+        } else {
 
             jsonString = messageFormatter.FormatMessage(undefined, "Remove External User fields successfully", false, undefined);
         }
@@ -826,7 +897,10 @@ function UpdateFormSubmission(req, res) {
     var jsonString;
 
 
-    ExternalUser.findOneAndUpdate({_id: req.params.id,company: company, tenant: tenant}, {updated_at : Date.now(), form_submission:req.body.form_submission}, function (err, users) {
+    ExternalUser.findOneAndUpdate({_id: req.params.id, company: company, tenant: tenant}, {
+        updated_at: Date.now(),
+        form_submission: req.body.form_submission
+    }, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update External User Form Submission Failed", false, undefined);
@@ -841,7 +915,7 @@ function UpdateFormSubmission(req, res) {
     });
 }
 
-function GetExternalUsersByTags(req, res){
+function GetExternalUsersByTags(req, res) {
 
 
     logger.debug("DVP-UserService.GetExternalUsersByTags Internal method ");
@@ -849,19 +923,19 @@ function GetExternalUsersByTags(req, res){
     var tenant = parseInt(req.user.tenant);
     var tags = req.query.tags;
     var jsonString;
-    ExternalUser.find({company: company, tenant: tenant, tags:{ $all: tags }}, function(err, users) {
+    ExternalUser.find({company: company, tenant: tenant, tags: {$all: tags}}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users By Tags Failed", false, undefined);
 
-        }else {
+        } else {
 
             if (users) {
 
 
                 jsonString = messageFormatter.FormatMessage(err, "Get Users By Tags Successful", true, users);
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "No External Users Found", false, undefined);
 
@@ -874,6 +948,179 @@ function GetExternalUsersByTags(req, res){
 }
 
 
+function GetAccessibleFieldConfig(req, res) {
+
+
+    logger.debug("DVP-UserService.GetAccessibleFieldConfig Internal method ");
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    ExternalUserAccessFields.findOne({company: company, tenant: tenant}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get External User Access Fields Failed", false, undefined);
+
+        } else {
+
+            if (users) {
+
+
+                jsonString = messageFormatter.FormatMessage(err, "Get External User Access Fields Successful", true, users);
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "No External User Access filed data Found", true, undefined);
+
+            }
+        }
+
+        res.end(jsonString);
+    });
+
+}
+
+function UpdateAccessibleFieldConfig(req, res) {
+
+    logger.debug("DVP-UserService.UpdateExternalUserFieldsAvailability Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+
+    var jsonString;
+
+    ExternalUserAccessFields.findOneAndUpdate({
+        company: company,
+        tenant: tenant
+    }, req.body.fields).exec(function (errUpdate, resUpdate) {
+
+        if (errUpdate) {
+            jsonString = messageFormatter.FormatMessage(errUpdate, "Update External User Available Fields Failed", false, undefined);
+            res.end(jsonString);
+        }
+        else {
+            if (resUpdate) {
+                jsonString = messageFormatter.FormatMessage(undefined, "Update External User Available Fields Successful", true, undefined);
+            }
+            else {
+                jsonString = messageFormatter.FormatMessage(new Error("Update External User Available Fields Failed"), "Update External User Available Fields Failed", false, undefined);
+            }
+
+            res.end(jsonString);
+        }
+    });
+
+
+}
+
+function AddAccessibleFieldConfig(req, res) {
+
+    logger.debug("DVP-UserService.AddExternalUserAvailableFields Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+
+    var jsonString;
+
+    try {
+        if (req.body.fields) {
+            req.body.fields.company = company;
+            req.body.fields.tenant = tenant;
+
+            var userFields = ExternalUserAccessFields(req.body.fields);
+
+            userFields.save(function (errSave, resSave) {
+
+                if (errSave) {
+                    jsonString = messageFormatter.FormatMessage(errSave, "External User Available Fields Model already available", false, undefined);
+                    res.end(jsonString);
+                }
+                else {
+                    if (resSave) {
+                        jsonString = messageFormatter.FormatMessage(undefined, "External User Available Fields Model added successfully", true, resSave);
+                    }
+                    else {
+                        jsonString = messageFormatter.FormatMessage(new Error("Failed to add External user unaccessible feilds "), "Failed to add External user unaccessible feilds ", true, resSave);
+                    }
+                    res.end(jsonString);
+                }
+            });
+        }
+        else {
+            jsonString = messageFormatter.FormatMessage(new Error("Empty request body found"), "Empty request body found", false, undefined);
+            res.end(jsonString);
+        }
+    } catch (e) {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in operation : AddExternalUserAccessibleFields ", false, undefined);
+        res.end(jsonString);
+    }
+
+
+}
+
+function GetDefaultAccessibleFieldConfig(req, res) {
+
+
+    var jsonString;
+
+    try {
+
+        var propsKeys = Object.keys(ExternalUserAccessFields.schema.paths);
+        var propsAccess = Object.keys(AccessSchema.schema.paths);
+
+
+        propsKeys.splice(propsKeys.indexOf('created_at'), 1);
+        propsKeys.splice(propsKeys.indexOf('updated_at'), 1);
+        propsKeys.splice(propsKeys.indexOf('_id'), 1);
+        propsKeys.splice(propsKeys.indexOf('__v'), 1);
+        propsAccess.splice(propsAccess.indexOf('_id'), 1);
+        propsAccess.splice(propsAccess.indexOf('__v'), 1);
+
+
+        var obj =
+            {
+                Keys: propsKeys,
+                Sub_keys: propsAccess
+            }
+
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Get External User Access Key Fields succeeded", true, obj);
+        res.end(jsonString);
+
+    } catch (e) {
+
+        jsonString = messageFormatter.FormatMessage(e, "Error in operation : GetExternalUserAccessKeyFields", false, undefined);
+        res.end(jsonString);
+    }
+
+
+}
+
+function GetUserFields(req, res) {
+
+
+    var jsonString;
+
+    try {
+
+        var propsKeys = ExternalUser.schema.paths;
+
+
+        /*propsKeys.splice(propsKeys.indexOf('created_at'),1);
+        propsKeys.splice(propsKeys.indexOf('updated_at'),1);
+        propsKeys.splice(propsKeys.indexOf('_id'),1);
+        propsKeys.splice(propsKeys.indexOf('__v'),1);*/
+
+        jsonString = messageFormatter.FormatMessage(undefined, "Get External User Access Key Fields succeeded", true, propsKeys);
+        res.end(jsonString);
+
+    } catch (e) {
+
+        jsonString = messageFormatter.FormatMessage(e, "Error in operation : GetExternalUserAccessKeyFields", false, undefined);
+        res.end(jsonString);
+    }
+
+
+}
 
 module.exports.GetExternalUsers = GetExternalUsers;
 module.exports.GetExternalUser = GetExternalUser;
@@ -885,13 +1132,19 @@ module.exports.GetExternalUserProfileByInteraction = GetExternalUserProfileByInt
 module.exports.GetExternalUserProfileByField = GetExternalUserProfileByField;
 module.exports.UpdateExternalUserProfileContact = UpdateExternalUserProfileContact;
 module.exports.UpdateExternalUserProfileEmail = UpdateExternalUserProfileEmail;
-module.exports.RemoveExternalUserProfileContact =RemoveExternalUserProfileContact;
+module.exports.RemoveExternalUserProfileContact = RemoveExternalUserProfileContact;
 module.exports.UpdateExternalUserProfilePhone = UpdateExternalUserProfilePhone;
 module.exports.GetExternalUserProfileBySSN = GetExternalUserProfileBySSN;
 module.exports.BulkCreate = BulkCreate;
-module.exports.SearchExternalUsers =SearchExternalUsers;
+module.exports.SearchExternalUsers = SearchExternalUsers;
 module.exports.UpdateExternalUserProfileDynamicFields = UpdateExternalUserProfileDynamicFields;
 module.exports.UpdateFormSubmission = UpdateFormSubmission;
 module.exports.GetExternalUserAttribute = GetExternalUserAttribute;
 module.exports.GetExternalUsersByTags = GetExternalUsersByTags;
 module.exports.UpdateExternalUserAttribute = UpdateExternalUserAttribute;
+module.exports.GetAccessibleFieldConfig = GetAccessibleFieldConfig;
+module.exports.UpdateAccessibleFieldConfig = UpdateAccessibleFieldConfig;
+module.exports.AddAccessibleFieldConfig = AddAccessibleFieldConfig;
+module.exports.GetDefaultAccessibleFieldConfig = GetDefaultAccessibleFieldConfig;
+module.exports.GetUserFields = GetUserFields;
+
