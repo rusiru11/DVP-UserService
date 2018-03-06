@@ -751,7 +751,7 @@ function CreateUser(req, res) {
                                                         } else {
                                                             var userAccount = UserAccount({
                                                                 active: true,
-                                                                verified: false,
+                                                                verified: true,
                                                                 joined: Date.now(),
                                                                 user: user.username,
                                                                 userref: user._id,
