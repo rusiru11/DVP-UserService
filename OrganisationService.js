@@ -17,6 +17,8 @@ var validator = require('validator');
 var Tenant = require('dvp-mongomodels/model/Tenant').Tenant;
 var dbConn = require('dvp-dbmodels');
 var UserAccount = require('dvp-mongomodels/model/UserAccount');
+var businessUnitService = require('./BusinessUnitService.js');
+var externalUserService = require('./ExternalUserService.js');
 
 
 var redisip = config.Redis.ip;
@@ -174,6 +176,17 @@ function GetNewCompanyId(callback){
             callback(null);
         } else {
             callback(parseInt(result));
+        }
+    });
+}
+
+function SetCompanySpaceLimit(tenant, company, spaceType, limit){
+    var spaceLimitKey = util.format('SpaceLimit:%d:%d:%s', tenant, company, spaceType);
+    client.set(spaceLimitKey, JSON.stringify(limit), function (err, result) {
+        if (err) {
+            logger.error("Set Company space limit in redis failed: "+ err);
+        } else {
+            logger.error("Set Company space limit in redis success.");
         }
     });
 }
@@ -419,7 +432,7 @@ function DeleteOrganisation(req,res){
 //     });
 // }
 
-var AssignPackageToOrganisationLib = function(company, tenant, packageName, requestedUser, callback){
+var AssignPackageToOrganisationLib = function(company, tenant, packageName, requestedUser, addDefaultData, callback){
     logger.debug("DVP-UserService.AssignPackageToOrganisation Internal method ");
     logger.debug(packageName);
 
@@ -496,7 +509,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                                         typeExist.veeryPackage = vPackage._id;
                                                                         typeExist.buyDate = Date.now();
 
-                                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, function (jsonResponse) {
+                                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, addDefaultData, function (jsonResponse) {
                                                                             callback(jsonResponse);
                                                                         });
                                                                     } else {
@@ -529,7 +542,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                             } else {
                                                                 if (response) {
                                                                     if (response.IsSuccess) {
-                                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, function (jsonResponse) {
+                                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, addDefaultData, function (jsonResponse) {
                                                                             callback(jsonResponse);
                                                                         });
                                                                     } else {
@@ -543,7 +556,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                             }
                                                         });
                                                     } else {
-                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, function (jsonResponse) {
+                                                        SetPackageToOrganisation(company, tenant, domainData, vPackage, org, userAccount._id, addDefaultData, function (jsonResponse) {
                                                             callback(jsonResponse);
                                                         });
                                                     }
@@ -741,9 +754,10 @@ function ActivateOrganisation(req, res){
         }
         res.end(jsonString);
     });
-}
+};
 
-var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, org, userAccountId, callback){
+
+var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, org, userAccountId, addDefaultData, callback){
     var jsonString;
 
     if(vPackage.spaceLimit && vPackage.spaceLimit.length >0){
@@ -756,9 +770,11 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
             if(existingSpaceLimit && existingSpaceLimit.length > 0){
                 if(existingSpaceLimit[0].spaceLimit < sLimit.spaceLimit) {
                     existingSpaceLimit[0].spaceLimit = sLimit.spaceLimit;
+                    SetCompanySpaceLimit(tenant,company, sLimit.spaceType, existingSpaceLimit[0]);
                 }
             }else{
                 spaceLimitsToAdd.push(sLimit);
+                SetCompanySpaceLimit(tenant,company, sLimit.spaceType, sLimit);
             }
         });
 
@@ -831,7 +847,16 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
                 // UpdateUser(org.ownerId, vPackage);
                 UpdateUser(userAccountId, vPackage);
                 AssignTaskToOrganisation(company, tenant, vPackage.veeryTask);
-                AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
+                if(addDefaultData)
+                {
+                    AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
+                    AddDefaultRule(company, tenant);
+                    AddDefaultTicketTypes(company, tenant);
+                    AddDefaultFileCategories(company, tenant);
+                    businessUnitService.AddDefaultBusinessUnit(company, tenant, org.ownerRef.id);
+                    externalUserService.AddDefaultAccessibleFields(company, tenant);
+
+                }
                 jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
             }
             callback(jsonString);
@@ -859,7 +884,7 @@ function AssignPackageToOrganisation(req,res){
             res.end(jsonString);
         } else {
             if(userAccount) {
-                AssignPackageToOrganisationLib(orgId, tenant, req.params.packageName, userAccount.userref, function (jsonString) {
+                AssignPackageToOrganisationLib(orgId, tenant, req.params.packageName, userAccount.userref, false, function (jsonString) {
                     res.end(jsonString);
                 });
             }else{
@@ -913,13 +938,18 @@ function AssignTaskToOrganisation(company, tenant, taskList){
 function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
     var contextUrl = util.format("http://%s/DVP/API/%s/SipUser/Context",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointserviceVersion);
     var transferCodesUrl = util.format("http://%s/DVP/API/%s/SipUser/TransferCode",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointserviceVersion);
-    var cloudEndUserUrl = util.format("http://%s/DVP/API/%s/CloudConfiguration/CloudEndUser",config.Services.clusterconfigserviceHost, config.Services.clusterconfigserviceVersion);
-    if(validator.isIP(config.Services.resourceServiceHost))
+    var cloudEndUserUrl = util.format("http://%s/DVP/API/%s/CloudConfiguration/DefaultCloudEndUser",config.Services.clusterconfigserviceHost, config.Services.clusterconfigserviceVersion);
+    if(validator.isIP(config.Services.sipuserendpointserviceHost))
     {
-        cloudEndUserUrl = util.format("http://%s:%s/DVP/API/%s/CloudConfiguration/CloudEndUser", config.Services.clusterconfigserviceHost, config.Services.sipuserendpointservicePort, config.Services.clusterconfigserviceVersion);
-        contextUrl = util.format("http://%s:%s/DVP/API/%s/SipUser/Context", config.Services.sipuserendpointserviceHost, config.Services.clusterconfigservicePort, config.Services.sipuserendpointserviceVersion);
+        contextUrl = util.format("http://%s:%s/DVP/API/%s/SipUser/Context", config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointservicePort, config.Services.sipuserendpointserviceVersion);
         transferCodesUrl = util.format("http://%s:%s/DVP/API/%s/SipUser/TransferCode",config.Services.sipuserendpointserviceHost, config.Services.sipuserendpointservicePort, config.Services.sipuserendpointserviceVersion);
     }
+
+    if(validator.isIP(config.Services.clusterconfigserviceHost))
+    {
+        cloudEndUserUrl = util.format("http://%s:%s/DVP/API/%s/CloudConfiguration/DefaultCloudEndUser", config.Services.clusterconfigserviceHost, config.Services.clusterconfigservicePort, config.Services.clusterconfigserviceVersion);
+    }
+
     var companyInfo = util.format("%d:%d", tenant, company);
     var contextReqBody = {
         ContextCat: 'INTERNAL',
@@ -934,39 +964,136 @@ function AssignContextAndCloudEndUserToOrganisation(company, tenant, domain){
             console.log(err);
         }
         else {
+            var provision = 1;
+
             var companyInfoForCloudEndUser = util.format("%d:%d", 1, 1);
-            var cloudEndUserReqBody = {
-                ClusterID: 1,
-                Domain: domain,
-                Provision: 2,
-                ClientTenant: tenant,
-                ClientCompany: company
-            };
-            console.log("Assign context Success: ", result);
-            restClientHandler.DoPost(companyInfoForCloudEndUser, cloudEndUserUrl, cloudEndUserReqBody, function (err, res1, result) {
-                if (err) {
-                    console.log(err);
-                }
-                else {
-                    console.log("Assign cloudEndUser Success: ", result);
-                }
-            });
 
-            var transferCodesBody = {
-                InternalTransfer: 3,
-                ExternalTransfer: 6,
-                GroupTransfer: 4,
-                ConferenceTransfer: 5
-            };
+            if(config.ClusterName)
+            {
+                if(config.Provision)
+                {
+                    provision = config.Provision;
+                }
 
-            restClientHandler.DoPost(companyInfo, transferCodesUrl, transferCodesBody, function (err, res1, result) {
-                if (err) {
-                    console.log(err);
-                }
-                else {
-                    console.log("Assign transfer codes Success: ", result);
-                }
-            });
+                var cloudEndUserReqBody = {
+                    ClusterName: config.ClusterName,
+                    Domain: domain,
+                    Provision: provision,
+                    ClientTenant: tenant,
+                    ClientCompany: company
+                };
+                console.log("Assign context Success: ", result);
+                restClientHandler.DoPost(companyInfoForCloudEndUser, cloudEndUserUrl, cloudEndUserReqBody, function (err, res1, result) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else {
+                        console.log("Assign cloudEndUser Success: ", result);
+                    }
+                });
+
+                var transferCodesBody = {
+                    InternalTransfer: 3,
+                    ExternalTransfer: 6,
+                    GroupTransfer: 4,
+                    ConferenceTransfer: 5
+                };
+
+                restClientHandler.DoPost(companyInfo, transferCodesUrl, transferCodesBody, function (err, res1, result) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else {
+                        console.log("Assign transfer codes Success: ", result);
+                    }
+                });
+            }
+            else
+            {
+                console.log("Cluster Code not set");
+            }
+
+
+        }
+    });
+}
+
+function AddDefaultRule(company, tenant){
+    var ruleserviceUrl = util.format("http://%s/DVP/API/%s/CallRuleApi/DefaultRule",config.Services.ruleserviceHost, config.Services.ruleserviceVersion);
+
+    if(validator.isIP(config.Services.ruleserviceHost))
+    {
+        ruleserviceUrl = util.format("http://%s:%s/DVP/API/%s/CallRuleApi/DefaultRule",config.Services.ruleserviceHost, config.Services.ruleservicePort, config.Services.ruleserviceVersion);
+    }
+    var compInfo = util.format("%d:%d", tenant, company);
+    restClientHandler.DoPost(compInfo, ruleserviceUrl, null, function (err, res1, result) {
+        if (err)
+        {
+            console.log(err);
+        }
+        else
+        {
+            console.log("Add default rule result : ", result);
+        }
+    });
+}
+
+function AddDefaultFileCategories(company, tenant){
+
+    var arr ={FileCategories: [
+            {Category: 'CONVERSATION', Owner: "user", Visible: true, Encripted: true},
+            {Category: 'VOICEMAIL', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'HOLDMUSIC', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'IVRCLIPS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'TICKET_ATTACHMENTS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'REPORTS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'PROFILE_PICTURES', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'NOTICE_ATTACHMENTS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'CHAT_ATTACHMENTS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'FAX', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'EMAIL_ATTACHMENTS', Owner: "user", Visible: true, Encripted: false},
+            {Category: 'AGENT_GREETINGS', Owner: "user", Visible: true, Encripted: false}
+        ]};
+
+    var fileserviceUrl = util.format("http://%s/DVP/API/%s/FileService/FileCategory/Bulk",config.Services.fileserviceHost, config.Services.fileserviceVersion);
+
+    if(validator.isIP(config.Services.fileserviceHost))
+    {
+        fileserviceUrl = util.format("http://%s:%s/DVP/API/%s/FileService/FileCategory/Bulk",config.Services.fileserviceHost, config.Services.fileservicePort, config.Services.fileserviceVersion);
+    }
+    var compInfo = util.format("%d:%d", tenant, company);
+    restClientHandler.DoPost(compInfo, fileserviceUrl, arr, function (err, res1, result) {
+        if (err)
+        {
+            console.log(err);
+        }
+        else
+        {
+            console.log("Add file categories result : ", result);
+        }
+    });
+}
+
+function AddDefaultTicketTypes(company, tenant){
+    var ticketserviceUrl = util.format("http://%s/DVP/API/%s/TicketTypes",config.Services.liteticketHost, config.Services.liteticketVersion);
+
+    if(validator.isIP(config.Services.liteticketHost))
+    {
+        ticketserviceUrl = util.format("http://%s:%s/DVP/API/%s/TicketTypes",config.Services.liteticketHost, config.Services.liteticketPort, config.Services.liteticketVersion);
+    }
+    var compInfo = util.format("%d:%d", tenant, company);
+
+    var obj = {
+        custom_types: []
+    };
+    restClientHandler.DoPost(compInfo, ticketserviceUrl, obj, function (err, res1, result) {
+        if (err)
+        {
+            console.log(err);
+        }
+        else
+        {
+            console.log("Add default ticket types : ", result);
         }
     });
 }
@@ -1009,6 +1136,7 @@ function RemovePackageFromOrganisation(req,res){
 
                                 if(existingSpaceLimit && existingSpaceLimit.length > 0){
                                     existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit - sLimit.spaceLimit;
+                                    SetCompanySpaceLimit(tenant,company, sLimit.spaceType, existingSpaceLimit[0]);
                                 }
                             });
                         }
@@ -1398,7 +1526,7 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
                                             callback(err, undefined);
                                         } else {
                                             //rUser.company = cid;
-                                            AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", user,function(jsonString){
+                                            AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", user, true, function(jsonString){
                                                 console.log(jsonString);
                                             });
                                             callback(undefined, user);
@@ -1538,8 +1666,10 @@ function AssignPackageUnitToOrganisation(req,res){
 
                                                                                         if(existingSpaceLimit && existingSpaceLimit.length > 0){
                                                                                             existingSpaceLimit[0].spaceLimit = existingSpaceLimit[0].spaceLimit + sLimit.spaceLimit;
+                                                                                            SetCompanySpaceLimit(org.tenant, org.id, sLimit.spaceType, existingSpaceLimit[0]);
                                                                                         }else{
                                                                                             spaceLimitsToAdd.push(sLimit);
+                                                                                            SetCompanySpaceLimit(org.tenant, org.id, sLimit.spaceType, sLimit);
                                                                                         }
                                                                                     });
 

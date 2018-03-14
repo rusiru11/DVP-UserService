@@ -12,7 +12,7 @@ var config = require("config");
 var validator = require("validator");
 
 
-function GetInvitation(req, res){
+function GetInvitation(req, res) {
 
 
     logger.debug("DVP-UserService.GetInvitation Internal method ");
@@ -23,19 +23,23 @@ function GetInvitation(req, res){
     var user = req.user.iss;
 
 
-    UserInvitation.findOne({company: company, tenant: tenant, _id:  ObjectId(req.params.id)}, function(err, invitations) {
+    UserInvitation.findOne({
+        company: company,
+        tenant: tenant,
+        _id: ObjectId(req.params.id)
+    }, function (err, invitations) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get invitation Failed", false, undefined);
 
-        }else {
+        } else {
 
             if (usergroups) {
 
 
                 jsonString = messageFormatter.FormatMessage(err, "Get invitation Successful", true, invitations);
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "No invitations Found", false, undefined);
 
@@ -47,7 +51,7 @@ function GetInvitation(req, res){
 
 }
 
-function GetMyReceivedInvitations(req, res){
+function GetMyReceivedInvitations(req, res) {
 
 
     logger.debug("DVP-UserService.GetMyReceivedInvitations Internal method ");
@@ -65,19 +69,19 @@ function GetMyReceivedInvitations(req, res){
     //
     // });
 
-    UserInvitation.find({ to:  user, status: 'pending'}, function(err, invitations) {
+    UserInvitation.find({to: user, status: 'pending'}, function (err, invitations) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get My invitations Failed", false, undefined);
 
-        }else {
+        } else {
 
             if (invitations) {
 
 
                 jsonString = messageFormatter.FormatMessage(err, "Get My invitations Successful", true, invitations);
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "No invitations Found", false, undefined);
 
@@ -89,7 +93,7 @@ function GetMyReceivedInvitations(req, res){
 
 }
 
-function GetMySendInvitations(req, res){
+function GetMySendInvitations(req, res) {
 
 
     logger.debug("DVP-UserService.GetMyFromInvitations Internal method ");
@@ -100,19 +104,19 @@ function GetMySendInvitations(req, res){
     var user = req.user.iss;
 
 
-    UserInvitation.find({ from:  user}, function(err, invitations) {
+    UserInvitation.find({from: user}, function (err, invitations) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get My invitations Failed", false, undefined);
 
-        }else {
+        } else {
 
             if (invitations) {
 
 
                 jsonString = messageFormatter.FormatMessage(err, "Get My invitations Successful", true, invitations);
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(undefined, "No invitations Found", false, undefined);
 
@@ -134,99 +138,130 @@ function CreateInvitation(req, res) {
     var to = req.params.to;
     var message = "";
     var role = "agent";
-    if(req.body && req.body.message){
+    if (req.body && req.body.message) {
         message = req.body.message;
     }
 
-    if(req.body && req.body.role){
+    if (req.body && req.body.role) {
         role = req.body.role;
     }
 
-    User.findOne({
-        username: to
-    }, function (err, user) {
-
-        if(err){
-
-            jsonString = messageFormatter.FormatMessage(err, "User Invitation failed due to no user found", true, undefined);
+    Org.findOne({tenant: tenant, id: company}, function (err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
             res.end(jsonString);
+        } else {
+            if (org) {
+                if (req.body.role) {
+                    var userRole = req.body.role.toLowerCase();
+                    var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
+                    if (limitObj) {
+                        if (limitObj.accessLimit > limitObj.currentAccess.length) {
+                            User.findOne({
+                                username: to
+                            }, function (err, user) {
+
+                                if (err) {
+
+                                    jsonString = messageFormatter.FormatMessage(err, "User Invitation failed due to no user found", true, undefined);
+                                    res.end(jsonString);
 
 
-        }else {
+                                } else {
 
-            if (user && user.allow_invitation === true) {
+                                    if (user && user.allow_invitation === true) {
 
-                var invitation = UserInvitation({
-                    to: to,
-                    from: from,
+                                        var invitation = UserInvitation({
+                                            to: to,
+                                            from: from,
 
-                    status: 'pending',
-                    company: company,
-                    tenant: tenant,
-                    created_at: Date.now(),
-                    updated_at: Date.now(),
-                    message: message,
-                });
+                                            status: 'pending',
+                                            company: company,
+                                            tenant: tenant,
+                                            created_at: Date.now(),
+                                            updated_at: Date.now(),
+                                            message: message,
+                                        });
 
-                invitation.save(function (err, invitation) {
-                    if (err) {
-                        jsonString = messageFormatter.FormatMessage(err, "User Invitation save failed", false, undefined);
-                        res.end(jsonString);
+                                        invitation.save(function (err, invitation) {
+                                            if (err) {
+                                                jsonString = messageFormatter.FormatMessage(err, "User Invitation save failed", false, undefined);
+                                                res.end(jsonString);
+                                            } else {
+
+
+                                                var userAccount = UserAccount({
+                                                    active: true,
+                                                    verified: false,
+                                                    userref: user._id,
+                                                    user_meta: {role: role},
+                                                    user: to,
+                                                    tenant: tenant,
+                                                    company: company,
+                                                    created_at: Date.now(),
+                                                    updated_at: Date.now(),
+                                                    multi_login: false
+                                                });
+
+                                                userAccount.save(function (err, account) {
+                                                    if (err) {
+                                                        jsonString = messageFormatter.FormatMessage(new Error("Account creation failed"), "User Invitation failed due to no user found", true, undefined);
+                                                        res.end(jsonString);
+                                                    } else {
+
+
+                                                        var sendObj = {
+                                                            "company": 0,
+                                                            "tenant": 1
+                                                        };
+
+                                                        sendObj.to = to;
+                                                        sendObj.from = "no-reply";
+                                                        sendObj.template = "By-User Invitation received";
+                                                        sendObj.Parameters = {
+                                                            username: to,
+                                                            owner: from,
+                                                            created_at: new Date()
+                                                        };
+
+                                                        PublishToQueue("EMAILOUT", sendObj);
+
+                                                        SenNotification(company, tenant, from, to, message, function () {
+
+                                                        })
+
+                                                        jsonString = messageFormatter.FormatMessage(undefined, "User Invitation saved successfully", true, invitation);
+                                                        res.end(jsonString);
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    } else {
+
+                                        jsonString = messageFormatter.FormatMessage(new Error("No user found"), "User Invitation failed due to no user found", true, undefined);
+                                        res.end(jsonString);
+                                    }
+                                }
+
+                            });
+                        } else {
+                            jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
+                            res.end(jsonString);
+                        }
                     } else {
-
-
-                        var userAccount = UserAccount({
-                            active: true,
-                            verified: false,
-                            userref: user._id,
-                            user_meta: {role: role},
-                            user: to,
-                            tenant: tenant,
-                            company: company,
-                            created_at: Date.now(),
-                            updated_at: Date.now(),
-                            multi_login: false
-                        });
-
-                        userAccount.save(function (err, account) {
-                            if (err) {
-                                jsonString = messageFormatter.FormatMessage(new Error("Account creation failed"), "User Invitation failed due to no user found", true, undefined);
-                                res.end(jsonString);
-                            } else {
-
-
-
-                                var sendObj = {
-                                    "company": 0,
-                                    "tenant": 1
-                                };
-
-                                sendObj.to =  to;
-                                sendObj.from = "no-reply";
-                                sendObj.template = "By-User Invitation received";
-                                sendObj.Parameters = {username: to, owner: from, created_at: new Date()};
-
-                                PublishToQueue("EMAILOUT", sendObj);
-
-                                SenNotification(company,tenant,from,to,message,function(){
-
-                                })
-
-                                jsonString = messageFormatter.FormatMessage(undefined, "User Invitation saved successfully", true, invitation);
-                                res.end(jsonString);
-                            }
-                        });
+                        jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
+                        res.end(jsonString);
                     }
-                });
+                } else {
+                    jsonString = messageFormatter.FormatMessage(err, "No User Role Found", false, undefined);
+                    res.end(jsonString);
+                }
             } else {
-
-                jsonString = messageFormatter.FormatMessage(new Error("No user found"), "User Invitation failed due to no user found", true, undefined);
+                jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
                 res.end(jsonString);
             }
         }
-
     });
-
 }
 
 function AcceptUserInvitation(req, res) {
@@ -284,7 +319,7 @@ function AcceptUserInvitation(req, res) {
 
 }
 
-function RejectUserInvitation(req, res){
+function RejectUserInvitation(req, res) {
 
 
     logger.debug("DVP-UserService.AcceptUserInvitation Internal method ");
@@ -295,12 +330,18 @@ function RejectUserInvitation(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    UserInvitation.findOneAndUpdate({_id: ObjectId(req.params.id),company: company, tenant: tenant, to: to, status: "pending"}, {status: "rejected", update_at: Date.now()}, function(err, invitation) {
+    UserInvitation.findOneAndUpdate({
+        _id: ObjectId(req.params.id),
+        company: company,
+        tenant: tenant,
+        to: to,
+        status: "pending"
+    }, {status: "rejected", update_at: Date.now()}, function (err, invitation) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Invitation Failed", false, undefined);
 
-        }else {
+        } else {
 
             if (invitation) {
                 //jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
@@ -333,7 +374,7 @@ function RejectUserInvitation(req, res){
 
 }
 
-function CancelUserInvitation(req, res){
+function CancelUserInvitation(req, res) {
 
 
     logger.debug("DVP-UserService.CancelUserInvitation Internal method ");
@@ -344,25 +385,35 @@ function CancelUserInvitation(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    UserInvitation.findOneAndUpdate({_id: ObjectId(req.params.id),company: company, tenant: tenant, from: from, status: 'pending'}, {status: "canceled", update_at: Date.now()}, function(err, invitation) {
+    UserInvitation.findOneAndUpdate({
+        _id: ObjectId(req.params.id),
+        company: company,
+        tenant: tenant,
+        from: from,
+        status: 'pending'
+    }, {status: "canceled", update_at: Date.now()}, function (err, invitation) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Invitation Failed", false, undefined);
             res.end(jsonString);
 
-        }else{
+        } else {
 
-            if(invitation){
+            if (invitation) {
 
                 var to = invitation.to;
                 //jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
-                UserAccount.findOneAndUpdate({ company: company, tenant: tenant, user: to}, {varified:false, active: false, update_at: Date.now()}, function (err, account) {
-                    if(err){
+                UserAccount.findOneAndUpdate({company: company, tenant: tenant, user: to}, {
+                    varified: false,
+                    active: false,
+                    update_at: Date.now()
+                }, function (err, account) {
+                    if (err) {
 
                         jsonString = messageFormatter.FormatMessage(err, "Update User Invitation failed", false, undefined);
                         res.end(jsonString);
 
-                    }else{
+                    } else {
 
                         jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
                         res.end(jsonString);
@@ -370,7 +421,7 @@ function CancelUserInvitation(req, res){
 
                 });
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(new Error("No invitation found"), "Update User Invitation failed", false, undefined);
                 res.end(jsonString);
@@ -383,7 +434,7 @@ function CancelUserInvitation(req, res){
 
 }
 
-function ResendUserInvitation(req, res){
+function ResendUserInvitation(req, res) {
 
 
     logger.debug("DVP-UserService.ResendUserInvitation Internal method ");
@@ -394,25 +445,35 @@ function ResendUserInvitation(req, res){
     var jsonString;
 
     req.body.updated_at = Date.now();
-    UserInvitation.findOneAndUpdate({_id: ObjectId(req.params.id),company: company, tenant: tenant, from: from, status: 'canceled'}, {status: "pending", update_at: Date.now()}, function(err, invitation) {
+    UserInvitation.findOneAndUpdate({
+        _id: ObjectId(req.params.id),
+        company: company,
+        tenant: tenant,
+        from: from,
+        status: 'canceled'
+    }, {status: "pending", update_at: Date.now()}, function (err, invitation) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Invitation Failed", false, undefined);
             res.end(jsonString);
 
-        }else{
+        } else {
 
-            if(invitation){
+            if (invitation) {
 
                 var to = invitation.to;
                 //jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
-                UserAccount.findOneAndUpdate({ company: company, tenant: tenant, user: to}, {varified:false, active: false, update_at: Date.now()}, function (err, account) {
-                    if(err){
+                UserAccount.findOneAndUpdate({company: company, tenant: tenant, user: to}, {
+                    varified: false,
+                    active: false,
+                    update_at: Date.now()
+                }, function (err, account) {
+                    if (err) {
 
                         jsonString = messageFormatter.FormatMessage(err, "Update User Invitation failed", false, undefined);
                         res.end(jsonString);
 
-                    }else{
+                    } else {
 
                         jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
                         res.end(jsonString);
@@ -420,7 +481,7 @@ function ResendUserInvitation(req, res){
 
                 });
 
-            }else{
+            } else {
 
                 jsonString = messageFormatter.FormatMessage(new Error("No invitation found"), "Update User Invitation failed", false, undefined);
                 res.end(jsonString);
@@ -434,9 +495,7 @@ function ResendUserInvitation(req, res){
 }
 
 
-
-
-var SenNotification = function (company, tenant,from, to, message,  callback) {
+var SenNotification = function (company, tenant, from, to, message, callback) {
     //var jsonStr = JSON.stringify(postData);
     var accessToken = util.format("bearer %s", config.Services.accessToken);
     var internalAccessToken = util.format("%d:%d", tenant, company);
@@ -475,12 +534,10 @@ var SenNotification = function (company, tenant,from, to, message,  callback) {
             console.log('Server returned: %j', body);
             callback(err, httpResponse, body);
         });
-    }catch(ex){
+    } catch (ex) {
         callback(ex, undefined, undefined);
     }
 };
-
-
 
 
 module.exports.GetMyReceivedInvitations = GetMyReceivedInvitations;

@@ -554,8 +554,8 @@ module.exports.Login =  function(req, res) {
 
                                     redisClient.expireat("activate"+":"+token,  parseInt((+new Date)/1000) + 86400);
                                     var sendObj = {
-                                        "company": 0,
-                                        "tenant": 1
+                                        "company": config.Tenant.activeCompany,
+                                        "tenant": config.Tenant.activeTenant
                                     };
 
                                     sendObj.to =  user.email.contact;
@@ -995,8 +995,8 @@ module.exports.SignUP = function(req, res) {
                                             res.send({state: "new", message: "check mail"});
 
                                             var sendObj = {
-                                                "company": 0,
-                                                "tenant": 1
+                                                "company": config.Tenant.activeCompany,
+                                                "tenant": config.Tenant.activeTenant
                                             };
 
                                             sendObj.to = req.body.mail;
@@ -1093,8 +1093,8 @@ module.exports.SignUP = function(req, res) {
                                             res.send({state: "new", message: "check mail", companyId: result.company});
 
                                             var sendObj = {
-                                                "company": 0,
-                                                "tenant": 1
+                                                "company": config.Tenant.activeCompany,
+                                                "tenant": config.Tenant.activeTenant
                                             };
 
                                             sendObj.to = req.body.mail;
@@ -1307,8 +1307,8 @@ module.exports.Google = function(req, res) {
                                                         if (token) {
 
                                                             var sendObj = {
-                                                                "company": 0,
-                                                                "tenant": 1
+                                                                "company": config.Tenant.activeCompany,
+                                                                "tenant": config.Tenant.activeTenant
                                                             };
 
                                                             sendObj.to = profile.email;
@@ -1553,8 +1553,8 @@ module.exports.GitHub = function(req, res) {
                                                     if (token) {
 
                                                         var sendObj = {
-                                                            "company": 0,
-                                                            "tenant": 1
+                                                            "company": config.Tenant.activeCompany,
+                                                            "tenant": config.Tenant.activeTenant
                                                         };
 
                                                         sendObj.to = profile.email;
@@ -1818,8 +1818,8 @@ module.exports.Facebook = function(req, res) {
                                                 if(token){
 
                                                     var sendObj = {
-                                                        "company": 0,
-                                                        "tenant": 1
+                                                        "company": config.Tenant.activeCompany,
+                                                        "tenant": config.Tenant.activeTenant
                                                     };
 
                                                     sendObj.to =  profile.email;
@@ -1936,8 +1936,8 @@ module.exports.ForgetPassword = function(req, res){
 
                             redisClient.expireat("reset"+":"+token,  parseInt((+new Date)/1000) + 86400);
                             var sendObj = {
-                                "company": 0,
-                                "tenant": 1
+                                "company": config.Tenant.activeCompany,
+                                "tenant": config.Tenant.activeTenant
                             };
 
                             //existingUser.url = url;
@@ -1999,8 +1999,8 @@ module.exports.ForgetPasswordToken = function(req, res){
 
                             redisClient.expireat("reset"+":"+token,  parseInt((+new Date)/1000) + 86400);
                             var sendObj = {
-                                "company": 0,
-                                "tenant": 1
+                                "company": config.Tenant.activeCompany,
+                                "tenant": config.Tenant.activeTenant
                             };
 
                             //existingUser.url = url;
@@ -2061,8 +2061,8 @@ module.exports.ResetPassword = function(req, res){
 
                                 } else {
                                     var sendObj = {
-                                        "company": 0,
-                                        "tenant": 1
+                                        "company": config.Tenant.activeCompany,
+                                        "tenant": config.Tenant.activeTenant
                                     };
 
                                     //existingUser.url = url;
@@ -2127,8 +2127,8 @@ module.exports.ActivateAccount= function(req, res){
 
                     } else {
                         var sendObj = {
-                            "company": 0,
-                            "tenant": 1
+                            "company": config.Tenant.activeCompany,
+                            "tenant": config.Tenant.activeTenant
                         };
 
                         //existingUser.url = url;
@@ -2185,8 +2185,8 @@ module.exports.CheckToken = function(req, res) {
 module.exports.Attachments = function(req,res){
 
     var sendObj = {
-        "company": 0,
-        "tenant": 1
+        "company": config.Tenant.activeCompany,
+        "tenant": config.Tenant.activeTenant
     };
 
     sendObj.to =  "pawan@duosoftware.com";

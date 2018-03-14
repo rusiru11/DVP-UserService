@@ -135,7 +135,7 @@ function GetUsers(req, res) {
                             var user = userAccount.userref.toObject();
 
                             user.group = userAccount.group;
-                            user.active = userAccount.active;
+                            user.Active = userAccount.active;
                             user.joined = userAccount.joined;
                             user.resourceid = userAccount.resource_id;
                             user.veeryaccount = userAccount.veeryaccount;
@@ -217,7 +217,7 @@ function GetUser(req, res) {
                     var user = userAccount.userref.toObject();
 
                     user.group = userAccount.group;
-                    user.active = userAccount.active;
+                    user.Active = userAccount.active;
                     user.joined = userAccount.joined;
                     user.resourceid = userAccount.resource_id;
                     user.veeryaccount = userAccount.veeryaccount;
@@ -269,7 +269,7 @@ function GetUsersByIDs(req, res) {
                     var user = userAccount.userref.toObject();
 
                     user.group = userAccount.group;
-                    user.active = userAccount.active;
+                    user.Active = userAccount.active;
                     user.joined = userAccount.joined;
                     user.resourceid = userAccount.resource_id;
                     user.veeryaccount = userAccount.veeryaccount;
@@ -321,7 +321,7 @@ function GetUsersByRole(req, res) {
                     var user = userAccount.userref.toObject();
 
                     user.group = userAccount.group;
-                    user.active = userAccount.active;
+                    user.Active = userAccount.active;
                     user.joined = userAccount.joined;
                     user.resourceid = userAccount.resource_id;
                     user.veeryaccount = userAccount.veeryaccount;
@@ -376,7 +376,7 @@ function GetUsersByRoles(req, res) {
                     var user = userAccount.userref.toObject();
 
                     user.group = userAccount.group;
-                    user.active = userAccount.active;
+                    user.Active = userAccount.active;
                     user.joined = userAccount.joined;
                     user.resourceid = userAccount.resource_id;
                     user.veeryaccount = userAccount.veeryaccount;
@@ -751,7 +751,7 @@ function CreateUser(req, res) {
                                                         } else {
                                                             var userAccount = UserAccount({
                                                                 active: true,
-                                                                verified: false,
+                                                                verified: true,
                                                                 joined: Date.now(),
                                                                 user: user.username,
                                                                 userref: user._id,
@@ -807,8 +807,8 @@ function CreateUser(req, res) {
                                                                                             redisClient.expireat("activate" + ":" + token, parseInt((+new Date) / 1000) + 86400);
 
                                                                                             var sendObj = {
-                                                                                                "company": 0,
-                                                                                                "tenant": 1
+                                                                                                "company": config.Tenant.activeCompany,
+                                                                                                "tenant": config.Tenant.activeTenant
                                                                                             };
 
                                                                                             sendObj.to = req.body.mail;
@@ -900,7 +900,7 @@ function ReActivateUser(req, res) {
                             if (userAccount) {
 
                                 if (userAccount.user_meta.role) {
-                                    var userRole = user.user_meta.role.toLowerCase();
+                                    var userRole = userAccount.user_meta.role.toLowerCase();
                                     var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
                                     if (limitObj) {
                                         if (limitObj.accessLimit > limitObj.currentAccess.length) {
@@ -1076,7 +1076,7 @@ function UpdateUser(req, res) {
                         } else {
                             if (userAccount) {
                                 user.group = userAccount.group;
-                                user.active = userAccount.active;
+                                user.Active = userAccount.active;
                                 user.joined = userAccount.joined;
                                 user.resourceid = userAccount.resource_id;
                                 user.veeryaccount = userAccount.veeryaccount;
@@ -1156,8 +1156,8 @@ function UpdateUserProfilePassword(req, res) {
 
                             redisClient.expireat("reset" + ":" + token, parseInt((+new Date) / 1000) + 86400);
                             var sendObj = {
-                                "company": 0,
-                                "tenant": 1
+                                "company": config.Tenant.activeCompany,
+                                "tenant": config.Tenant.activeTenant
                             };
 
                             //existingUser.url = url;
@@ -1398,7 +1398,7 @@ function GetUserProfileByResourceId(req, res) {
 
                 var user = userAccount.userref.toObject();
                 user.group = userAccount.group;
-                user.active = userAccount.active;
+                user.Active = userAccount.active;
                 user.joined = userAccount.joined;
                 user.resourceid = userAccount.resource_id;
                 user.veeryaccount = userAccount.veeryaccount;
@@ -1445,7 +1445,7 @@ function GetUserProfileByContact(req, res) {
                 if (account.userref[category + ".contact"] === contact) {
                     var user = account.userref.toObject();
                     user.group = account.group;
-                    user.active = account.active;
+                    user.Active = account.active;
                     user.joined = account.joined;
                     user.resourceid = account.resource_id;
                     user.veeryaccount = account.veeryaccount;
@@ -1525,7 +1525,7 @@ function GetUserProfile(req, res) {
                 var user = userAccount.userref.toObject();
 
                 user.group = userAccount.group;
-                user.active = userAccount.active;
+                user.Active = userAccount.active;
                 user.joined = userAccount.joined;
                 user.resourceid = userAccount.resource_id;
                 user.veeryaccount = userAccount.veeryaccount;
@@ -3502,7 +3502,7 @@ function GetSuperUsers(req, res) {
                         var user = userAcc.userref.toObject();
 
                         user.group = userAcc.group;
-                        user.active = userAcc.active;
+                        user.Active = userAcc.active;
                         user.joined = userAcc.joined;
                         user.resourceid = userAcc.resource_id;
                         user.veeryaccount = userAcc.veeryaccount;
@@ -3851,22 +3851,37 @@ function GetFileCategories(req, res) {
 
     req.body.updated_at = Date.now();
 
+    if(req.user.company && req.user.tenant)
+    {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
 
-    DbConn.FileCategory.findAll({where: [{Visible: true}]}).then(function (resCat) {
+        DbConn.FileCategory.findAll({where: [{Visible: true},{Company:company},{Tenant:tenant}]}).then(function (resCat) {
 
-        if (resCat) {
-            jsonString = messageFormatter.FormatMessage(undefined, "File categories found", true, resCat);
+            if (resCat) {
+                jsonString = messageFormatter.FormatMessage(undefined, "File categories found", true, resCat);
+                res.end(jsonString);
+            }
+            else {
+                jsonString = messageFormatter.FormatMessage(new Error('No fule categories found'), "No fule categories found ", false, undefined);
+                res.end(jsonString);
+            }
+
+        }).catch(function (errCat) {
+            jsonString = messageFormatter.FormatMessage(errCat, "Error in searching file categories", false, undefined);
             res.end(jsonString);
-        }
-        else {
-            jsonString = messageFormatter.FormatMessage(new Error('No fule categories found'), "No fule categories found ", false, undefined);
-            res.end(jsonString);
-        }
-
-    }).catch(function (errCat) {
-        jsonString = messageFormatter.FormatMessage(errCat, "Error in searching file categories", false, undefined);
+        });
+    }
+    else
+    {
+        jsonString = messageFormatter.FormatMessage(new Error("No Company Tenant details found"), "No Company Tenant details found", false, undefined);
         res.end(jsonString);
-    });
+
+
+    }
+
+
+
 
 
 }

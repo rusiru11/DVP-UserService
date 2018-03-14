@@ -116,6 +116,15 @@ module.exports = {
         "sipuserendpointserviceHost": "SYS_SIPUSERENDPOINTSERVICE_HOST",
         "sipuserendpointservicePort": "SYS_SIPUSERENDPOINTSERVICE_PORT",
         "sipuserendpointserviceVersion": "SYS_SIPUSERENDPOINTSERVICE_VERSION",
+        "ruleserviceHost": "SYS_RULESERVICE_HOST",
+        "ruleservicePort": "SYS_RULESERVICE_PORT",
+        "ruleserviceVersion": "SYS_RULESERVICE_VERSION",
+        "fileserviceHost": "SYS_FILESERVICE_HOST",
+        "fileservicePort": "SYS_FILESERVICE_PORT",
+        "fileserviceVersion": "SYS_FILESERVICE_VERSION",
+        "liteticketHost": "SYS_LITETICKET_HOST",
+        "liteticketPort": "SYS_LITETICKET_PORT",
+        "liteticketVersion": "SYS_LITETICKET_VERSION",
         "clusterconfigserviceHost": "SYS_CLUSTERCONFIG_HOST",
         "clusterconfigservicePort": "SYS_CLUSTERCONFIG_PORT",
         "clusterconfigserviceVersion": "SYS_CLUSTERCONFIG_VERSION",
@@ -125,8 +134,12 @@ module.exports = {
     },
 
     "Tenant": {
-        "activeTenant": "ACTIVE_TENANT"
+        "activeTenant": "ACTIVE_TENANT",
+        "activeCompany": "ACTIVE_COMPANY"
     },
+
+    "ClusterName": "HOST_CLUSTER_NAME",
+    "Provision": "HOST_PROVISION_MECHANISM",
 
     "ActiveDirectory": {
         "groupName": "AD_GROUPNAME"
