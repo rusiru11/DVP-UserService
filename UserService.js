@@ -4134,6 +4134,59 @@ function UserAcccountActivation(req, res) {
 
 }
 
+function UpdateUsersVeeryAccountDomain(req, res) {
+
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+
+    var jsonString;
+    var queryString  = {company: company, tenant: tenant};
+
+
+    UserAccount.find(queryString).exec(function (err, userAccounts) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+
+        } else {
+
+            if (userAccounts && Array.isArray(userAccounts) ) {
+                var domainName = req.body.domainName;
+                var users = userAccounts.map(function (userAccount) {
+                    if(userAccount.veeryaccount) {
+
+                        var arr = userAccount.veeryaccount.contact.split("@");
+                        userAccount.veeryaccount.contact = arr[0]+"@"+domainName;
+
+                        UserAccount.findOneAndUpdate({
+                            _id: userAccount._id
+                        }, {"veeryaccount": userAccount.veeryaccount}, function (err, users) {
+                            if (err) {
+                                console.error(err);
+                            } else {
+                                console.log("Domain Updated...."+userAccount.veeryaccount.contact);
+                            }
+
+                        });
+
+                    }
+
+                });
+                jsonString = messageFormatter.FormatMessage(undefined, "opration Started....", true, undefined);
+                res.end(jsonString);
+            } else {
+                console.error("Invalide Data");
+                jsonString = messageFormatter.FormatMessage(undefined, "opration fail....", false, undefined);
+                res.end(jsonString);
+            }
+        }
+
+
+    });
+
+}
+
 
 module.exports.GetUser = GetUser;
 module.exports.GetUsers = GetUsers;
@@ -4217,5 +4270,8 @@ module.exports.UserIsAllowToOutbound = userIsAllowToOutbound;
 
 module.exports.GetFileCategories = GetFileCategories;
 module.exports.UserAcccountActivation = UserAcccountActivation;
+
+module.exports.UpdateUsersVeeryAccountDomain = UpdateUsersVeeryAccountDomain;
+
 /*
  module.exports.AddFileCategoriesToUser = AddFileCategoriesToUser;*/
