@@ -726,6 +726,7 @@ function GetUsersOfBusinessUnits(req, res){
                     {
                         var users = resUsers.map(function(item){
 
+                            item.userref.resourceid = item.resource_id;
                             return item.userref;
                         });
                         jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, users);
@@ -772,6 +773,7 @@ function GetUsersOfBusinessUnits(req, res){
                                 {
                                     var users = resUsers.map(function(item){
 
+                                        item.userref.resourceid = item.resource_id;
                                         return item.userref;
                                     });
                                     jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, users);
