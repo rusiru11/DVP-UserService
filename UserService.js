@@ -734,6 +734,11 @@ function CreateUser(req, res) {
                                                         updated_at: Date.now()
                                                     });
 
+                                                    if(req.body.veeryaccount)
+                                                    {
+                                                        user.veeryaccount = req.body.veeryaccount;
+                                                    }
+
                                                     if (config.auth.login_verification) {
 
                                                         user.verified = false;
