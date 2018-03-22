@@ -364,7 +364,7 @@ function GetUsersByRoles(req, res) {
     });
 
 
-    UserAccount.find(qObj).populate('userref', '-password')
+    UserAccount.find(qObj).select('-user_scopes -client_scopes').populate('userref', '-password -user_scopes -client_scopes')
         .exec(function (err, userAccounts) {
             if (err) {
 
