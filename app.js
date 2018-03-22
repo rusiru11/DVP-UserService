@@ -492,6 +492,7 @@ app.put('/DVP/API/:version/Invitation/Resend/:id',jwt({secret: secret.Secret}),a
 app.put('/DVP/API/:version/UserAccount/:username/Activation/:state',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),userService.UserAcccountActivation);
 
 
+app.post('/DVP/API/:version/UserAccount/DataMigrate/Domain',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),userService.UpdateUsersVeeryAccountDomain);
 
 app.listen(port, function () {
 

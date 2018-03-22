@@ -734,6 +734,11 @@ function CreateUser(req, res) {
                                                         updated_at: Date.now()
                                                     });
 
+                                                    if(req.body.veeryaccount)
+                                                    {
+                                                        user.veeryaccount = req.body.veeryaccount;
+                                                    }
+
                                                     if (config.auth.login_verification) {
 
                                                         user.verified = false;
@@ -751,7 +756,7 @@ function CreateUser(req, res) {
                                                         } else {
                                                             var userAccount = UserAccount({
                                                                 active: true,
-                                                                verified: false,
+                                                                verified: true,
                                                                 joined: Date.now(),
                                                                 user: user.username,
                                                                 userref: user._id,
@@ -807,8 +812,8 @@ function CreateUser(req, res) {
                                                                                             redisClient.expireat("activate" + ":" + token, parseInt((+new Date) / 1000) + 86400);
 
                                                                                             var sendObj = {
-                                                                                                "company": 0,
-                                                                                                "tenant": 1
+                                                                                                "company": config.Tenant.activeCompany,
+                                                                                                "tenant": config.Tenant.activeTenant
                                                                                             };
 
                                                                                             sendObj.to = req.body.mail;
@@ -1156,8 +1161,8 @@ function UpdateUserProfilePassword(req, res) {
 
                             redisClient.expireat("reset" + ":" + token, parseInt((+new Date) / 1000) + 86400);
                             var sendObj = {
-                                "company": 0,
-                                "tenant": 1
+                                "company": config.Tenant.activeCompany,
+                                "tenant": config.Tenant.activeTenant
                             };
 
                             //existingUser.url = url;
@@ -4134,6 +4139,59 @@ function UserAcccountActivation(req, res) {
 
 }
 
+function UpdateUsersVeeryAccountDomain(req, res) {
+
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+
+    var jsonString;
+    var queryString  = {company: company, tenant: tenant};
+
+
+    UserAccount.find(queryString).exec(function (err, userAccounts) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+
+        } else {
+
+            if (userAccounts && Array.isArray(userAccounts) ) {
+                var domainName = req.body.domainName;
+                var users = userAccounts.map(function (userAccount) {
+                    if(userAccount.veeryaccount) {
+
+                        var arr = userAccount.veeryaccount.contact.split("@");
+                        userAccount.veeryaccount.contact = arr[0]+"@"+domainName;
+
+                        UserAccount.findOneAndUpdate({
+                            _id: userAccount._id
+                        }, {"veeryaccount": userAccount.veeryaccount}, function (err, users) {
+                            if (err) {
+                                console.error(err);
+                            } else {
+                                console.log("Domain Updated...."+userAccount.veeryaccount.contact);
+                            }
+
+                        });
+
+                    }
+
+                });
+                jsonString = messageFormatter.FormatMessage(undefined, "opration Started....", true, undefined);
+                res.end(jsonString);
+            } else {
+                console.error("Invalide Data");
+                jsonString = messageFormatter.FormatMessage(undefined, "opration fail....", false, undefined);
+                res.end(jsonString);
+            }
+        }
+
+
+    });
+
+}
+
 
 module.exports.GetUser = GetUser;
 module.exports.GetUsers = GetUsers;
@@ -4217,5 +4275,8 @@ module.exports.UserIsAllowToOutbound = userIsAllowToOutbound;
 
 module.exports.GetFileCategories = GetFileCategories;
 module.exports.UserAcccountActivation = UserAcccountActivation;
+
+module.exports.UpdateUsersVeeryAccountDomain = UpdateUsersVeeryAccountDomain;
+
 /*
  module.exports.AddFileCategoriesToUser = AddFileCategoriesToUser;*/
