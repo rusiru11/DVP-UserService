@@ -456,16 +456,17 @@ app.post('/DVP/API/:version/ActiveDirectory/FaceTone/User', jwt({secret: secret.
 app.post('/DVP/API/:version/BusinessUnit', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.AddBusinessUnit);
 app.put('/DVP/API/:version/BusinessUnit/:unitname', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.UpdateBusinessUnit);
 app.put('/DVP/API/:version/BusinessUnit/:unitname/Groups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.UpdateBusinessUnitUserGroups);
-app.get('/DVP/API/:version/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnits);
-app.get('/DVP/API/:version/BusinessUnitsWithGroups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnitsWithGroups);
-app.get('/DVP/API/:version/BusinessUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.GetBusinessUnit);
+app.get('/DVP/API/:version/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnits);
+app.get('/DVP/API/:version/BusinessUnitsWithGroups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnitsWithGroups);
+app.get('/DVP/API/:version/BusinessUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnit);
 
-app.get('/DVP/API/:version/Supervisor/:sid/Groups', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), userGroupService.GetSupervisorUserGroups);
+app.get('/DVP/API/:version/Supervisor/:sid/Groups', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), userGroupService.GetSupervisorUserGroups);
 app.put('/DVP/API/:version/BusinessUnit/:name/Head/:hid', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadToBusinessUnits);
+app.delete('/DVP/API/:version/BusinessUnit/:name/Head/:hid', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.RemoveHeadToBusinessUnits);
 app.put('/DVP/API/:version/BusinessUnit/:name/Heads', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadsToBusinessUnit);
-app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetSupervisorBusinessUnits);
-app.get('/DVP/API/:version/BusinessUnit/:name/Users', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetUsersOfBusinessUnits);
-app.get('/DVP/API/:version/MyBusinessUnit', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.GetMyBusinessUnit);
+app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetSupervisorBusinessUnits);
+app.get('/DVP/API/:version/BusinessUnit/:name/Users', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUsersOfBusinessUnits);
+app.get('/DVP/API/:version/MyBusinessUnit', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetMyBusinessUnit);
 
 
 app.get('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetAccessibleFieldConfig);
@@ -491,6 +492,7 @@ app.put('/DVP/API/:version/Invitation/Resend/:id',jwt({secret: secret.Secret}),a
 app.put('/DVP/API/:version/UserAccount/:username/Activation/:state',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),userService.UserAcccountActivation);
 
 
+app.post('/DVP/API/:version/UserAccount/DataMigrate/Domain',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),userService.UpdateUsersVeeryAccountDomain);
 
 app.listen(port, function () {
 
