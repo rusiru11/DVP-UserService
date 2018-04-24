@@ -497,10 +497,12 @@ function AddHeadToBusinessUnits(req, res){
         var company = parseInt(req.user.company);
         var tenant = parseInt(req.user.tenant);
         var jsonString;
+        var ObjectId = mongoose.Types.ObjectId;
+
 
         if(req.params && req.params.hid && req.params.name)
         {
-            UserAccount.findOne({_id:req.params.hid, company:company, tenant:tenant}).populate('userref', '-password').exec(function (errUser,resUser) {
+            UserAccount.findOne({userref:  req.params.hid, company:company, tenant:tenant}).exec(function (errUser,resUser) {
 
                 if(errUser)
                 {
@@ -554,6 +556,55 @@ function AddHeadToBusinessUnits(req, res){
 
     } catch (e) {
         jsonString = messageFormatter.FormatMessage(e, "Exception in attaching Head to Business Unit", false, undefined);
+        res.end(jsonString);
+    }
+
+
+}
+function RemoveHeadToBusinessUnits(req, res){
+
+
+    logger.debug("DVP-UserService.RemoveHeadToBusinessUnits Internal method ");
+
+    try {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+
+
+        if(req.params && req.params.hid && req.params.name)
+        {
+            BusinessUnit.findOneAndUpdate({
+                unitName: req.params.name,
+                company: company,
+                tenant: tenant
+            }, {$pull: {heads: req.params.hid}}).exec(function (errAttach,resAttach) {
+                if(errAttach)
+                {
+                    logger.error("DVP-UserService.RemoveHeadToBusinessUnits :  Error in Detaching Head to Business Unit ",errAttach);
+                    jsonString = messageFormatter.FormatMessage(errAttach, "Error in Detaching Head to Business Unit", false, undefined);
+                }
+                else
+                {
+                    jsonString = messageFormatter.FormatMessage(undefined, "Head attached to Business Units successfully", true, resAttach);
+                    logger.debug("DVP-UserService.AddHeadToBusinessUnits :  Head attached to Business Units successfully ");
+                }
+                res.end(jsonString);
+            });
+
+
+        }
+        else
+        {
+            logger.error("DVP-UserService.RemoveHeadToBusinessUnits :  No supervisor ID or BusinessUnit name found ");
+            jsonString = messageFormatter.FormatMessage(new Error("No supervisor ID or BusinessUnit name found "), "No supervisor ID or BusinessUnit name found ", false, undefined);
+            res.end(jsonString);
+        }
+
+
+    } catch (e) {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in Detaching Head to Business Unit", false, undefined);
         res.end(jsonString);
     }
 
@@ -726,6 +777,7 @@ function GetUsersOfBusinessUnits(req, res){
                     {
                         var users = resUsers.map(function(item){
 
+                            item.userref.resourceid = item.resource_id;
                             return item.userref;
                         });
                         jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, users);
@@ -772,6 +824,7 @@ function GetUsersOfBusinessUnits(req, res){
                                 {
                                     var users = resUsers.map(function(item){
 
+                                        item.userref.resourceid = item.resource_id;
                                         return item.userref;
                                     });
                                     jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, users);
@@ -848,3 +901,4 @@ module.exports.GetBusinessUnitsWithGroups=GetBusinessUnitsWithGroups;
 module.exports.GetMyBusinessUnit=GetMyBusinessUnit;
 module.exports.UpdateBusinessUnitUserGroups=UpdateBusinessUnitUserGroups;
 module.exports.AddDefaultBusinessUnit = AddDefaultBusinessUnit;
+module.exports.RemoveHeadToBusinessUnits = RemoveHeadToBusinessUnits;

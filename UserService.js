@@ -364,7 +364,7 @@ function GetUsersByRoles(req, res) {
     });
 
 
-    UserAccount.find(qObj).populate('userref', '-password')
+    UserAccount.find(qObj).select('-user_scopes -client_scopes').populate('userref', '-password -user_scopes -client_scopes')
         .exec(function (err, userAccounts) {
             if (err) {
 
@@ -733,6 +733,11 @@ function CreateUser(req, res) {
                                                         created_at: Date.now(),
                                                         updated_at: Date.now()
                                                     });
+
+                                                    if(req.body.veeryaccount)
+                                                    {
+                                                        user.veeryaccount = req.body.veeryaccount;
+                                                    }
 
                                                     if (config.auth.login_verification) {
 
