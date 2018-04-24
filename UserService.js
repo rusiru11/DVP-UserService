@@ -610,7 +610,7 @@ function DeleteUser(req, res) {
                             } else {
                                 var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", user.user_meta.role);
                                 if (limitObj) {
-                                    var userIndex = limitObj.currentAccess.indexOf(user.username);
+                                    var userIndex = limitObj.currentAccess.indexOf(user.user);
                                     if (userIndex > -1) {
                                         limitObj.currentAccess.splice(userIndex, 1);
                                         Org.findOneAndUpdate({id: company, tenant: tenant}, org, function (err, rOrg) {
