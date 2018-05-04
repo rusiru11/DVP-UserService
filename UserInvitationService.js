@@ -10,6 +10,7 @@ var request = require("request");
 var util = require("util");
 var config = require("config");
 var validator = require("validator");
+var Org = require('dvp-mongomodels/model/Organisation');
 
 
 function GetInvitation(req, res) {
