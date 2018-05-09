@@ -432,17 +432,17 @@ function UserInvitable(req, res) {
                 }).populate('userref', '-password').exec(function (err, userAccount) {
                     if (err) {
 
-                        jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed", false, undefined);
+                        jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed,Not available for invitation", false, undefined);
 
                     } else {
 
 
                         if (userAccount) {
-                            jsonString = messageFormatter.FormatMessage(err, "Get User Account Successful", false, undefined);
+                            jsonString = messageFormatter.FormatMessage(err, "Get User Account Successful, Not available for invitation", false, undefined);
 
                         } else {
 
-                            jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed", true, undefined);
+                            jsonString = messageFormatter.FormatMessage(err, "No user Account found, Available for Invitation", true, undefined);
 
                         }
 
