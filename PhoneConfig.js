@@ -19,6 +19,7 @@ module.exports.AddPhoneConfig = function (req, res) {
         autoAnswer: req.body.autoAnswer,
         allowAgentToChange: req.body.allowAgentToChange,
         autoAnswerDelay: parseInt(req.body.autoAnswerDelay) * 1000,
+        phoneType: req.body.phoneType,
         company: company,
         tenant: tenant
     });
@@ -72,7 +73,7 @@ module.exports.UpdatePhoneConfig = function (req, res) {
     var jsonString;
 
     PhoneConfig.findOneAndUpdate({company: company, tenant: tenant, _id: req.params.id}, { autoAnswer: req.body.autoAnswer,allowAgentToChange: req.body.allowAgentToChange,
-        autoAnswerDelay: parseInt(req.body.autoAnswerDelay) * 1000}, function (err, users) {
+        autoAnswerDelay: parseInt(req.body.autoAnswerDelay) * 1000,phoneType: req.body.phoneType}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update PhoneConfig Failed", false, undefined);
