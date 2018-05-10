@@ -153,110 +153,105 @@ function CreateInvitation(req, res) {
             res.end(jsonString);
         } else {
             if (org) {
-                if (req.body.role) {
-                    var userRole = req.body.role.toLowerCase();
-                    var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
-                    if (limitObj) {
-                        if (limitObj.accessLimit > limitObj.currentAccess.length) {
-                            User.findOne({
-                                username: to
-                            }, function (err, user) {
 
-                                if (err) {
+                var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", role);
+                if (limitObj) {
+                    if (limitObj.accessLimit > limitObj.currentAccess.length) {
+                        User.findOne({
+                            username: to
+                        }, function (err, user) {
 
-                                    jsonString = messageFormatter.FormatMessage(err, "User Invitation failed due to no user found", true, undefined);
-                                    res.end(jsonString);
+                            if (err) {
+
+                                jsonString = messageFormatter.FormatMessage(err, "User Invitation failed due to no user found", true, undefined);
+                                res.end(jsonString);
+
+                            } else {
+
+                                if (user && user.allow_invitation === true) {
+
+                                    var invitation = UserInvitation({
+                                        to: to,
+                                        from: from,
+
+                                        status: 'pending',
+                                        company: company,
+                                        tenant: tenant,
+                                        created_at: Date.now(),
+                                        updated_at: Date.now(),
+                                        message: message,
+                                    });
+
+                                    invitation.save(function (err, invitation) {
+                                        if (err) {
+                                            jsonString = messageFormatter.FormatMessage(err, "User Invitation save failed", false, undefined);
+                                            res.end(jsonString);
+                                        } else {
 
 
+                                            var userAccount = UserAccount({
+                                                active: true,
+                                                verified: false,
+                                                userref: user._id,
+                                                user_meta: {role: role},
+                                                user: to,
+                                                tenant: tenant,
+                                                company: company,
+                                                created_at: Date.now(),
+                                                updated_at: Date.now(),
+                                                multi_login: false
+                                            });
+
+                                            userAccount.save(function (err, account) {
+                                                if (err) {
+                                                    jsonString = messageFormatter.FormatMessage(new Error("Account creation failed"), "User Invitation failed due to no user found", true, undefined);
+                                                    res.end(jsonString);
+                                                } else {
+
+
+                                                    var sendObj = {
+                                                        "company": 0,
+                                                        "tenant": 1
+                                                    };
+
+                                                    sendObj.to = to;
+                                                    sendObj.from = "no-reply";
+                                                    sendObj.template = "By-User Invitation received";
+                                                    sendObj.Parameters = {
+                                                        username: to,
+                                                        owner: from,
+                                                        created_at: new Date()
+                                                    };
+
+                                                    PublishToQueue("EMAILOUT", sendObj);
+
+                                                    SenNotification(company, tenant, from, to, message, function () {
+
+                                                    })
+
+                                                    jsonString = messageFormatter.FormatMessage(undefined, "User Invitation saved successfully", true, invitation);
+                                                    res.end(jsonString);
+                                                }
+                                            });
+                                        }
+                                    });
                                 } else {
 
-                                    if (user && user.allow_invitation === true) {
-
-                                        var invitation = UserInvitation({
-                                            to: to,
-                                            from: from,
-
-                                            status: 'pending',
-                                            company: company,
-                                            tenant: tenant,
-                                            created_at: Date.now(),
-                                            updated_at: Date.now(),
-                                            message: message,
-                                        });
-
-                                        invitation.save(function (err, invitation) {
-                                            if (err) {
-                                                jsonString = messageFormatter.FormatMessage(err, "User Invitation save failed", false, undefined);
-                                                res.end(jsonString);
-                                            } else {
-
-
-                                                var userAccount = UserAccount({
-                                                    active: true,
-                                                    verified: false,
-                                                    userref: user._id,
-                                                    user_meta: {role: role},
-                                                    user: to,
-                                                    tenant: tenant,
-                                                    company: company,
-                                                    created_at: Date.now(),
-                                                    updated_at: Date.now(),
-                                                    multi_login: false
-                                                });
-
-                                                userAccount.save(function (err, account) {
-                                                    if (err) {
-                                                        jsonString = messageFormatter.FormatMessage(new Error("Account creation failed"), "User Invitation failed due to no user found", true, undefined);
-                                                        res.end(jsonString);
-                                                    } else {
-
-
-                                                        var sendObj = {
-                                                            "company": 0,
-                                                            "tenant": 1
-                                                        };
-
-                                                        sendObj.to = to;
-                                                        sendObj.from = "no-reply";
-                                                        sendObj.template = "By-User Invitation received";
-                                                        sendObj.Parameters = {
-                                                            username: to,
-                                                            owner: from,
-                                                            created_at: new Date()
-                                                        };
-
-                                                        PublishToQueue("EMAILOUT", sendObj);
-
-                                                        SenNotification(company, tenant, from, to, message, function () {
-
-                                                        })
-
-                                                        jsonString = messageFormatter.FormatMessage(undefined, "User Invitation saved successfully", true, invitation);
-                                                        res.end(jsonString);
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    } else {
-
-                                        jsonString = messageFormatter.FormatMessage(new Error("No user found"), "User Invitation failed due to no user found", true, undefined);
-                                        res.end(jsonString);
-                                    }
+                                    jsonString = messageFormatter.FormatMessage(new Error("No user found"), "User Invitation failed due to no user found", true, undefined);
+                                    res.end(jsonString);
                                 }
+                            }
 
-                            });
-                        } else {
-                            jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
-                            res.end(jsonString);
-                        }
+                        });
                     } else {
-                        jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
+                        jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
                         res.end(jsonString);
                     }
                 } else {
-                    jsonString = messageFormatter.FormatMessage(err, "No User Role Found", false, undefined);
+                    jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
                     res.end(jsonString);
                 }
+
             } else {
                 jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
                 res.end(jsonString);
@@ -494,7 +489,6 @@ function ResendUserInvitation(req, res) {
     });
 
 }
-
 
 var SenNotification = function (company, tenant, from, to, message, callback) {
     //var jsonStr = JSON.stringify(postData);
