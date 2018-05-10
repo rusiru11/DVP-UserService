@@ -1,7 +1,7 @@
 /**
  * Created by Pawan on 12/29/2017.
  */
-var mongoose = require('mongoose');
+
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var BusinessUnit = require('dvp-mongomodels/model/BusinessUnit').BusinessUnit;
@@ -123,11 +123,11 @@ function AddDefaultBusinessUnit(companyId, tenantId, ownerRef) {
             tenant: tenantId
         };
 
-        var ObjectId = mongoose.Types.ObjectId;
+        //var ObjectId = mongoose.Types.ObjectId;
 
         var arr = [];
 
-        arr.push(new ObjectId(ownerRef));
+        arr.push(ownerRef);
 
         unitObj.heads = arr;
 
@@ -313,7 +313,7 @@ function GetBusinessUnits(req,res) {
 
 };
 
-mongoose.set('debug', true);
+
 function GetBusinessUnitsWithGroups(req,res) {
 
     try {
@@ -497,8 +497,6 @@ function AddHeadToBusinessUnits(req, res){
         var company = parseInt(req.user.company);
         var tenant = parseInt(req.user.tenant);
         var jsonString;
-        var ObjectId = mongoose.Types.ObjectId;
-
 
         if(req.params && req.params.hid && req.params.name)
         {

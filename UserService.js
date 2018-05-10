@@ -1,4 +1,4 @@
-var mongoose = require('mongoose');
+
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var User = require('dvp-mongomodels/model/User');
 var Org = require('dvp-mongomodels/model/Organisation');

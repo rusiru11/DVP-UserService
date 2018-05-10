@@ -1,5 +1,5 @@
 var mongoose = require('mongoose');
-var ObjectId = mongoose.Types.ObjectId;
+//var ObjectId = mongoose.Types.ObjectId;
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var User = require('dvp-mongomodels/model/User');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
@@ -27,7 +27,7 @@ function GetInvitation(req, res) {
     UserInvitation.findOne({
         company: company,
         tenant: tenant,
-        _id: ObjectId(req.params.id)
+        _id: req.params.id
     }, function (err, invitations) {
         if (err) {
 
@@ -272,7 +272,7 @@ function AcceptUserInvitation(req, res) {
 
     req.body.updated_at = Date.now();
     UserInvitation.findOneAndUpdate({
-        _id: ObjectId(req.params.id),
+        _id: req.params.id,
         company: company,
         tenant: tenant,
         to: to,
@@ -327,7 +327,7 @@ function RejectUserInvitation(req, res) {
 
     req.body.updated_at = Date.now();
     UserInvitation.findOneAndUpdate({
-        _id: ObjectId(req.params.id),
+        _id: req.params.id,
         company: company,
         tenant: tenant,
         to: to,
@@ -382,7 +382,7 @@ function CancelUserInvitation(req, res) {
 
     req.body.updated_at = Date.now();
     UserInvitation.findOneAndUpdate({
-        _id: ObjectId(req.params.id),
+        _id: req.params.id,
         company: company,
         tenant: tenant,
         from: from,
@@ -442,7 +442,7 @@ function ResendUserInvitation(req, res) {
 
     req.body.updated_at = Date.now();
     UserInvitation.findOneAndUpdate({
-        _id: ObjectId(req.params.id),
+        _id: req.params.id,
         company: company,
         tenant: tenant,
         from: from,

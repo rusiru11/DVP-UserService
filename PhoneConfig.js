@@ -1,9 +1,8 @@
-var mongoose = require('mongoose');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var PhoneConfig = require('dvp-mongomodels/model/PhoneConfig');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
-var util = require('util');
-var config = require('config');
+
+
 
 
 module.exports.AddPhoneConfig = function (req, res) {

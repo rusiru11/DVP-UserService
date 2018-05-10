@@ -1,7 +1,6 @@
 /**
  * Created by a on 7/23/2016.
  */
-var mongoose = require('mongoose');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var UserGroup = require('dvp-mongomodels/model/UserGroup').UserGroup;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
