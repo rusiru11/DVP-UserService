@@ -12,6 +12,38 @@ var config = require("config");
 var validator = require("validator");
 var Org = require('dvp-mongomodels/model/Organisation');
 
+function FilterObjFromArray(itemArray, field, value){
+    var resultObj;
+    if(itemArray) {
+        for (var i = 0; i < itemArray.length; i++) {
+            var item = itemArray[i];
+            var qParams = field.split('.');
+            if(qParams && qParams.length >1){
+                var qData = item[qParams[0]];
+                for(var j=1;j<qParams.length;j++){
+                    if(qData) {
+                        qData = qData[qParams[j]];
+                    }
+                }
+
+                if (qData == value) {
+                    resultObj = item;
+                    break;
+                }
+            }else {
+                if (item[field] == value) {
+                    resultObj = item;
+                    break;
+                }
+            }
+        }
+        return resultObj;
+    }else{
+        return undefined;
+    }
+}
+
+
 
 function GetInvitation(req, res) {
 
