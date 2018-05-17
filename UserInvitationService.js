@@ -478,7 +478,7 @@ function ResendUserInvitation(req, res) {
         company: company,
         tenant: tenant,
         from: from,
-        status: 'canceled'
+        $or:[{status: 'canceled'},{status:'rejected'}]
     }, {status: "pending", update_at: Date.now()}, function (err, invitation) {
         if (err) {
 
