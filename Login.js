@@ -34,7 +34,7 @@ var redismode = config.Redis.mode;
 var redisdb = config.Redis.db;
 
 /////////////////security breach///////////////////////
-var commonsignature = config.auth.common_signaturee;
+var commonsignature = config.auth.common_signature;
 
 var multilogin = config.auth.multi_login;
 

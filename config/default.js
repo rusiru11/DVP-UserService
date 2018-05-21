@@ -43,7 +43,7 @@ module.exports = {
       TWITTER_KEY: 'vdrg4sqxyTPSRdJHKu4UVVdeD',
       TWITTER_SECRET: 'cUIobhRgRlXsFyObUMg3tBq56EgGSwabmcavQP4fncABvotRMA',
 
-      login_verification: true,
+      login_verification: false,
       signup_verification: true,
       recaptcha_key: "6LezaAsUAAAAAFbtiyMzOlMmqEwzMwmMYszmO_Ve",
 
@@ -67,7 +67,7 @@ module.exports = {
 
   "Redis":
   {
-    "mode":"sentinel",//instance, cluster, sentinel
+    "mode":"instance",//instance, cluster, sentinel
     "ip": "45.55.142.207",
     "port": 6389,
     "user": "duo",
@@ -88,7 +88,7 @@ module.exports = {
     "port": 6389,
     "user": "duo",
     "password": "DuoS123",
-    "mode":"sentinel",//instance, cluster, sentinel
+    "mode":"instance",//instance, cluster, sentinel
     "sentinels":{
       "hosts": "138.197.90.92,45.55.205.92,138.197.90.92",
       "port":16389,
