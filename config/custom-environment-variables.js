@@ -89,7 +89,8 @@ module.exports = {
         ui_host: 'SYS_APP_UI_HOST',
         agent_host: 'SYS_APP_AGENT_UI_HOST',
 
-        common_signature: "JWT_COMMON_SIGNATURE"
+        common_signature: "JWT_COMMON_SIGNATURE",
+        multi_login: "SYS_AUTH_MULTI_LOGIN"
 
     },
 
