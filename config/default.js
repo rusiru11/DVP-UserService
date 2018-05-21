@@ -49,7 +49,7 @@ module.exports = {
 
       ui_host: 'http://localhost:3000/',
       agent_host: 'http://localhost:3000/',
-      common_signature: true,
+      common_signature: false,
       multi_login: false
 
 
