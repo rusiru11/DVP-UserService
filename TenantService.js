@@ -1,7 +1,6 @@
 /**
  * Created by Pawan on 8/1/2016.
  */
-var mongoose = require('mongoose');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var Tenant = require('dvp-mongomodels/model/Tenant').Tenant;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');

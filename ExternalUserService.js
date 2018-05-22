@@ -1,7 +1,6 @@
 /**
  * Created by a on 6/26/2016.
  */
-var mongoose = require('mongoose');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var ExternalUser = require('dvp-mongomodels/model/ExternalUser');
 var ExternalUserAccessFields = require('dvp-mongomodels/model/ExternalUserAccessConfig').ExternalUserAccessFields;

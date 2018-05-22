@@ -33,6 +33,11 @@ var redispass = config.Redis.password;
 var redismode = config.Redis.mode;
 var redisdb = config.Redis.db;
 
+/////////////////security breach///////////////////////
+var commonsignature = config.auth.common_signature;
+
+var multilogin = config.auth.multi_login;
+
 
 
 var redisSetting =  {
@@ -113,27 +118,38 @@ function GetVerification(token, done) {
 
     var payload = jwt.decode(token);
 
-    if(payload && payload.iss && payload.jti) {
+    if(commonsignature === true || commonsignature === "true"){
 
-        redisClient.get("token:iss:" + payload.iss + ":" + payload.jti, function (err, key) {
-            if (err) {
-                return done(err);
-            }
-            if (!key) {
-                return done(new Error('missing_secret'));
-            }
+        if (jwt.verify(token, payload.jti)) {
+            return done(null, payload);
+        } else {
+            return done(new Error('verification_failed'));
+        }
 
-            if(jwt.verify(token, key)) {
-                return done(null, payload);
-            }else{
-                return done(new Error('verification_failed'));
-            }
+    }else {
+
+        if (payload && payload.iss && payload.jti) {
+
+            redisClient.get("token:iss:" + payload.iss + ":" + payload.jti, function (err, key) {
+                if (err) {
+                    return done(err);
+                }
+                if (!key) {
+                    return done(new Error('missing_secret'));
+                }
+
+                if (jwt.verify(token, key)) {
+                    return done(null, payload);
+                } else {
+                    return done(new Error('verification_failed'));
+                }
 
 
-        });
-    }else{
+            });
+        } else {
 
-        return done(new Error('wrong_token'));
+            return done(new Error('wrong_token'));
+        }
     }
 }
 
@@ -352,22 +368,118 @@ function GetJWT(user, scopesx, client_id, type, req, done){
     var redisKey = "token:iss:"+user.username+":"+jti;
     var tokenMap = "token:iss:"+user.username+":*";
 
-    if(user.multi_login && user.multi_login === false){
+    if(commonsignature === true || commonsignature === "true"){
 
-        redisClient.keys(tokenMap, function(err, res){
+        var payload = {};
 
-            if(Array.isArray(res)){
-                res.forEach(function(item){
-                    //var delRedisKey = "token:iss:"+user.username+":"+item;
-                    redisClient.del(item,function(err, res){
-                        logger.info("JTI deleted -> ", item);
-                    })
-                })
+        secret = jti;
+        payload.iss = user.username;
+        payload.jti = jti;
+        payload.sub = "Access client";
+        payload.exp = expin;
+        payload.tenant = user.tenant;
+        payload.company = user.company;
+        //payload.aud = client.name;
+
+        if (user.companyName)
+            payload.companyName = user.companyName;
+
+        var scopes = GetScopes(user, scopesx);
+        payload.context = scopes.context;
+        payload.scope = scopes.scope;
+        var token = jwt.sign(payload, secret);
+
+        var accesstoken = accessToken({
+
+            userId: user._id,
+            clientId: client_id,
+            jti: jti,
+            Agent: req.headers['user-agent'],
+            Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+            scope: scopesx,
+            expirationDate: expin,
+            type: type
+        });
+
+        accesstoken.save(function (err, accesstoken) {
+            if (err) {
+
+                return done(err, false, undefined);
             }
+            return done(undefined, true, token);
+        });
 
-            redisClient.set(redisKey, secret, function(err, res){
+    }else {
 
-                if(!err) {
+//multilogin
+        if ((multilogin ===false || multilogin === "false") || (user.multi_login != undefined && user.multi_login === false)) {
+
+            redisClient.keys(tokenMap, function (err, res) {
+
+                if (Array.isArray(res)) {
+                    res.forEach(function (item) {
+                        //var delRedisKey = "token:iss:"+user.username+":"+item;
+                        redisClient.del(item, function (err, res) {
+                            logger.info("JTI deleted -> ", item);
+                        })
+                    })
+                }
+
+                redisClient.set(redisKey, secret, function (err, res) {
+
+                    if (!err) {
+                        redisClient.expireat(redisKey, expin);
+
+                        var payload = {};
+                        payload.iss = user.username;
+                        payload.jti = jti;
+                        payload.sub = "Access client";
+                        payload.exp = expin;
+                        payload.tenant = user.tenant;
+                        payload.company = user.company;
+
+                        if (user.companyName)
+                            payload.companyName = user.companyName;
+                        //payload.aud = client.name;
+
+                        var scopes = GetScopes(user, scopesx);
+                        payload.context = scopes.context;
+                        payload.scope = scopes.scope;
+                        var token = jwt.sign(payload, secret);
+
+
+                        var accesstoken = accessToken({
+
+                            userId: user._id,
+                            clientId: client_id,
+                            jti: jti,
+                            Agent: req.headers['user-agent'],
+                            Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                            scope: scopesx,
+                            expirationDate: expin,
+                            type: type
+                        });
+
+                        accesstoken.save(function (err, accesstoken) {
+                            if (err) {
+
+                                return done(err, false, undefined);
+                            }
+                            return done(undefined, true, token);
+                        });
+                    } else {
+
+                        return done(err, false, undefined);
+                    }
+
+                });
+
+            });
+        } else {
+
+            redisClient.set(redisKey, secret, function (err, res) {
+
+                if (!err) {
 
 
                     redisClient.expireat(redisKey, expin);
@@ -379,10 +491,10 @@ function GetJWT(user, scopesx, client_id, type, req, done){
                     payload.exp = expin;
                     payload.tenant = user.tenant;
                     payload.company = user.company;
-
-                    if(user.companyName)
-                        payload.companyName = user.companyName;
                     //payload.aud = client.name;
+
+                    if (user.companyName)
+                        payload.companyName = user.companyName;
 
                     var scopes = GetScopes(user, scopesx);
                     payload.context = scopes.context;
@@ -410,67 +522,13 @@ function GetJWT(user, scopesx, client_id, type, req, done){
                         }
                         return done(undefined, true, token);
                     });
-                }else{
+                } else {
 
                     return done(err, false, undefined);
                 }
 
             });
-
-        });
-    }else{
-
-        redisClient.set(redisKey, secret, function(err, res){
-
-            if(!err) {
-
-
-                redisClient.expireat(redisKey, expin);
-
-                var payload = {};
-                payload.iss = user.username;
-                payload.jti = jti;
-                payload.sub = "Access client";
-                payload.exp = expin;
-                payload.tenant = user.tenant;
-                payload.company = user.company;
-                //payload.aud = client.name;
-
-                if(user.companyName)
-                    payload.companyName = user.companyName;
-
-                var scopes = GetScopes(user, scopesx);
-                payload.context = scopes.context;
-                payload.scope = scopes.scope;
-                var token = jwt.sign(payload, secret);
-
-
-                var accesstoken = accessToken({
-
-
-                    userId: user._id,
-                    clientId: client_id,
-                    jti: jti,
-                    Agent: req.headers['user-agent'],
-                    Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-                    scope: scopesx,
-                    expirationDate: expin,
-                    type: type
-                });
-
-                accesstoken.save(function (err, accesstoken) {
-                    if (err) {
-
-                        return done(err, false, undefined);
-                    }
-                    return done(undefined, true, token);
-                });
-            }else{
-
-                return done(err, false, undefined);
-            }
-
-        });
+        }
     }
 }
 

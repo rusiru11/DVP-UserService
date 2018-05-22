@@ -1,9 +1,8 @@
-var mongoose = require('mongoose');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var PhoneConfig = require('dvp-mongomodels/model/PhoneConfig');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
-var util = require('util');
-var config = require('config');
+
+
 
 
 module.exports.AddPhoneConfig = function (req, res) {
@@ -19,6 +18,7 @@ module.exports.AddPhoneConfig = function (req, res) {
         autoAnswer: req.body.autoAnswer,
         allowAgentToChange: req.body.allowAgentToChange,
         autoAnswerDelay: parseInt(req.body.autoAnswerDelay) * 1000,
+        phoneType: req.body.phoneType,
         company: company,
         tenant: tenant
     });
@@ -72,7 +72,7 @@ module.exports.UpdatePhoneConfig = function (req, res) {
     var jsonString;
 
     PhoneConfig.findOneAndUpdate({company: company, tenant: tenant, _id: req.params.id}, { autoAnswer: req.body.autoAnswer,allowAgentToChange: req.body.allowAgentToChange,
-        autoAnswerDelay: parseInt(req.body.autoAnswerDelay) * 1000}, function (err, users) {
+        autoAnswerDelay: parseInt(req.body.autoAnswerDelay) * 1000,phoneType: req.body.phoneType}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update PhoneConfig Failed", false, undefined);
