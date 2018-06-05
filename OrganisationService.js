@@ -288,6 +288,22 @@ function GetOrganisationName(req, res){
     });
 }
 
+function GetOrganisationID(req, res){
+    logger.debug("DVP-UserService.GetOrganisationID Internal method ");
+
+    var tenant = parseInt(req.params.tenant);
+    var company = req.params.company;
+    var jsonString;
+    Org.findOne({tenant: tenant, companyName: company},{id: 1}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+        }else{
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Successful", true, org);
+        }
+        res.end(jsonString);
+    });
+}
+
 function GetOrganisationPackages(req, res){
     logger.debug("DVP-UserService.GetOrganisationPackages Internal method ");
 
@@ -2130,3 +2146,4 @@ module.exports.GetBillingDetails = GetBillingDetails;
 module.exports.IsOrganizationExists = IsOrganizationExists;
 module.exports.GetSpaceLimit = GetSpaceLimit;
 module.exports.GetSpaceLimitForTenant = GetSpaceLimitForTenant;
+module.exports.GetOrganisationID = GetOrganisationID;
