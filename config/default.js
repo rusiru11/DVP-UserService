@@ -1,15 +1,15 @@
 module.exports = {
 
 
-  MONGO_URI: process.env.MONGO_URI || 'mongodb://duo:DuoS123@45.55.142.207/dvpdb',
+  MONGO_URI: process.env.MONGO_URI || '',
   TOKEN_SECRET: process.env.TOKEN_SECRET || 'YOUR_UNIQUE_JWT_TOKEN_SECRET',
 
   // OAuth 2.0
-  FACEBOOK_SECRET: process.env.FACEBOOK_SECRET || 'a0acd201d949151b58f97768227c0e7d',
+  FACEBOOK_SECRET: process.env.FACEBOOK_SECRET || '',
   FOURSQUARE_SECRET: process.env.FOURSQUARE_SECRET || 'YOUR_FOURSQUARE_CLIENT_SECRET',
-  GOOGLE_SECRET: process.env.GOOGLE_SECRET || '4po259JgUy9xJsCLkGj7Mj_m',
+  GOOGLE_SECRET: process.env.GOOGLE_SECRET || '',
   //
-  GITHUB_SECRET: process.env.GITHUB_SECRET || 'ed7bbb48226294da88edad5f0df04914ce06e927',
+  GITHUB_SECRET: process.env.GITHUB_SECRET || '',
   INSTAGRAM_SECRET: process.env.INSTAGRAM_SECRET || 'YOUR_INSTAGRAM_CLIENT_SECRET',
   LINKEDIN_SECRET: process.env.LINKEDIN_SECRET || 'YOUR_LINKEDIN_CLIENT_SECRET',
   TWITCH_SECRET: process.env.TWITCH_SECRET || 'YOUR_TWITCH_CLIENT_SECRET',
@@ -19,18 +19,18 @@ module.exports = {
   SPOTIFY_SECRET: process.env.SPOTIFY_SECRET || 'YOUR_SPOTIFY_CLIENT_SECRET',
 
   // OAuth 1.0
-  TWITTER_KEY: process.env.TWITTER_KEY || 'vdrg4sqxyTPSRdJHKu4UVVdeD',
-  TWITTER_SECRET: process.env.TWITTER_SECRET || 'cUIobhRgRlXsFyObUMg3tBq56EgGSwabmcavQP4fncABvotRMA',
+  TWITTER_KEY: process.env.TWITTER_KEY || '',
+  TWITTER_SECRET: process.env.TWITTER_SECRET || '',
 
 
   "auth": {
 
       // OAuth 2.0
-      FACEBOOK_SECRET: 'a0acd201d949151b58f97768227c0e7d',
+      FACEBOOK_SECRET: '',
       FOURSQUARE_SECRET: 'YOUR_FOURSQUARE_CLIENT_SECRET',
-      GOOGLE_SECRET: '4po259JgUy9xJsCLkGj7Mj_m',
+      GOOGLE_SECRET: '',
       //
-      GITHUB_SECRET: 'ed7bbb48226294da88edad5f0df04914ce06e927',
+      GITHUB_SECRET: '',
       INSTAGRAM_SECRET: 'YOUR_INSTAGRAM_CLIENT_SECRET',
       LINKEDIN_SECRET: 'YOUR_LINKEDIN_CLIENT_SECRET',
       TWITCH_SECRET: 'YOUR_TWITCH_CLIENT_SECRET',
@@ -40,8 +40,8 @@ module.exports = {
       SPOTIFY_SECRET: 'YOUR_SPOTIFY_CLIENT_SECRET',
 
       // OAuth 1.0
-      TWITTER_KEY: 'vdrg4sqxyTPSRdJHKu4UVVdeD',
-      TWITTER_SECRET: 'cUIobhRgRlXsFyObUMg3tBq56EgGSwabmcavQP4fncABvotRMA',
+      TWITTER_KEY: '',
+      TWITTER_SECRET: '',
 
       login_verification: false,
       signup_verification: true,
@@ -57,23 +57,23 @@ module.exports = {
 
     "DB": {
         "Type":"postgres",
-        "User":"duo",
-        "Password":"DuoS123",
+        "User":"",
+        "Password":"",
         "Port":5432,
-        "Host":"104.236.231.11",
-        "Database":"duo"
+        "Host":"",
+        "Database":""
     },
 
 
   "Redis":
   {
     "mode":"instance",//instance, cluster, sentinel
-    "ip": "45.55.142.207",
+    "ip": "",
     "port": 6389,
-    "user": "duo",
-    "password": "DuoS123",
+    "user": "",
+    "password": "",
     "sentinels":{
-      "hosts": "138.197.90.92,45.55.205.92,138.197.90.92",
+      "hosts": "",
       "port":16389,
       "name":"redis-cluster"
     }
@@ -84,13 +84,13 @@ module.exports = {
   "Security":
   {
 
-    "ip" : "45.55.142.207",
+    "ip" : "",
     "port": 6389,
-    "user": "duo",
-    "password": "DuoS123",
+    "user": "",
+    "password": "",
     "mode":"instance",//instance, cluster, sentinel
     "sentinels":{
-      "hosts": "138.197.90.92,45.55.205.92,138.197.90.92",
+      "hosts": "",
       "port":16389,
       "name":"redis-cluster"
     }
@@ -115,27 +115,27 @@ module.exports = {
 
   "RabbitMQ":
   {
-    "ip": "45.55.142.207",
+    "ip": "",
     "port": 5672,
-    "user": "admin",
-    "password": "admin",
+    "user": "",
+    "password": "",
     "vhost":'/'
   },
 
 
   "Mongo":
   {
-    "ip":"104.236.231.11",
+    "ip":"",
     "port":"27017",
-    "dbname":"dvpdb",
-    "password":"DuoS123",
-    "user":"duo",
+    "dbname":"",
+    "password":"",
+    "user":"",
     "replicaset" :""
   },
 
   "Services" : {
-    "accessToken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdWtpdGhhIiwianRpIjoiYWEzOGRmZWYtNDFhOC00MWUyLTgwMzktOTJjZTY0YjM4ZDFmIiwic3ViIjoiNTZhOWU3NTlmYjA3MTkwN2EwMDAwMDAxMjVkOWU4MGI1YzdjNGY5ODQ2NmY5MjExNzk2ZWJmNDMiLCJleHAiOjE5MDIzODExMTgsInRlbmFudCI6LTEsImNvbXBhbnkiOi0xLCJzY29wZSI6W3sicmVzb3VyY2UiOiJhbGwiLCJhY3Rpb25zIjoiYWxsIn1dLCJpYXQiOjE0NzAzODExMTh9.Gmlu00Uj66Fzts-w6qEwNUz46XYGzE8wHUhAJOFtiRo",
-    "resourceServiceHost": "resourceservice.app.veery.cloud",
+    "accessToken":"",
+    "resourceServiceHost": "",
     "resourceServicePort": "8831",
     "resourceServiceVersion": "1.0.0.0",
     "sipuserendpointserviceHost": "127.0.0.1",
@@ -153,10 +153,10 @@ module.exports = {
     "clusterconfigserviceHost": "127.0.0.1",
     "clusterconfigservicePort": "3636",
     "clusterconfigserviceVersion": "1.0.0.0",
-    "billingserviceHost": "billingservice.app.veery.cloud",
+    "billingserviceHost": "",
     "billingservicePort": "4444",
     "billingserviceVersion": "1.0.0.0",
-    "notificationServiceHost": "notificationservice.app1.veery.cloud",
+    "notificationServiceHost": "",
     "notificationServicePort": "8089",
     "notificationServiceVersion": "1.0.0.0"
   },
