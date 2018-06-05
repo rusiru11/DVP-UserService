@@ -2266,3 +2266,233 @@ module.exports.Attachments = function(req,res){
     res.end();
 
 }
+
+//bot_framework
+function GetFedaratedJWT(user, userscopes, scopesx, client_id, type, req, done) {
+
+    var jti = uuid.v4();
+    var secret = uuid.v4();
+    var expin = moment().add(7, 'days').unix();
+    var redisKey = "token:iss:" + user.username + ":" + jti;
+    var tokenMap = "token:iss:" + user.username + ":*";
+
+    if (commonsignature === true || commonsignature === "true") {
+
+        var payload = {};
+
+        secret = jti;
+        payload.iss = user.username;
+        payload.jti = jti;
+        payload.sub = "Access client";
+        payload.exp = expin;
+        payload.tenant = user.tenant;
+        payload.company = user.company;
+        //payload.aud = client.name;
+
+        if (user.companyName)
+            payload.companyName = user.companyName;
+
+        payload.context = {};
+        payload.scope = userscopes;
+        var token = jwt.sign(payload, secret);
+
+        var accesstoken = accessToken({
+
+            userId: user._id,
+            clientId: client_id,
+            jti: jti,
+            Agent: req.headers['user-agent'],
+            Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+            scope: scopesx,
+            expirationDate: expin,
+            type: type
+        });
+
+        accesstoken.save(function (err, accesstoken) {
+            if (err) {
+
+                return done(err, false, undefined);
+            }
+            return done(undefined, true, token);
+        });
+
+    } else {
+
+//multilogin
+        if ((multilogin === false || multilogin === "false") || (user.multi_login != undefined && user.multi_login === false)) {
+
+            redisClient.keys(tokenMap, function (err, res) {
+
+                if (Array.isArray(res)) {
+                    res.forEach(function (item) {
+                        //var delRedisKey = "token:iss:"+user.username+":"+item;
+                        redisClient.del(item, function (err, res) {
+                            logger.info("JTI deleted -> ", item);
+                        })
+                    })
+                }
+
+                redisClient.set(redisKey, secret, function (err, res) {
+
+                    if (!err) {
+                        redisClient.expireat(redisKey, expin);
+
+                        var payload = {};
+                        payload.iss = user.username;
+                        payload.jti = jti;
+                        payload.sub = "Access client";
+                        payload.exp = expin;
+                        payload.tenant = user.tenant;
+                        payload.company = user.company;
+
+                        if (user.companyName)
+                            payload.companyName = user.companyName;
+                        //payload.aud = client.name;
+
+                        payload.context = {};
+                        payload.scope = userscopes;
+                        var token = jwt.sign(payload, secret);
+
+
+                        var accesstoken = accessToken({
+
+                            userId: user._id,
+                            clientId: client_id,
+                            jti: jti,
+                            Agent: req.headers['user-agent'],
+                            Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                            scope: scopesx,
+                            expirationDate: expin,
+                            type: type
+                        });
+
+                        accesstoken.save(function (err, accesstoken) {
+                            if (err) {
+
+                                return done(err, false, undefined);
+                            }
+                            return done(undefined, true, token);
+                        });
+                    } else {
+
+                        return done(err, false, undefined);
+                    }
+
+                });
+
+            });
+        } else {
+
+            redisClient.set(redisKey, secret, function (err, res) {
+
+                if (!err) {
+
+
+                    redisClient.expireat(redisKey, expin);
+
+                    var payload = {};
+                    payload.iss = user.username;
+                    payload.jti = jti;
+                    payload.sub = "Access client";
+                    payload.exp = expin;
+                    payload.tenant = user.tenant;
+                    payload.company = user.company;
+                    //payload.aud = client.name;
+
+                    if (user.companyName)
+                        payload.companyName = user.companyName;
+
+                    payload.context = {};
+                    payload.scope = userscopes;
+                    var token = jwt.sign(payload, secret);
+
+
+                    var accesstoken = accessToken({
+
+
+                        userId: user._id,
+                        clientId: client_id,
+                        jti: jti,
+                        Agent: req.headers['user-agent'],
+                        Location: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                        scope: scopesx,
+                        expirationDate: expin,
+                        type: type
+                    });
+
+                    accesstoken.save(function (err, accesstoken) {
+                        if (err) {
+
+                            return done(err, false, undefined);
+                        }
+                        return done(undefined, true, token);
+                    });
+                } else {
+
+                    return done(err, false, undefined);
+                }
+
+            });
+        }
+    }
+}
+
+module.exports.FedaratedLogin = function (req, res) {
+    var companyReg = ["^", req.body.companyName, "$"].join('');
+    Org.findOne({"companyName": {$regex: companyReg, $options: "i"}}, function (err, org) {
+        if (err) {
+            return res.status(401).send({message: 'Company verification failed'});
+        }
+
+        if (!org) {
+            return res.status(401).send({message: 'Invalid organization name'});
+        }
+
+        //user = user.toObject();
+        var user = {};
+        user.tenant = org.tenant;
+        user.company = org.id;
+        user.companyName = org.companyName;
+        user.multi_login = true;
+        //user._doc.user_meta = account.user_meta;
+        //user._doc.app_meta = account.app_meta;
+        //user._doc.user_scopes = account.user_scopes;
+        //user._doc.client_scopes = account.client_scopes;
+        //user._doc.resourceid = account.resource_id;
+        //user._doc.veeryaccount = account.veeryaccount;
+
+        user.username = req.body.userName;
+        user._id = "n/a";
+
+
+
+        var claims_arr = ["all_all"];
+        if (req.body.scopes && util.isArray(req.body.scopes) && req.body.scopes.length > 0) {
+            claims_arr = req.body.scopes;
+        }
+
+        Console.findOne({consoleName: req.body.console}, function (err, console) {
+            if (err) {
+                return res.status(449).send({message: 'Request console is not valid ...'});
+            } else {
+
+                if (!console) {
+
+                    return res.status(449).send({message: 'Request console is not valid ...'});
+                } else {
+                    if (console.consoleName == "BOT_CONSOLE") {
+                        GetFedaratedJWT(user, req.body.userScopes, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
+                            if (token) {
+                                return res.send({state: 'login', token: token});
+                            } else {
+                                return res.status(401).send({message: 'Invalid email and/or password'});
+                            }
+                        });
+                    } else {
+                        return res.status(401).send({message: 'Console type not supported for fedarated identities.'});
+                    }
+                }
+            }
+        });
+    });
+}

@@ -187,6 +187,8 @@ app.get('/auth/token/:token/exists', Login.CheckToken);
 app.get('/auth/activate/:token', Login.ActivateAccount);
 app.post('/auth/attachments', Login.Attachments);
 
+//bot_framework
+app.post('/auth/fedarate/login', Login.FedaratedLogin);
 
 
 app.post('/auth/google', Login.Google);
