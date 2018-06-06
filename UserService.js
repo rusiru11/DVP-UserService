@@ -2101,33 +2101,54 @@ function AddUserAppScopes(req, res){
                                             //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
                                             if(consoleAccessLimitObj) {
                                                 var consoleScope = FilterObjFromArray(assignUser.client_scopes,"consoleName",appConsole.consoleName);
-                                                if(consoleScope){
-                                                    var menuItem = FilterObjFromArray(consoleScope.menus,"menuItem",req.body.menuItem);
-                                                    if(menuItem){
-                                                        for(var j=0; j<menuItem.menuAction.length; j++){
+                                                if (consoleScope) {
+                                                    var menuItem = FilterObjFromArray(consoleScope.menus, "menuItem", req.body.menuItem);
+                                                    if (menuItem) {
+                                                        for (var j = 0; j < menuItem.menuAction.length; j++) {
                                                             var menuAction = FilterObjFromArray(menuItem.menuAction, "scope", req.body.menuAction[j].scope);
-                                                            if(menuAction){
-                                                                menuAction.read = (!req.body.menuAction[j].read)? false: req.body.menuAction[j].read;
-                                                                menuAction.write = (!req.body.menuAction[j].write)? false: req.body.menuAction[j].write;
-                                                                menuAction.delete = (!req.body.menuAction[j].delete)? false: req.body.menuAction[j].delete;
-                                                            }else{
+                                                            if (menuAction) {
+                                                                if (req.body.menuAction[j].read) {
+                                                                    menuAction.read = req.body.menuAction[j].read;
+                                                                }
+                                                                if (req.body.menuAction[j].write) {
+                                                                    menuAction.write = req.body.menuAction[j].write;
+                                                                }
+                                                                if (req.body.menuAction[j].delete) {
+                                                                    menuAction.delete = req.body.menuAction[j].delete;
+                                                                }
+                                                                // menuAction.read = (!req.body.menuAction[j].read)? false: req.body.menuAction[j].read;
+                                                                // menuAction.write = (!req.body.menuAction[j].write)? false: req.body.menuAction[j].write;
+                                                                // menuAction.delete = (!req.body.menuAction[j].delete)? false: req.body.menuAction[j].delete;
+                                                            } else {
                                                                 assignUser.user_scopes.push(req.body.menuAction);
                                                             }
                                                         }
-                                                    }else {
+                                                    } else {
                                                         consoleScope.menus.push(req.body);
                                                         consoleScope.menus = UniqueObjectArray(consoleScope.menus, "menuItem");
                                                     }
-                                                }else{
-                                                    assignUser.client_scopes.push({consoleName: appConsole.consoleName, menus: [req.body]});
+                                                } else {
+                                                    assignUser.client_scopes.push({
+                                                        consoleName: appConsole.consoleName,
+                                                        menus: [req.body]
+                                                    });
                                                 }
-                                                for(var i in req.body.menuAction){
+                                                for (var i in req.body.menuAction) {
                                                     var userScope = FilterObjFromArray(assignUser.user_scopes, "scope", req.body.menuAction[i].scope);
-                                                    if(userScope){
-                                                        userScope.read = (!req.body.menuAction[i].read)? false: req.body.menuAction[i].read;
-                                                        userScope.write = (!req.body.menuAction[i].write)? false: req.body.menuAction[i].write;
-                                                        userScope.delete = (!req.body.menuAction[i].delete)? false: req.body.menuAction[i].delete;
-                                                    }else{
+                                                    if (userScope) {
+                                                        if (req.body.menuAction[i].read && (!userScope.read || userScope.read == false)) {
+                                                            userScope.read = req.body.menuAction[i].read;
+                                                        }
+                                                        if (req.body.menuAction[i].write && (!userScope.write || userScope.write == false)) {
+                                                            userScope.write = req.body.menuAction[i].write;
+                                                        }
+                                                        if (req.body.menuAction[i].delete && (!userScope.delete || userScope.delete == false)) {
+                                                            userScope.delete = req.body.menuAction[i].delete;
+                                                        }
+                                                        // userScope.read = (!req.body.menuAction[i].read)? false: req.body.menuAction[i].read;
+                                                        // userScope.write = (!req.body.menuAction[i].write)? false: req.body.menuAction[i].write;
+                                                        // userScope.delete = (!req.body.menuAction[i].delete)? false: req.body.menuAction[i].delete;
+                                                    } else {
                                                         assignUser.user_scopes.push(req.body.menuAction[i]);
                                                     }
                                                 }
