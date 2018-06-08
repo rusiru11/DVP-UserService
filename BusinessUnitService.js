@@ -5,7 +5,6 @@
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var BusinessUnit = require('dvp-mongomodels/model/BusinessUnit').BusinessUnit;
-var User = require('dvp-mongomodels/model/User');
 var UserAccount = require('dvp-mongomodels/model/UserAccount');
 var unique = require('array-unique');
 var util = require('util');
