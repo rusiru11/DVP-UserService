@@ -130,7 +130,7 @@ function GetUsers(req, res) {
 
                 if (userAccounts && Array.isArray(userAccounts) ) {
 
-                    var users = userAccounts.map(function (userAccount) {
+                    var users = userAccounts.reduce(function (result, userAccount) {
                         if(userAccount.userref) {
                             var user = userAccount.userref.toObject();
 
@@ -144,10 +144,13 @@ function GetUsers(req, res) {
                             user.allowed_file_categories = userAccount.allowed_file_categories;
                             user.user_meta = userAccount.user_meta;
 
-                            return user;
+                            result.push(user) ;
+
                         }
 
-                    });
+                        return result;
+
+                    }, []);
                     jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
                 } else {
