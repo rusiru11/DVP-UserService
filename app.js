@@ -494,6 +494,9 @@ app.put('/DVP/API/:version/UserAccount/:username/Activation/:state',jwt({secret:
 
 app.post('/DVP/API/:version/UserAccount/DataMigrate/Domain',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),userService.UpdateUsersVeeryAccountDomain);
 
+
+app.put('/DVP/API/:version/ReportUser/:username/Console/:consoleName/Navigation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateReportUser);
+
 app.listen(port, function () {
 
     logger.info("DVP-UserService.main Server listening at %d", port);
