@@ -773,7 +773,7 @@ function GetUsersOfBusinessUnits(req, res){
                     else
                     {
 
-                        var users = resUsers.reduce(function(item,index,arr){
+                        var users = resUsers.reduce(function(arr,item,index,items){
 
                             if(item && item.userref) {
                                 item.userref.resourceid = item.resource_id;
